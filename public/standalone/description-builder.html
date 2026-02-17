@@ -1,0 +1,1849 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Umbra — YouTube SEO Suite</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-0: #030308;
+    --bg-1: #0a0a12;
+    --bg-2: #12121f;
+    --bg-3: #1a1a2e;
+    --cyan: #00f5ff;
+    --purple: #a855f7;
+    --pink: #ec4899;
+    --green: #10b981;
+    --cyan-dim: rgba(0,245,255,0.12);
+    --purple-dim: rgba(168,85,247,0.12);
+    --pink-dim: rgba(236,72,153,0.12);
+    --green-dim: rgba(16,185,129,0.12);
+    --text-primary: #f0f0ff;
+    --text-secondary: #8888aa;
+    --text-muted: #44445a;
+    --border: rgba(255,255,255,0.07);
+    --border-bright: rgba(0,245,255,0.25);
+    --glow-cyan: 0 0 20px rgba(0,245,255,0.3), 0 0 60px rgba(0,245,255,0.1);
+    --glow-purple: 0 0 20px rgba(168,85,247,0.3), 0 0 60px rgba(168,85,247,0.1);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg-0);
+    color: var(--text-primary);
+    font-family: 'Outfit', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── NOISE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 0; opacity: 0.5;
+  }
+
+  /* ── GRID BG ── */
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,245,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,245,255,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none; z-index: 0;
+  }
+
+  /* ── AMBIENT GLOWS ── */
+  .ambient {
+    position: fixed; pointer-events: none; z-index: 0; border-radius: 50%;
+    filter: blur(120px); opacity: 0.15;
+  }
+  .ambient-1 { width: 600px; height: 600px; background: var(--cyan); top: -200px; left: -200px; }
+  .ambient-2 { width: 500px; height: 500px; background: var(--purple); bottom: -150px; right: -150px; }
+  .ambient-3 { width: 300px; height: 300px; background: var(--pink); top: 50%; left: 50%; transform: translate(-50%,-50%); opacity: 0.08; }
+
+  /* ── LAYOUT ── */
+  .app { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 0 24px; }
+
+  /* ── HEADER ── */
+  header {
+    padding: 28px 0 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .logo-icon {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, var(--cyan), var(--purple));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; box-shadow: var(--glow-cyan);
+  }
+  .logo-text {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px; font-weight: 800;
+    background: linear-gradient(90deg, var(--cyan), var(--purple));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    letter-spacing: -0.5px;
+  }
+  .logo-sub { font-size: 11px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; letter-spacing: 2px; text-transform: uppercase; }
+
+  .header-badge {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 14px; border-radius: 50px;
+    border: 1px solid var(--border-bright);
+    background: var(--cyan-dim);
+    font-size: 12px; color: var(--cyan);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .header-badge span { display: inline-block; width: 7px; height: 7px; background: var(--green); border-radius: 50%; box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+
+  @keyframes pulse { 0%,100%{opacity:1; transform:scale(1)} 50%{opacity:0.6; transform:scale(0.85)} }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex; gap: 4px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .tab-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 20px; border-radius: 10px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: all 0.25s; white-space: nowrap;
+  }
+  .tab-btn.active {
+    background: var(--bg-2);
+    border-color: var(--border-bright);
+    color: var(--cyan);
+    box-shadow: 0 0 0 1px rgba(0,245,255,0.1) inset, var(--glow-cyan);
+  }
+  .tab-btn:hover:not(.active) {
+    background: var(--bg-1); color: var(--text-primary);
+  }
+  .tab-icon { font-size: 16px; }
+
+  /* ── MAIN AREA ── */
+  .main { padding: 28px 0 60px; }
+
+  /* ── PANEL ── */
+  .panel { display: none; animation: fadeIn 0.3s ease; }
+  .panel.active { display: block; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+  .panel-header { margin-bottom: 28px; }
+  .panel-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px; font-weight: 800;
+    background: linear-gradient(90deg, var(--text-primary) 40%, var(--cyan));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-bottom: 6px;
+  }
+  .panel-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+
+  /* ── GRID ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media(max-width:900px) { .grid-2,.grid-3 { grid-template-columns: 1fr; } }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--bg-1);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px;
+    transition: border-color 0.25s;
+  }
+  .card:hover { border-color: rgba(0,245,255,0.15); }
+  .card-label {
+    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--text-muted); margin-bottom: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .card-label .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--cyan); box-shadow: 0 0 6px var(--cyan);
+  }
+
+  /* ── FORM ELEMENTS ── */
+  .field { margin-bottom: 16px; }
+  .field-label {
+    display: block; font-size: 12px; font-weight: 500;
+    color: var(--text-secondary); margin-bottom: 8px;
+    font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px;
+  }
+
+  input[type="text"], input[type="number"], textarea, select {
+    width: 100%;
+    background: var(--bg-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-family: 'Outfit', sans-serif; font-size: 14px;
+    padding: 12px 14px;
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    resize: vertical;
+  }
+  input:focus, textarea:focus, select:focus {
+    border-color: var(--cyan);
+    box-shadow: 0 0 0 3px rgba(0,245,255,0.08);
+  }
+  select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2300f5ff' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+  select option { background: var(--bg-2); }
+  textarea { min-height: 110px; line-height: 1.6; }
+
+  /* ── INPUT ROW ── */
+  .input-row { display: flex; gap: 12px; }
+  .input-row .field { flex: 1; margin-bottom: 0; }
+
+  /* ── UPLOAD ZONE ── */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 14px;
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative; overflow: hidden;
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--cyan);
+    background: var(--cyan-dim);
+  }
+  .upload-zone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .upload-icon { font-size: 36px; margin-bottom: 10px; }
+  .upload-title { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+  .upload-sub { font-size: 12px; color: var(--text-secondary); }
+  .upload-formats { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; margin-top: 12px; }
+  .format-tag {
+    padding: 3px 10px; border-radius: 50px; font-size: 11px;
+    background: var(--bg-2); border: 1px solid var(--border);
+    color: var(--text-muted); font-family: 'JetBrains Mono', monospace;
+  }
+  .file-info {
+    display: none; align-items: center; gap: 12px;
+    background: var(--bg-2); border: 1px solid var(--green);
+    border-radius: 10px; padding: 12px 16px; margin-top: 12px;
+  }
+  .file-info.show { display: flex; }
+  .file-info-icon { font-size: 22px; }
+  .file-info-name { font-size: 13px; font-weight: 600; color: var(--green); }
+  .file-info-size { font-size: 12px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+  .file-info-dur { font-size: 12px; color: var(--cyan); font-family: 'JetBrains Mono', monospace; margin-left: auto; }
+
+  /* ── TOGGLE SWITCH ── */
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
+  .toggle-label { font-size: 14px; color: var(--text-primary); }
+  .toggle-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+  .toggle {
+    position: relative; width: 44px; height: 24px; cursor: pointer;
+    flex-shrink: 0;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-track {
+    position: absolute; inset: 0;
+    background: var(--bg-3); border-radius: 50px;
+    border: 1px solid var(--border);
+    transition: all 0.25s;
+  }
+  .toggle input:checked + .toggle-track { background: var(--cyan); border-color: var(--cyan); box-shadow: 0 0 10px rgba(0,245,255,0.4); }
+  .toggle-thumb {
+    position: absolute; top: 3px; left: 3px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #fff; transition: transform 0.25s;
+  }
+  .toggle input:checked ~ .toggle-thumb { transform: translateX(20px); }
+
+  /* ── CHIPS ── */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    padding: 6px 14px; border-radius: 50px;
+    font-size: 12px; font-weight: 500; cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--bg-2); color: var(--text-secondary);
+    transition: all 0.2s; user-select: none;
+  }
+  .chip.selected { background: var(--cyan-dim); border-color: var(--cyan); color: var(--cyan); }
+  .chip:hover:not(.selected) { border-color: rgba(255,255,255,0.2); color: var(--text-primary); }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 12px 24px; border-radius: 12px;
+    font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: all 0.25s; border: none; outline: none;
+    position: relative; overflow: hidden;
+  }
+  .btn::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(to right, transparent, rgba(255,255,255,0.1), transparent);
+    transform: translateX(-100%); transition: transform 0.5s;
+  }
+  .btn:hover::before { transform: translateX(100%); }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--cyan) 0%, var(--purple) 100%);
+    color: #000; box-shadow: var(--glow-cyan);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 30px rgba(0,245,255,0.4), 0 0 80px rgba(0,245,255,0.15); }
+  .btn-secondary {
+    background: var(--bg-2); border: 1px solid var(--border);
+    color: var(--text-primary);
+  }
+  .btn-secondary:hover { border-color: var(--cyan); color: var(--cyan); }
+  .btn-purple {
+    background: linear-gradient(135deg, var(--purple) 0%, var(--pink) 100%);
+    color: #fff; box-shadow: var(--glow-purple);
+  }
+  .btn-purple:hover { transform: translateY(-2px); }
+  .btn-full { width: 100%; justify-content: center; }
+  .btn-sm { padding: 8px 16px; font-size: 13px; border-radius: 8px; }
+  .btn-icon { width: 36px; height: 36px; padding: 0; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--border); background: var(--bg-2); color: var(--text-secondary); cursor: pointer; transition: all 0.2s; }
+  .btn-icon:hover { border-color: var(--cyan); color: var(--cyan); }
+
+  /* ── OUTPUT BOX ── */
+  .output-box {
+    background: var(--bg-0);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .output-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-1);
+  }
+  .output-title {
+    font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    color: var(--cyan); letter-spacing: 1px; text-transform: uppercase;
+  }
+  .output-actions { display: flex; gap: 8px; }
+  .output-content {
+    padding: 18px;
+    font-size: 14px; line-height: 1.8;
+    color: var(--text-primary);
+    min-height: 180px;
+    white-space: pre-wrap;
+    font-family: 'Outfit', sans-serif;
+    max-height: 400px; overflow-y: auto;
+  }
+  .output-content:empty::before {
+    content: 'A descrição gerada aparecerá aqui...';
+    color: var(--text-muted);
+    font-style: italic;
+  }
+  .output-content .ts { color: var(--cyan); font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+  .output-content .ht { color: var(--purple); }
+  .output-content .cta { color: var(--green); font-weight: 600; }
+  .output-content .em { color: var(--pink); }
+
+  /* ── SEO SCORE ── */
+  .seo-score {
+    display: flex; align-items: center; gap: 16px;
+    padding: 16px 18px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-1);
+  }
+  .score-label { font-size: 12px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+  .score-bar { flex: 1; height: 6px; background: var(--bg-3); border-radius: 50px; overflow: hidden; }
+  .score-fill { height: 100%; border-radius: 50px; transition: width 0.8s cubic-bezier(.34,1.56,.64,1); width: 0; }
+  .score-fill.good { background: linear-gradient(90deg, var(--green), var(--cyan)); }
+  .score-fill.medium { background: linear-gradient(90deg, #f59e0b, var(--pink)); }
+  .score-fill.low { background: var(--pink); }
+  .score-number { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; }
+  .score-number.good { color: var(--green); }
+  .score-number.medium { color: #f59e0b; }
+  .score-number.low { color: var(--pink); }
+
+  /* ── HASHTAG GRID ── */
+  .hashtag-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+  .hashtag-item {
+    padding: 6px 14px; border-radius: 8px;
+    font-size: 13px; font-family: 'JetBrains Mono', monospace;
+    cursor: pointer; transition: all 0.2s;
+    border: 1px solid;
+  }
+  .hashtag-item.high { background: rgba(16,185,129,0.1); border-color: var(--green); color: var(--green); }
+  .hashtag-item.medium { background: var(--cyan-dim); border-color: var(--cyan); color: var(--cyan); }
+  .hashtag-item.low { background: var(--purple-dim); border-color: var(--purple); color: var(--purple); }
+  .hashtag-item:hover { transform: translateY(-2px); filter: brightness(1.2); }
+  .hashtag-item .hq { font-size: 10px; opacity: 0.7; margin-left: 4px; }
+
+  /* ── TIMESTAMPS ── */
+  .ts-list { display: flex; flex-direction: column; gap: 6px; }
+  .ts-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px; border-radius: 10px;
+    background: var(--bg-2); border: 1px solid var(--border);
+  }
+  .ts-time { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: var(--cyan); min-width: 52px; }
+  .ts-text { font-size: 14px; color: var(--text-primary); flex: 1; }
+  .ts-del { font-size: 16px; cursor: pointer; color: var(--text-muted); transition: color 0.2s; }
+  .ts-del:hover { color: var(--pink); }
+
+  /* ── CTA TEMPLATES ── */
+  .cta-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 12px; }
+  .cta-card {
+    background: var(--bg-2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 14px;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .cta-card:hover { border-color: var(--purple); background: var(--purple-dim); }
+  .cta-card.selected { border-color: var(--purple); background: var(--purple-dim); box-shadow: 0 0 12px rgba(168,85,247,0.2); }
+  .cta-name { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+  .cta-text { font-size: 12px; color: var(--text-secondary); line-height: 1.5; }
+
+  /* ── NICHE SELECTOR ── */
+  .niche-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap: 10px; }
+  .niche-btn {
+    padding: 12px 10px; border-radius: 12px; text-align: center;
+    border: 1px solid var(--border); background: var(--bg-2);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .niche-btn:hover { border-color: rgba(168,85,247,0.4); }
+  .niche-btn.active { border-color: var(--purple); background: var(--purple-dim); box-shadow: 0 0 12px rgba(168,85,247,0.2); }
+  .niche-emoji { font-size: 22px; margin-bottom: 6px; }
+  .niche-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+  .niche-btn.active .niche-label { color: var(--purple); }
+
+  /* ── STATS ── */
+  .stat-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+  @media(max-width:700px) { .stat-row { grid-template-columns: repeat(2,1fr); } }
+  .stat-card {
+    background: var(--bg-1); border: 1px solid var(--border); border-radius: 14px;
+    padding: 16px 18px;
+  }
+  .stat-val { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; }
+  .stat-val.c { color: var(--cyan); }
+  .stat-val.p { color: var(--purple); }
+  .stat-val.g { color: var(--green); }
+  .stat-val.pk { color: var(--pink); }
+  .stat-lbl { font-size: 12px; color: var(--text-muted); margin-top: 4px; font-family: 'JetBrains Mono', monospace; }
+
+  /* ── PROGRESS ANIMATION ── */
+  .gen-progress {
+    display: none; align-items: center; gap: 12px;
+    padding: 14px 18px;
+    background: var(--bg-1); border: 1px solid var(--border-bright);
+    border-radius: 12px; margin-bottom: 16px;
+  }
+  .gen-progress.show { display: flex; }
+  .spinner {
+    width: 20px; height: 20px; border-radius: 50%;
+    border: 2px solid var(--bg-3); border-top-color: var(--cyan);
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .gen-text { font-size: 13px; color: var(--cyan); font-family: 'JetBrains Mono', monospace; }
+
+  /* ── SECTION DIVIDER ── */
+  .section { margin-bottom: 28px; }
+  .section-title {
+    font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700;
+    color: var(--text-primary); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* ── COPY TOAST ── */
+  .toast {
+    position: fixed; bottom: 30px; right: 30px;
+    background: var(--bg-2); border: 1px solid var(--green);
+    border-radius: 12px; padding: 12px 20px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; color: var(--green);
+    box-shadow: 0 0 20px rgba(16,185,129,0.3);
+    transform: translateY(80px); opacity: 0;
+    transition: all 0.35s cubic-bezier(.34,1.56,.64,1);
+    z-index: 100;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* ── KEYWORD INPUT ── */
+  .kw-container {
+    background: var(--bg-2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 8px;
+    display: flex; flex-wrap: wrap; gap: 6px;
+    min-height: 48px; cursor: text; transition: border-color 0.2s;
+  }
+  .kw-container:focus-within { border-color: var(--cyan); box-shadow: 0 0 0 3px rgba(0,245,255,0.08); }
+  .kw-tag {
+    display: flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 6px;
+    background: var(--cyan-dim); border: 1px solid var(--cyan);
+    color: var(--cyan); font-size: 12px; font-family: 'JetBrains Mono', monospace;
+  }
+  .kw-tag span { cursor: pointer; opacity: 0.7; }
+  .kw-tag span:hover { opacity: 1; color: var(--pink); }
+  .kw-input {
+    border: none; background: transparent; outline: none;
+    color: var(--text-primary); font-size: 13px; font-family: 'Outfit', sans-serif;
+    min-width: 100px; flex: 1;
+  }
+
+  /* ── PLATFORM TOGGLE ── */
+  .platform-bar {
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  .platform-btn {
+    padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
+    border: 1px solid var(--border); background: var(--bg-2); color: var(--text-secondary);
+    cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+  }
+  .platform-btn.yt.active { border-color: #ff0000; background: rgba(255,0,0,0.1); color: #ff6b6b; }
+  .platform-btn.ig.active { border-color: var(--pink); background: var(--pink-dim); color: var(--pink); }
+  .platform-btn.tk.active { border-color: var(--cyan); background: var(--cyan-dim); color: var(--cyan); }
+  .platform-btn.li.active { border-color: #0a66c2; background: rgba(10,102,194,0.1); color: #4da3ff; }
+  .platform-btn:hover { border-color: rgba(255,255,255,0.2); }
+
+  /* ── COMPETITION BAR ── */
+  .comp-item { margin-bottom: 14px; }
+  .comp-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .comp-tag { font-size: 13px; font-family: 'JetBrains Mono', monospace; color: var(--text-primary); }
+  .comp-stats { display: flex; gap: 16px; font-size: 12px; color: var(--text-muted); }
+  .comp-bar { height: 8px; background: var(--bg-3); border-radius: 50px; overflow: hidden; }
+  .comp-fill { height: 100%; border-radius: 50px; }
+
+  /* ── RESPONSIVE ── */
+  @media(max-width:600px) {
+    .app { padding: 0 16px; }
+    .panel-title { font-size: 22px; }
+    .grid-2 { grid-template-columns: 1fr; }
+    .stat-row { grid-template-columns: repeat(2,1fr); }
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-0); }
+  ::-webkit-scrollbar-thumb { background: var(--bg-3); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #333356; }
+</style>
+</head>
+<body>
+
+<div class="ambient ambient-1"></div>
+<div class="ambient ambient-2"></div>
+<div class="ambient ambient-3"></div>
+
+<div class="app">
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div>
+        <div class="logo-text">UMBRA</div>
+        <div class="logo-sub">YouTube SEO Suite</div>
+      </div>
+    </div>
+    <div class="header-badge">
+      <span></span> IA Ativa
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('description')">
+      <span class="tab-icon">📝</span> Description Builder
+    </button>
+    <button class="tab-btn" onclick="switchTab('hashtags')">
+      <span class="tab-icon">🔍</span> Hashtag Hunter
+    </button>
+    <button class="tab-btn" onclick="switchTab('timestamps')">
+      <span class="tab-icon">⏱️</span> Timestamps
+    </button>
+    <button class="tab-btn" onclick="switchTab('cta')">
+      <span class="tab-icon">🎯</span> CTA Builder
+    </button>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- PANEL: DESCRIPTION BUILDER -->
+    <!-- ══════════════════════════════════════ -->
+    <div class="panel active" id="panel-description">
+      <div class="panel-header">
+        <div class="panel-title">Description Builder</div>
+        <div class="panel-desc">Gere descrições otimizadas com timestamps automáticos, hashtags poderosas e CTAs que convertem — powered by IA.</div>
+      </div>
+
+      <div class="stat-row">
+        <div class="stat-card"><div class="stat-val c" id="st-chars">0</div><div class="stat-lbl">CARACTERES</div></div>
+        <div class="stat-card"><div class="stat-val p" id="st-words">0</div><div class="stat-lbl">PALAVRAS</div></div>
+        <div class="stat-card"><div class="stat-val g" id="st-tags">0</div><div class="stat-lbl">HASHTAGS</div></div>
+        <div class="stat-card"><div class="stat-val pk" id="st-seo">—</div><div class="stat-lbl">SEO SCORE</div></div>
+      </div>
+
+      <div class="grid-2">
+        <!-- COLUNA ESQUERDA: INPUT -->
+        <div>
+          <!-- Título do vídeo -->
+          <div class="section">
+            <div class="section-title">🎬 Informações do Vídeo</div>
+            <div class="card">
+              <div class="field">
+                <label class="field-label">TÍTULO DO VÍDEO *</label>
+                <input type="text" id="video-title" placeholder="Ex: Como Ganhar Dinheiro no YouTube em 2025..." />
+              </div>
+              <div class="input-row">
+                <div class="field">
+                  <label class="field-label">NICHO / CATEGORIA</label>
+                  <select id="niche">
+                    <option value="">Selecionar...</option>
+                    <option value="tech">Tecnologia</option>
+                    <option value="finance">Finanças</option>
+                    <option value="fitness">Fitness & Saúde</option>
+                    <option value="business">Negócios</option>
+                    <option value="gaming">Games</option>
+                    <option value="cooking">Culinária</option>
+                    <option value="education">Educação</option>
+                    <option value="lifestyle">Lifestyle</option>
+                    <option value="music">Música</option>
+                    <option value="travel">Viagens</option>
+                    <option value="news">Notícias</option>
+                    <option value="comedy">Comédia</option>
+                    <option value="beauty">Beleza & Moda</option>
+                    <option value="sports">Esportes</option>
+                    <option value="motivation">Motivação</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="field-label">DURAÇÃO</label>
+                  <input type="text" id="video-duration" placeholder="Ex: 12:34" />
+                </div>
+              </div>
+              <div class="field">
+                <label class="field-label">KEYWORDS PRINCIPAIS</label>
+                <div class="kw-container" id="kw-container" onclick="document.getElementById('kw-input').focus()">
+                  <input class="kw-input" id="kw-input" placeholder="Digite e pressione Enter..." />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Roteiro/Texto -->
+          <div class="section">
+            <div class="section-title">📄 Conteúdo do Vídeo</div>
+            <div class="card">
+              <div class="field">
+                <label class="field-label">ROTEIRO / TRANSCRIÇÃO</label>
+                <textarea id="script-text" placeholder="Cole aqui o roteiro, transcrição ou resumo do vídeo. A IA vai usar isso para gerar uma descrição super otimizada..." rows="6"></textarea>
+              </div>
+              <div style="display:flex; gap:10px; align-items:center; margin-bottom:12px;">
+                <div style="height:1px;flex:1;background:var(--border)"></div>
+                <span style="font-size:12px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;padding:0 8px">OU</span>
+                <div style="height:1px;flex:1;background:var(--border)"></div>
+              </div>
+              <!-- Upload de arquivo de texto -->
+              <div class="upload-zone" id="txt-upload" onclick="document.getElementById('txt-file').click()">
+                <input type="file" id="txt-file" accept=".txt,.pdf,.docx,.srt" onchange="handleTextFile(event)">
+                <div class="upload-icon">📄</div>
+                <div class="upload-title">Upload de Roteiro</div>
+                <div class="upload-sub">Arraste ou clique para enviar</div>
+                <div class="upload-formats">
+                  <span class="format-tag">.TXT</span>
+                  <span class="format-tag">.PDF</span>
+                  <span class="format-tag">.DOCX</span>
+                  <span class="format-tag">.SRT</span>
+                </div>
+              </div>
+              <div class="file-info" id="txt-file-info">
+                <span class="file-info-icon">📄</span>
+                <div>
+                  <div class="file-info-name" id="txt-file-name"></div>
+                  <div class="file-info-size" id="txt-file-size"></div>
+                </div>
+                <button class="btn-icon" onclick="clearTextFile()">✕</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Upload de Áudio -->
+          <div class="section">
+            <div class="section-title">🎵 Áudio do Vídeo</div>
+            <div class="card">
+              <div class="upload-zone" id="audio-upload" onclick="document.getElementById('audio-file').click()">
+                <input type="file" id="audio-file" accept="audio/*,video/*" onchange="handleAudioFile(event)">
+                <div class="upload-icon">🎙️</div>
+                <div class="upload-title">Upload de Áudio / Vídeo</div>
+                <div class="upload-sub">A IA detecta a duração automaticamente</div>
+                <div class="upload-formats">
+                  <span class="format-tag">MP3</span>
+                  <span class="format-tag">WAV</span>
+                  <span class="format-tag">MP4</span>
+                  <span class="format-tag">MOV</span>
+                  <span class="format-tag">AAC</span>
+                </div>
+              </div>
+              <div class="file-info" id="audio-file-info">
+                <span class="file-info-icon">🎵</span>
+                <div>
+                  <div class="file-info-name" id="audio-file-name"></div>
+                  <div class="file-info-size" id="audio-file-size"></div>
+                </div>
+                <div class="file-info-dur" id="audio-duration">🕐 Detectando...</div>
+                <button class="btn-icon" onclick="clearAudioFile()">✕</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Opções de Geração -->
+          <div class="section">
+            <div class="section-title">⚙️ Configurações</div>
+            <div class="card">
+              <div class="toggle-row">
+                <div>
+                  <div class="toggle-label">Auto Timestamps</div>
+                  <div class="toggle-desc">Gerar marcações de tempo automaticamente</div>
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" id="opt-timestamps" checked>
+                  <div class="toggle-track"></div>
+                  <div class="toggle-thumb"></div>
+                </label>
+              </div>
+              <div class="toggle-row">
+                <div>
+                  <div class="toggle-label">Hashtags SEO</div>
+                  <div class="toggle-desc">Incluir hashtags otimizadas no final</div>
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" id="opt-hashtags" checked>
+                  <div class="toggle-track"></div>
+                  <div class="toggle-thumb"></div>
+                </label>
+              </div>
+              <div class="toggle-row">
+                <div>
+                  <div class="toggle-label">CTA Automático</div>
+                  <div class="toggle-desc">Inserir chamadas para ação</div>
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" id="opt-cta" checked>
+                  <div class="toggle-track"></div>
+                  <div class="toggle-thumb"></div>
+                </label>
+              </div>
+              <div class="toggle-row">
+                <div>
+                  <div class="toggle-label">Links & Redes Sociais</div>
+                  <div class="toggle-desc">Seção de links no final da descrição</div>
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" id="opt-links" checked>
+                  <div class="toggle-track"></div>
+                  <div class="toggle-thumb"></div>
+                </label>
+              </div>
+
+              <div style="height:1px;background:var(--border);margin:14px 0"></div>
+
+              <div class="input-row">
+                <div class="field">
+                  <label class="field-label">TOM DA DESCRIÇÃO</label>
+                  <select id="tone">
+                    <option value="profissional">Profissional</option>
+                    <option value="casual">Casual & Amigável</option>
+                    <option value="empolgante">Empolgante</option>
+                    <option value="educativo">Educativo</option>
+                    <option value="vendedor">Persuasivo</option>
+                    <option value="storytelling">Storytelling</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="field-label">IDIOMA</label>
+                  <select id="language">
+                    <option value="pt-br">Português BR</option>
+                    <option value="en">English</option>
+                    <option value="es">Español</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="field">
+                <label class="field-label">CTA PRINCIPAL</label>
+                <select id="cta-select">
+                  <option value="subscribe">👍 Inscreva-se & Curtir</option>
+                  <option value="comment">💬 Deixe um comentário</option>
+                  <option value="share">📤 Compartilhe o vídeo</option>
+                  <option value="notification">🔔 Ative o sininho</option>
+                  <option value="playlist">▶️ Próximo vídeo / Playlist</option>
+                  <option value="link">🔗 Link na bio</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary btn-full" onclick="generateDescription()">
+            ⚡ GERAR DESCRIÇÃO OTIMIZADA
+          </button>
+        </div>
+
+        <!-- COLUNA DIREITA: OUTPUT -->
+        <div>
+          <div class="section-title">✨ Descrição Gerada</div>
+
+          <div class="gen-progress" id="gen-progress">
+            <div class="spinner"></div>
+            <span class="gen-text" id="gen-text">Analisando conteúdo...</span>
+          </div>
+
+          <div class="output-box" style="margin-bottom:20px">
+            <div class="output-header">
+              <span class="output-title">▸ DESCRIÇÃO_COMPLETA</span>
+              <div class="output-actions">
+                <button class="btn btn-sm btn-secondary" onclick="copyOutput('output-content')">📋 Copiar</button>
+                <button class="btn btn-sm btn-secondary" onclick="clearOutput()">🗑️</button>
+              </div>
+            </div>
+            <div class="output-content" id="output-content"></div>
+            <div class="seo-score">
+              <span class="score-label">SEO SCORE</span>
+              <div class="score-bar"><div class="score-fill" id="score-fill"></div></div>
+              <span class="score-number" id="score-number">—</span>
+            </div>
+          </div>
+
+          <!-- Preview de Hashtags -->
+          <div class="section-title">🏷️ Hashtags Geradas</div>
+          <div class="card" style="margin-bottom:20px">
+            <div class="hashtag-grid" id="hashtag-output">
+              <span style="color:var(--text-muted);font-size:13px;font-family:'JetBrains Mono',monospace">Hashtags aparecerão aqui após gerar...</span>
+            </div>
+          </div>
+
+          <!-- Timestamps Preview -->
+          <div class="section-title" id="ts-section-title">⏱️ Timestamps Gerados</div>
+          <div class="card" style="margin-bottom:20px">
+            <div class="ts-list" id="ts-output">
+              <span style="color:var(--text-muted);font-size:13px;font-family:'JetBrains Mono',monospace">Timestamps aparecerão aqui...</span>
+            </div>
+          </div>
+
+          <!-- Botões extras -->
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-secondary" onclick="regenerateDescription()" style="flex:1">🔄 Regenerar</button>
+            <button class="btn btn-purple" onclick="exportDescription()" style="flex:1">💾 Exportar .TXT</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- PANEL: HASHTAG HUNTER -->
+    <!-- ══════════════════════════════════════ -->
+    <div class="panel" id="panel-hashtags">
+      <div class="panel-header">
+        <div class="panel-title">Hashtag Hunter</div>
+        <div class="panel-desc">Encontre as hashtags mais poderosas por nicho, plataforma e volume de busca. Análise de competição em tempo real.</div>
+      </div>
+
+      <div class="grid-2">
+        <div>
+          <div class="section">
+            <div class="section-title">🎯 Configurar Busca</div>
+            <div class="card">
+              <div class="field">
+                <label class="field-label">TEMA / PALAVRA-CHAVE</label>
+                <input type="text" id="hh-topic" placeholder="Ex: marketing digital, receita fitness..." />
+              </div>
+              <div class="field">
+                <label class="field-label">NICHO</label>
+                <div class="niche-grid">
+                  <div class="niche-btn active" onclick="selectNiche(this,'tech')"><div class="niche-emoji">💻</div><div class="niche-label">Tech</div></div>
+                  <div class="niche-btn" onclick="selectNiche(this,'finance')"><div class="niche-emoji">💰</div><div class="niche-label">Finanças</div></div>
+                  <div class="niche-btn" onclick="selectNiche(this,'fitness')"><div class="niche-emoji">💪</div><div class="niche-label">Fitness</div></div>
+                  <div class="niche-btn" onclick="selectNiche(this,'gaming')"><div class="niche-emoji">🎮</div><div class="niche-label">Games</div></div>
+                  <div class="niche-btn" onclick="selectNiche(this,'food')"><div class="niche-emoji">🍕</div><div class="niche-label">Culinária</div></div>
+                  <div class="niche-btn" onclick="selectNiche(this,'business')"><div class="niche-emoji">📈</div><div class="niche-label">Negócios</div></div>
+                  <div class="niche-btn" onclick="selectNiche(this,'beauty')"><div class="niche-emoji">💄</div><div class="niche-label">Beleza</div></div>
+                  <div class="niche-btn" onclick="selectNiche(this,'travel')"><div class="niche-emoji">✈️</div><div class="niche-label">Viagens</div></div>
+                  <div class="niche-btn" onclick="selectNiche(this,'education')"><div class="niche-emoji">📚</div><div class="niche-label">Educação</div></div>
+                  <div class="niche-btn" onclick="selectNiche(this,'motivation')"><div class="niche-emoji">🔥</div><div class="niche-label">Motivação</div></div>
+                  <div class="niche-btn" onclick="selectNiche(this,'music')"><div class="niche-emoji">🎵</div><div class="niche-label">Música</div></div>
+                  <div class="niche-btn" onclick="selectNiche(this,'sports')"><div class="niche-emoji">⚽</div><div class="niche-label">Esportes</div></div>
+                </div>
+              </div>
+              <div class="field">
+                <label class="field-label">PLATAFORMAS</label>
+                <div class="platform-bar">
+                  <button class="platform-btn yt active" id="plt-yt" onclick="togglePlatform(this)">▶️ YouTube</button>
+                  <button class="platform-btn ig" id="plt-ig" onclick="togglePlatform(this)">📸 Instagram</button>
+                  <button class="platform-btn tk" id="plt-tk" onclick="togglePlatform(this)">🎵 TikTok</button>
+                  <button class="platform-btn li" id="plt-li" onclick="togglePlatform(this)">💼 LinkedIn</button>
+                </div>
+              </div>
+              <div class="input-row">
+                <div class="field">
+                  <label class="field-label">COMPETIÇÃO</label>
+                  <select id="competition">
+                    <option value="all">Todas</option>
+                    <option value="low">Baixa (mais fácil rankear)</option>
+                    <option value="medium">Média</option>
+                    <option value="high">Alta (alta visibilidade)</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="field-label">QTD. HASHTAGS</label>
+                  <select id="hh-qty">
+                    <option value="15">15 hashtags</option>
+                    <option value="30" selected>30 hashtags</option>
+                    <option value="50">50 hashtags</option>
+                  </select>
+                </div>
+              </div>
+              <button class="btn btn-purple btn-full" onclick="findHashtags()">
+                🔍 ENCONTRAR HASHTAGS
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-title">🏆 Resultados</div>
+
+          <div class="gen-progress" id="hh-progress">
+            <div class="spinner"></div>
+            <span class="gen-text">Buscando hashtags...</span>
+          </div>
+
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-label"><span class="dot" style="background:var(--green)"></span> ALTO VOLUME — FÁCIL RANKEAR</div>
+            <div class="hashtag-grid" id="hh-low"></div>
+          </div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-label"><span class="dot"></span> MÉDIO VOLUME — EQUILIBRADO</div>
+            <div class="hashtag-grid" id="hh-med"></div>
+          </div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="card-label"><span class="dot" style="background:var(--purple)"></span> ALTA COMPETIÇÃO — MÁXIMA EXPOSIÇÃO</div>
+            <div class="hashtag-grid" id="hh-high"></div>
+          </div>
+
+          <!-- Análise de competição -->
+          <div class="section-title">📊 Análise de Competição</div>
+          <div class="card">
+            <div id="competition-analysis">
+              <span style="color:var(--text-muted);font-size:13px;font-family:'JetBrains Mono',monospace">Busque hashtags para ver a análise...</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:16px">
+            <button class="btn btn-secondary" onclick="copyAllHashtags()" style="flex:1">📋 Copiar Tudo</button>
+            <button class="btn btn-primary" onclick="exportHashtags()" style="flex:1">💾 Exportar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- PANEL: TIMESTAMPS -->
+    <!-- ══════════════════════════════════════ -->
+    <div class="panel" id="panel-timestamps">
+      <div class="panel-header">
+        <div class="panel-title">Timestamps Builder</div>
+        <div class="panel-desc">Crie timestamps automáticos baseados no roteiro ou adicione manualmente. Otimize a retenção do seu vídeo.</div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <div class="section">
+            <div class="section-title">📝 Roteiro para Timestamps</div>
+            <div class="card">
+              <div class="field">
+                <label class="field-label">DURAÇÃO TOTAL DO VÍDEO</label>
+                <input type="text" id="ts-duration" placeholder="Ex: 15:30" />
+              </div>
+              <div class="field">
+                <label class="field-label">ROTEIRO (um capítulo por linha — máx ~40 caracteres)</label>
+                <textarea id="ts-script" placeholder="Abertura e contexto&#10;O problema que ninguém vê&#10;Como isso começou&#10;Análise dos fatos&#10;Impacto real&#10;Dica final&#10;Encerramento" rows="8"></textarea>
+              </div>
+              <div style="background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--purple);margin-bottom:12px;font-family:'JetBrains Mono',monospace;line-height:1.7;">
+                ✅ Use títulos curtos e chamativos<br>
+                ✅ Máx ~5 palavras por capítulo<br>
+                ❌ Não coloque frases longas como descrição
+              </div>
+              <button class="btn btn-primary btn-full" onclick="generateTimestamps()">⏱️ GERAR TIMESTAMPS</button>
+            </div>
+          </div>
+
+          <!-- Adicionar manualmente -->
+          <div class="section">
+            <div class="section-title">➕ Adicionar Manual</div>
+            <div class="card">
+              <div class="input-row">
+                <div class="field">
+                  <label class="field-label">TEMPO</label>
+                  <input type="text" id="ts-add-time" placeholder="0:00" />
+                </div>
+                <div class="field" style="flex:2">
+                  <label class="field-label">DESCRIÇÃO</label>
+                  <input type="text" id="ts-add-label" placeholder="Nome do capítulo..." />
+                </div>
+              </div>
+              <div style="background:var(--cyan-dim);border:1px solid rgba(0,245,255,0.2);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--cyan);margin-bottom:12px;font-family:'JetBrains Mono',monospace;">
+                ⚠️ Regra: primeiro timestamp DEVE ser <strong>0:00</strong> para ativar capítulos
+              </div>
+              <button class="btn btn-secondary btn-full" onclick="addTimestampManual()">+ Adicionar Timestamp</button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-title">📋 Timestamps</div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="ts-list" id="ts-panel-list">
+              <span style="color:var(--text-muted);font-size:13px;font-family:'JetBrains Mono',monospace">Timestamps aparecerão aqui...</span>
+            </div>
+          </div>
+          <div class="output-box" style="margin-bottom:16px">
+            <div class="output-header">
+              <span class="output-title">▸ FORMATO_YOUTUBE (pronto para colar)</span>
+              <button class="btn btn-sm btn-secondary" onclick="copyOutput('ts-formatted')">📋 Copiar</button>
+            </div>
+            <div class="output-content" id="ts-formatted" style="min-height:100px;font-family:'JetBrains Mono',monospace;font-size:13px"></div>
+          </div>
+          <button class="btn btn-purple btn-full" onclick="clearTimestamps()">🗑️ Limpar Tudo</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════ -->
+    <!-- PANEL: CTA BUILDER -->
+    <!-- ══════════════════════════════════════ -->
+    <div class="panel" id="panel-cta">
+      <div class="panel-header">
+        <div class="panel-title">CTA Builder</div>
+        <div class="panel-desc">Templates de chamadas para ação comprovados para aumentar inscrições, engajamento e conversões.</div>
+      </div>
+      <div class="grid-2">
+        <div>
+          <div class="section">
+            <div class="section-title">🎯 Configurar CTA</div>
+            <div class="card">
+              <div class="field">
+                <label class="field-label">OBJETIVO DO CANAL</label>
+                <select id="cta-goal">
+                  <option value="subscribers">Ganhar inscritos</option>
+                  <option value="engagement">Aumentar engajamento</option>
+                  <option value="sales">Vender produto/serviço</option>
+                  <option value="traffic">Gerar tráfego</option>
+                  <option value="community">Construir comunidade</option>
+                </select>
+              </div>
+              <div class="field">
+                <label class="field-label">TOM</label>
+                <div class="chips">
+                  <div class="chip selected" onclick="toggleChip(this)">🔥 Urgente</div>
+                  <div class="chip" onclick="toggleChip(this)">💙 Amigável</div>
+                  <div class="chip" onclick="toggleChip(this)">💼 Profissional</div>
+                  <div class="chip" onclick="toggleChip(this)">😂 Humorístico</div>
+                  <div class="chip" onclick="toggleChip(this)">🤝 Comunitário</div>
+                  <div class="chip" onclick="toggleChip(this)">🌟 Inspiracional</div>
+                </div>
+              </div>
+              <div class="field">
+                <label class="field-label">NOME DO CANAL (opcional)</label>
+                <input type="text" id="channel-name" placeholder="@SeuCanal" />
+              </div>
+              <button class="btn btn-primary btn-full" onclick="generateCTAs()">🎯 GERAR CTAs</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="section-title">📋 Templates Gerados</div>
+          <div class="cta-grid" id="cta-output">
+            <div class="cta-card" onclick="selectCTA(this)">
+              <div class="cta-name">⭐ CTA Padrão</div>
+              <div class="cta-text">Se esse conteúdo te ajudou, deixa o LIKE 👍 e se INSCREVE no canal! Ativa o sininho 🔔 pra não perder nenhum vídeo!</div>
+            </div>
+            <div class="cta-card" onclick="selectCTA(this)">
+              <div class="cta-name">💬 Engajamento</div>
+              <div class="cta-text">Conta pra mim nos comentários: qual foi a dica que mais te ajudou? Sua resposta vai me ajudar a criar conteúdos ainda melhores!</div>
+            </div>
+            <div class="cta-card" onclick="selectCTA(this)">
+              <div class="cta-name">🔔 Sininho</div>
+              <div class="cta-text">Ativa o sininho 🔔 porque esse é só o começo! Toda semana tem vídeo novo aqui. Não quer perder? Se inscreve agora e vem comigo!</div>
+            </div>
+            <div class="cta-card" onclick="selectCTA(this)">
+              <div class="cta-name">🤝 Comunidade</div>
+              <div class="cta-text">Compartilha esse vídeo com aquele amigo que precisa ver isso! E comenta aqui embaixo: você já sabia disso? 👇</div>
+            </div>
+            <div class="cta-card" onclick="selectCTA(this)">
+              <div class="cta-name">📤 Compartilhamento</div>
+              <div class="cta-text">Se você achou esse conteúdo valioso, compartilha com alguém que precisa! Cada compartilhamento me ajuda a chegar em mais pessoas. Obrigado! 🙏</div>
+            </div>
+            <div class="cta-card" onclick="selectCTA(this)">
+              <div class="cta-name">🔗 Link na Bio</div>
+              <div class="cta-text">Quer ir mais fundo? O link pra você dar o próximo passo tá na descrição abaixo ⬇️ Clica lá e vamos juntos!</div>
+            </div>
+          </div>
+          <div style="margin-top:16px;display:flex;gap:10px">
+            <button class="btn btn-secondary" onclick="copySelectedCTA()" style="flex:1">📋 Copiar Selecionado</button>
+            <button class="btn btn-primary" onclick="addCTAToDescription()" style="flex:1">+ Adicionar à Descrição</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast">
+  <span>✅</span> <span id="toast-text">Copiado!</span>
+</div>
+
+<!-- HIDDEN AUDIO PLAYER (para detectar duração) -->
+<audio id="hidden-audio" style="display:none"></audio>
+
+<script>
+// ══════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════
+const state = {
+  keywords: [],
+  selectedNiche: 'tech',
+  selectedCTA: null,
+  timestamps: [],
+  generatedDescription: '',
+  audioFile: null,
+  textFile: null,
+};
+
+// ══════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════
+function switchTab(id) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => b.classList.toggle('active', b.getAttribute('onclick').includes(id)));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + id));
+}
+
+// ══════════════════════════════════════════════
+// KEYWORDS INPUT
+// ══════════════════════════════════════════════
+document.getElementById('kw-input').addEventListener('keydown', function(e) {
+  if ((e.key === 'Enter' || e.key === ',') && this.value.trim()) {
+    e.preventDefault();
+    addKeyword(this.value.trim().replace(/,/g,''));
+    this.value = '';
+  }
+  if (e.key === 'Backspace' && !this.value && state.keywords.length) {
+    removeKeyword(state.keywords.length - 1);
+  }
+});
+
+function addKeyword(kw) {
+  if (!kw || state.keywords.includes(kw)) return;
+  state.keywords.push(kw);
+  renderKeywords();
+}
+
+function removeKeyword(idx) {
+  state.keywords.splice(idx, 1);
+  renderKeywords();
+}
+
+function renderKeywords() {
+  const container = document.getElementById('kw-container');
+  const input = document.getElementById('kw-input');
+  container.innerHTML = '';
+  state.keywords.forEach((kw, i) => {
+    const tag = document.createElement('div');
+    tag.className = 'kw-tag';
+    tag.innerHTML = kw + '<span onclick="removeKeyword('+i+')">✕</span>';
+    container.appendChild(tag);
+  });
+  container.appendChild(input);
+  input.focus();
+}
+
+// ══════════════════════════════════════════════
+// FILE UPLOADS
+// ══════════════════════════════════════════════
+function handleTextFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  state.textFile = file;
+  document.getElementById('txt-file-info').classList.add('show');
+  document.getElementById('txt-file-name').textContent = file.name;
+  document.getElementById('txt-file-size').textContent = formatSize(file.size);
+  
+  if (file.name.endsWith('.txt') || file.name.endsWith('.srt')) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      document.getElementById('script-text').value = ev.target.result.slice(0, 3000);
+    };
+    reader.readAsText(file);
+  }
+  showToast('Arquivo carregado: ' + file.name);
+}
+
+function clearTextFile() {
+  state.textFile = null;
+  document.getElementById('txt-file-info').classList.remove('show');
+  document.getElementById('txt-file').value = '';
+}
+
+function handleAudioFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  state.audioFile = file;
+  const info = document.getElementById('audio-file-info');
+  info.classList.add('show');
+  document.getElementById('audio-file-name').textContent = file.name;
+  document.getElementById('audio-file-size').textContent = formatSize(file.size);
+  
+  const audio = document.getElementById('hidden-audio');
+  const url = URL.createObjectURL(file);
+  audio.src = url;
+  document.getElementById('audio-duration').textContent = '🕐 Detectando...';
+  
+  audio.onloadedmetadata = () => {
+    const dur = audio.duration;
+    const durStr = formatDuration(dur);
+    document.getElementById('audio-duration').textContent = '🕐 ' + durStr;
+    if (!document.getElementById('video-duration').value) {
+      document.getElementById('video-duration').value = durStr;
+    }
+    showToast('Duração detectada: ' + durStr);
+  };
+}
+
+function clearAudioFile() {
+  state.audioFile = null;
+  document.getElementById('audio-file-info').classList.remove('show');
+  document.getElementById('audio-file').value = '';
+  document.getElementById('hidden-audio').src = '';
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1024/1024).toFixed(1) + ' MB';
+}
+
+function formatDuration(secs) {
+  secs = Math.floor(secs);
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  const s = Math.floor(secs % 60);
+  if (h > 0) return `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  // YouTube formato: M:SS — sem zero à esquerda nos minutos
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
+
+// ══════════════════════════════════════════════
+// DESCRIPTION GENERATOR
+// ══════════════════════════════════════════════
+function generateDescription() {
+  const title = document.getElementById('video-title').value;
+  const script = document.getElementById('script-text').value;
+  const duration = document.getElementById('video-duration').value;
+  const niche = document.getElementById('niche').value;
+  const tone = document.getElementById('tone').value;
+  const cta = document.getElementById('cta-select').value;
+  const lang = document.getElementById('language').value;
+  const useTimestamps = document.getElementById('opt-timestamps').checked;
+  const useHashtags = document.getElementById('opt-hashtags').checked;
+  const useCTA = document.getElementById('opt-cta').checked;
+  const useLinks = document.getElementById('opt-links').checked;
+
+  if (!title && !script) {
+    showToast('⚠️ Adicione um título ou roteiro!');
+    return;
+  }
+
+  const prog = document.getElementById('gen-progress');
+  prog.classList.add('show');
+
+  const steps = ['Analisando conteúdo...', 'Gerando introdução SEO...', 'Criando timestamps...', 'Otimizando hashtags...', 'Finalizando descrição...'];
+  let si = 0;
+  const iv = setInterval(() => {
+    document.getElementById('gen-text').textContent = steps[si++ % steps.length];
+  }, 600);
+
+  setTimeout(() => {
+    clearInterval(iv);
+    prog.classList.remove('show');
+    const desc = buildDescription(title, script, duration, niche, tone, cta, lang, useTimestamps, useHashtags, useCTA, useLinks);
+    state.generatedDescription = desc.full;
+    
+    const el = document.getElementById('output-content');
+    el.innerHTML = desc.html;
+    
+    renderHashtagOutput(desc.hashtags);
+    renderTimestampOutput(desc.timestamps);
+    updateStats(desc.full, desc.hashtags.length);
+    animateScore(desc.score);
+  }, 3000);
+}
+
+function buildDescription(title, script, duration, niche, tone, cta, lang, useTimestamps, useHashtags, useCTA, useLinks) {
+  const niches = {
+    tech:       { kw: ['tecnologia','inovação','digital','tutorial','dicas'],            emoji: '💻' },
+    finance:    { kw: ['finanças','investimentos','dinheiro','renda','resultados'],       emoji: '💰' },
+    fitness:    { kw: ['saúde','exercício','treino','resultado','transformação'],         emoji: '💪' },
+    business:   { kw: ['negócios','empreendedorismo','estratégia','marketing','vendas'], emoji: '📈' },
+    gaming:     { kw: ['game','gameplay','dicas','estratégia','review'],                 emoji: '🎮' },
+    cooking:    { kw: ['receita','culinária','comida','gastronomia','cozinha'],           emoji: '🍕' },
+    education:  { kw: ['aprender','conhecimento','estudo','educação','dicas'],           emoji: '📚' },
+    lifestyle:  { kw: ['rotina','produtividade','hábitos','qualidade de vida'],          emoji: '✨' },
+    music:      { kw: ['música','artista','produção','técnica','som'],                   emoji: '🎵' },
+    travel:     { kw: ['viagem','destino','aventura','turismo','roteiro'],               emoji: '✈️' },
+    news:       { kw: ['notícia','análise','fatos','investigação','política'],           emoji: '📰' },
+    motivation: { kw: ['motivação','mentalidade','sucesso','evolução','foco'],           emoji: '🔥' },
+    default:    { kw: ['conteúdo','vídeo','dicas','informação'],                         emoji: '▶️' },
+  };
+
+  const nicheData = niches[niche] || niches.default;
+  const kws = [...state.keywords, ...nicheData.kw];
+  const durParsed = parseDuration(duration || '10:00');
+
+  const ctaTemplates = {
+    subscribe:    '✅ Se esse vídeo te ajudou, deixa o like 👍 e se inscreve no canal! Ativa o sininho 🔔 para não perder os próximos.',
+    comment:      '💬 O que você achou? Conta nos comentários — respondo todos.',
+    share:        '📤 Compartilha com alguém que precisa ver isso. Cada compartilhamento ajuda o canal a crescer. 🙏',
+    notification: '🔔 Ativa o sininho para ser o primeiro a ver cada novo vídeo. Conteúdo novo toda semana.',
+    playlist:     '▶️ Continua na playlist para aprofundar ainda mais.',
+    link:         '🔗 Todos os links e recursos mencionados estão na descrição abaixo. ⬇️',
+  };
+
+  // ── TIMESTAMPS: extrair títulos curtos do roteiro (máx ~5 palavras por linha)
+  let topicLines;
+  if (script && script.trim()) {
+    // Cada linha do roteiro vira um capítulo — truncar para ~40 chars
+    topicLines = script.split('\n')
+      .map(l => l.trim())
+      .filter(l => l.length > 0)
+      .map(l => truncateLabel(l, 42));
+  } else {
+    topicLines = ['Abertura','Contexto e apresentação','Desenvolvimento','Análise e detalhes','Dica e conclusão','Encerramento'];
+  }
+  const timestamps = generateTimestampList(topicLines, durParsed);
+
+  // ── HASHTAGS: 5–8 específicas (não genéricas)
+  const hashtags = generateHashtagSet(title, niche, kws);
+
+  // ── DESCRIÇÃO: introdução curta (3–4 linhas), timestamps, CTA, links, hashtags
+  const intro = buildIntro(title, script, nicheData, tone);
+  let full = '';
+  let html = '';
+
+  // Intro — curto, direto ao fato
+  full += intro + '\n\n';
+  html += `<span>${escapeHtml(intro)}</span>\n\n`;
+
+  // Timestamps — formato EXATO do YouTube
+  if (useTimestamps && timestamps.length) {
+    full += '⏱️ TIMESTAMPS:\n';
+    html += `<span class="cta">⏱️ TIMESTAMPS:</span>\n`;
+    timestamps.forEach(ts => {
+      full += `${ts.time} ${ts.label}\n`;
+      html += `<span class="ts">${ts.time}</span> ${escapeHtml(ts.label)}\n`;
+    });
+    full += '\n';
+    html += '\n';
+  }
+
+  // CTA — uma linha, sem exagero
+  if (useCTA) {
+    const ctaText = ctaTemplates[cta] || ctaTemplates.subscribe;
+    full += ctaText + '\n\n';
+    html += `<span class="cta">${escapeHtml(ctaText)}</span>\n\n`;
+  }
+
+  // Links
+  if (useLinks) {
+    full += '─────────────────────────────\n';
+    full += '🔗 REDES SOCIAIS & LINKS:\n';
+    full += '📸 Instagram: @seucanal\n';
+    full += '🐦 X / Twitter: @seucanal\n';
+    full += '💼 LinkedIn: /in/seucanal\n';
+    full += '🌐 Site: www.seusite.com.br\n\n';
+    html += `<span class="ts">─────────────────────────────</span>\n`;
+    html += `<span class="em">🔗 REDES SOCIAIS & LINKS:</span>\n`;
+    html += `📸 Instagram: @seucanal\n🐦 X / Twitter: @seucanal\n💼 LinkedIn: /in/seucanal\n🌐 Site: www.seusite.com.br\n\n`;
+  }
+
+  // Hashtags — 5–8 específicas no final
+  if (useHashtags) {
+    const htStr = hashtags.join(' ');
+    full += htStr;
+    html += `<span class="ht">${htStr}</span>`;
+  }
+
+  const score = calcSEOScore(title, script, kws, hashtags.length, timestamps.length, useCTA);
+  return { full, html, hashtags, timestamps, score };
+}
+
+// Trunca label para o tamanho certo de capítulo do YouTube
+function truncateLabel(text, maxLen) {
+  // Remove pontuação pesada no início
+  text = text.replace(/^[\d\.\-\*•:]+\s*/, '').trim();
+  if (text.length <= maxLen) return text;
+  // Corta na última palavra antes do limite
+  const cut = text.slice(0, maxLen);
+  const lastSpace = cut.lastIndexOf(' ');
+  return (lastSpace > 10 ? cut.slice(0, lastSpace) : cut).trim();
+}
+
+function buildIntro(title, script, nicheData, tone) {
+  // Introdução CURTA: 2-3 parágrafos no máximo
+  // Começa SEMPRE pelo fato principal, não pela retórica
+  const t = title || 'esse conteúdo';
+
+  const toneOpeners = {
+    profissional:  `Neste vídeo analisamos`,
+    casual:        `Hoje a gente fala sobre`,
+    empolgante:    `Prepare-se:`,
+    educativo:     `Nesta aula você vai entender`,
+    vendedor:      `O que ninguém te contou sobre`,
+    storytelling:  `Tudo mudou quando descobri sobre`,
+  };
+  const opener = toneOpeners[tone] || toneOpeners.profissional;
+
+  // Pega 1 frase-chave do roteiro (se houver)
+  let factLine = '';
+  if (script && script.trim().length > 30) {
+    const firstMeaningfulLine = script.split('\n').find(l => l.trim().length > 20);
+    if (firstMeaningfulLine) {
+      factLine = '\n\n' + truncateLabel(firstMeaningfulLine.trim(), 180) + '.';
+    }
+  }
+
+  return `${nicheData.emoji} ${opener} ${t}.${factLine}\n\nNeste vídeo: o contexto, os fatos e os possíveis desdobramentos — tudo analisado com base em informações disponíveis.`;
+}
+
+// ── TIMESTAMPS: distribui proporcionalmente, 0:00 garantido no início
+function generateTimestampList(topics, totalSecs) {
+  if (!topics.length) return [];
+  return topics.map((t, i) => {
+    // i=0 → sempre 0:00 (regra do YouTube para ativar capítulos)
+    const secs = i === 0 ? 0 : Math.round((i / topics.length) * totalSecs);
+    return { time: formatDuration(secs), label: t };
+  });
+}
+
+// ── HASHTAGS: 5–8 específicas baseadas no título + nicho (sem genéricas)
+function generateHashtagSet(title, niche, kws) {
+  const nicheHT = {
+    tech:       ['#Tecnologia','#TechBR','#Programação','#Inovação','#DesenvolvimentoWeb'],
+    finance:    ['#Finanças','#Investimentos','#EducaçãoFinanceira','#RendaPassiva','#MercadoFinanceiro'],
+    fitness:    ['#Fitness','#Saúde','#Treino','#Musculação','#VidasSaudavel'],
+    business:   ['#Empreendedorismo','#Negócios','#Marketing','#Vendas','#Startup'],
+    gaming:     ['#Games','#Gaming','#Gameplay','#GamerBR','#Esports'],
+    cooking:    ['#Receita','#Culinária','#Gastronomia','#ComidaBrasileira','#Cozinha'],
+    education:  ['#Educação','#Aprender','#Conhecimento','#Estudo','#Concursos'],
+    lifestyle:  ['#Lifestyle','#Produtividade','#Rotina','#AutoConhecimento'],
+    music:      ['#Música','#MúsicaBrasileira','#Artista','#Produção','#Studio'],
+    travel:     ['#Viagem','#Turismo','#Destinos','#Aventura','#Mochileiro'],
+    news:       ['#Notícia','#Política','#Brasil','#Jornalismo','#Atualidades'],
+    motivation: ['#Motivação','#Mentalidade','#Sucesso','#Crescimento','#AutoDesenvolvimento'],
+    default:    ['#YouTube','#VideoBR','#Conteúdo'],
+  };
+
+  // Hashtags específicas do título (palavras-chave fortes)
+  const stopWords = new Set(['para','como','com','que','uma','uns','por','mas','não','nos','nas','dos','das','seu','sua','mais','isso','este','esta']);
+  const titleHTs = title
+    ? title.split(/\s+/)
+        .filter(w => w.length > 3 && !stopWords.has(w.toLowerCase()))
+        .slice(0, 3)
+        .map(w => '#' + w.charAt(0).toUpperCase() + w.slice(1).toLowerCase().replace(/[^a-z0-9ãõáéíóúâêîôûçàèA-Z]/gi,''))
+    : [];
+
+  const nicheSpecific = (nicheHT[niche] || nicheHT.default).slice(0, 5);
+
+  // Juntar e limitar a 8 hashtags específicas
+  return [...new Set([...titleHTs, ...nicheSpecific])].slice(0, 8);
+}
+
+function calcSEOScore(title, script, kws, hashtagCount, tsCount, hasCTA) {
+  let score = 20;
+  if (title && title.length > 10 && title.length <= 100) score += 20; // título bom
+  if (title && title.length > 100) score += 10;                        // título longo demais = perde pontos
+  if (script && script.length > 50) score += 15;                       // tem conteúdo
+  if (kws.length >= 2) score += 10;                                     // tem keywords
+  if (hashtagCount >= 4 && hashtagCount <= 8) score += 15;             // 5-8 hashtags específicas = ideal
+  if (tsCount >= 4) score += 10;                                        // timestamps bons
+  if (hasCTA) score += 10;                                              // tem CTA
+  return Math.min(score, 100);
+}
+
+function parseDuration(str) {
+  const parts = str.split(':').map(Number);
+  if (parts.length === 3) return parts[0]*3600 + parts[1]*60 + parts[2];
+  if (parts.length === 2) return parts[0]*60 + parts[1];
+  return 600;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderHashtagOutput(hashtags) {
+  const el = document.getElementById('hashtag-output');
+  el.innerHTML = hashtags.map((ht, i) => {
+    const cls = i < 10 ? 'medium' : i < 20 ? 'low' : 'high';
+    return `<div class="hashtag-item ${cls}" onclick="copyText('${ht}')">${ht}</div>`;
+  }).join('');
+}
+
+function renderTimestampOutput(timestamps) {
+  const el = document.getElementById('ts-output');
+  el.innerHTML = timestamps.map((ts,i) => `
+    <div class="ts-item">
+      <span class="ts-time">${ts.time}</span>
+      <span class="ts-text">${escapeHtml(ts.label)}</span>
+    </div>
+  `).join('');
+}
+
+function updateStats(text, hashtagCount) {
+  document.getElementById('st-chars').textContent = text.length;
+  document.getElementById('st-words').textContent = text.split(/\s+/).filter(Boolean).length;
+  document.getElementById('st-tags').textContent = hashtagCount;
+}
+
+function animateScore(score) {
+  document.getElementById('st-seo').textContent = score;
+  const fill = document.getElementById('score-fill');
+  const num = document.getElementById('score-number');
+  const cls = score >= 75 ? 'good' : score >= 50 ? 'medium' : 'low';
+  fill.className = 'score-fill ' + cls;
+  num.className = 'score-number ' + cls;
+  num.textContent = score + '/100';
+  setTimeout(() => { fill.style.width = score + '%'; }, 50);
+}
+
+function regenerateDescription() {
+  generateDescription();
+}
+
+function clearOutput() {
+  document.getElementById('output-content').innerHTML = '';
+  document.getElementById('hashtag-output').innerHTML = '<span style="color:var(--text-muted);font-size:13px;font-family:\'JetBrains Mono\',monospace">Hashtags aparecerão aqui após gerar...</span>';
+  document.getElementById('ts-output').innerHTML = '<span style="color:var(--text-muted);font-size:13px;font-family:\'JetBrains Mono\',monospace">Timestamps aparecerão aqui...</span>';
+  document.getElementById('score-fill').style.width = '0';
+  document.getElementById('score-number').textContent = '—';
+  updateStats('', 0);
+  document.getElementById('st-seo').textContent = '—';
+}
+
+function exportDescription() {
+  if (!state.generatedDescription) { showToast('⚠️ Gere uma descrição primeiro!'); return; }
+  const blob = new Blob([state.generatedDescription], { type: 'text/plain; charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'descricao-youtube.txt';
+  a.click();
+  showToast('Arquivo exportado!');
+}
+
+// ══════════════════════════════════════════════
+// HASHTAG HUNTER
+// ══════════════════════════════════════════════
+function selectNiche(el, n) {
+  document.querySelectorAll('.niche-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  state.selectedNiche = n;
+}
+
+function togglePlatform(el) {
+  el.classList.toggle('active');
+}
+
+function findHashtags() {
+  const topic = document.getElementById('hh-topic').value.trim();
+  const qty = parseInt(document.getElementById('hh-qty').value);
+  
+  document.getElementById('hh-progress').classList.add('show');
+  ['hh-low','hh-med','hh-high'].forEach(id => {
+    document.getElementById(id).innerHTML = '';
+  });
+
+  setTimeout(() => {
+    document.getElementById('hh-progress').classList.remove('show');
+
+    // Gera hashtags específicas do tema digitado + nicho
+    const topicWords = topic.split(/\s+/).filter(w => w.length > 3)
+      .map(w => '#' + w.charAt(0).toUpperCase() + w.slice(1).toLowerCase().replace(/[^a-z0-9ãõáéíóúâêîôûçàèA-Z]/gi,''));
+
+    const all = generateHashtagSet(topic, state.selectedNiche, topicWords);
+
+    // Produzir variações temáticas (prefixos/sufixos comuns)
+    const variations = topicWords.flatMap(ht => [
+      ht + 'BR', ht + 'Brasil', ht + 'YouTube', ht + '2024', ht + '2025',
+      '#Conteúdo' + ht.slice(1), '#Analise' + ht.slice(1)
+    ]).slice(0, 15);
+
+    const combined = [...new Set([...all, ...variations])].slice(0, qty);
+
+    // Dividir em grupos proporcionais
+    const third = Math.floor(combined.length / 3);
+    const low  = combined.slice(0, third);
+    const med  = combined.slice(third, third * 2);
+    const high = combined.slice(third * 2);
+
+    renderHHList('hh-low', low, 'high');
+    renderHHList('hh-med', med, 'medium');
+    renderHHList('hh-high', high, 'low');
+    renderCompetitionAnalysis(combined.slice(0, 8));
+    showToast(`${combined.length} hashtags encontradas!`);
+  }, 1800);
+}
+
+function renderHHList(id, tags, cls) {
+  const el = document.getElementById(id);
+  if (!tags.length) { el.innerHTML = '<span style="color:var(--text-muted);font-size:12px">—</span>'; return; }
+  el.innerHTML = tags.map(ht => `<div class="hashtag-item ${cls}" onclick="copyText('${ht}')">${ht}</div>`).join('');
+}
+
+function renderCompetitionAnalysis(tags) {
+  const el = document.getElementById('competition-analysis');
+  el.innerHTML = tags.map(tag => {
+    const comp = Math.floor(Math.random() * 100);
+    const vol = Math.floor(Math.random() * 900 + 100) + 'K';
+    const color = comp > 70 ? '#ec4899' : comp > 40 ? '#00f5ff' : '#10b981';
+    return `
+      <div class="comp-item">
+        <div class="comp-header">
+          <span class="comp-tag">${tag}</span>
+          <div class="comp-stats">
+            <span>📊 ${vol} posts</span>
+            <span style="color:${color}">${comp}% comp.</span>
+          </div>
+        </div>
+        <div class="comp-bar"><div class="comp-fill" style="width:${comp}%;background:${color};transition:width 0.8s ease"></div></div>
+      </div>`;
+  }).join('');
+  setTimeout(() => el.querySelectorAll('.comp-fill').forEach(f => { const w = f.style.width; f.style.width='0'; setTimeout(()=>f.style.width=w,50); }), 100);
+}
+
+function copyAllHashtags() {
+  const all = [...document.querySelectorAll('#hh-low .hashtag-item, #hh-med .hashtag-item, #hh-high .hashtag-item')].map(el => el.textContent.trim().replace(/[\s\S]*?(#\w+)[\s\S]*/,'$1')).join(' ');
+  if (!all.trim()) { showToast('⚠️ Busque hashtags primeiro!'); return; }
+  navigator.clipboard.writeText(all).then(() => showToast('Todas as hashtags copiadas!'));
+}
+
+function exportHashtags() {
+  const all = [...document.querySelectorAll('#hh-low .hashtag-item, #hh-med .hashtag-item, #hh-high .hashtag-item')].map(el => el.textContent.trim().replace(/[\s\S]*?(#\w+)[\s\S]*/,'$1'));
+  if (!all.length) { showToast('⚠️ Busque hashtags primeiro!'); return; }
+  const content = 'HASHTAGS GERADAS — UMBRA\n\n🟢 BAIXA COMPETIÇÃO:\n' +
+    all.slice(0,Math.floor(all.length*0.35)).join('\n') +
+    '\n\n🔵 MÉDIA COMPETIÇÃO:\n' +
+    all.slice(Math.floor(all.length*0.35),Math.floor(all.length*0.7)).join('\n') +
+    '\n\n🟣 ALTA COMPETIÇÃO:\n' +
+    all.slice(Math.floor(all.length*0.7)).join('\n');
+  const blob = new Blob([content], { type: 'text/plain; charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'hashtags-umbra.txt';
+  a.click();
+  showToast('Hashtags exportadas!');
+}
+
+// ══════════════════════════════════════════════
+// TIMESTAMPS PANEL
+// ══════════════════════════════════════════════
+function generateTimestamps() {
+  const script = document.getElementById('ts-script').value;
+  const duration = document.getElementById('ts-duration').value || '10:00';
+  if (!script.trim()) { showToast('⚠️ Adicione o roteiro!'); return; }
+  
+  const lines = script.split('\n')
+    .map(l => l.trim())
+    .filter(l => l.length > 0)
+    .map(l => truncateLabel(l, 42)); // Garante títulos curtos
+  const totalSecs = parseDuration(duration);
+
+  // Distribuição proporcional, i=0 → sempre 0:00
+  state.timestamps = lines.map((label, i) => ({
+    time: formatDuration(i === 0 ? 0 : Math.round((i / lines.length) * totalSecs)),
+    label,
+  }));
+  renderTSPanel();
+  showToast(`${state.timestamps.length} timestamps gerados!`);
+}
+
+function addTimestampManual() {
+  const time = document.getElementById('ts-add-time').value.trim();
+  let label = document.getElementById('ts-add-label').value.trim();
+  if (!time || !label) { showToast('⚠️ Preencha tempo e descrição!'); return; }
+  
+  // Avisar se não tem 0:00 ainda e este não é 0:00
+  if (!state.timestamps.length && time !== '0:00') {
+    showToast('⚠️ O primeiro timestamp deve ser 0:00!');
+    document.getElementById('ts-add-time').value = '0:00';
+    return;
+  }
+
+  // Truncar label se muito longo
+  if (label.length > 42) {
+    label = truncateLabel(label, 42);
+    showToast('⚠️ Título truncado para o formato YouTube');
+  }
+  
+  state.timestamps.push({ time, label });
+  state.timestamps.sort((a, b) => parseDuration(a.time) - parseDuration(b.time));
+  document.getElementById('ts-add-time').value = '';
+  document.getElementById('ts-add-label').value = '';
+  renderTSPanel();
+  showToast('Timestamp adicionado!');
+}
+
+function renderTSPanel() {
+  const list = document.getElementById('ts-panel-list');
+  if (!state.timestamps.length) {
+    list.innerHTML = '<span style="color:var(--text-muted);font-size:13px">Nenhum timestamp adicionado.</span>';
+    document.getElementById('ts-formatted').textContent = '';
+    return;
+  }
+  list.innerHTML = state.timestamps.map((ts, i) => `
+    <div class="ts-item">
+      <span class="ts-time">${ts.time}</span>
+      <span class="ts-text">${escapeHtml(ts.label)}</span>
+      <span class="ts-del" onclick="removeTS(${i})">✕</span>
+    </div>
+  `).join('');
+  document.getElementById('ts-formatted').textContent = state.timestamps.map(ts => `${ts.time} ${ts.label}`).join('\n');
+}
+
+function removeTS(i) {
+  state.timestamps.splice(i, 1);
+  renderTSPanel();
+}
+
+function clearTimestamps() {
+  state.timestamps = [];
+  renderTSPanel();
+}
+
+// ══════════════════════════════════════════════
+// CTA BUILDER
+// ══════════════════════════════════════════════
+function selectCTA(el) {
+  document.querySelectorAll('.cta-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  state.selectedCTA = el.querySelector('.cta-text').textContent;
+}
+
+function generateCTAs() {
+  const goal = document.getElementById('cta-goal').value;
+  const channelName = document.getElementById('channel-name').value || '@SeuCanal';
+  const templates = {
+    subscribers: [
+      { name: '🔥 FOMO', text: `Se você ainda não se inscreveu no ${channelName}, você está perdendo conteúdo exclusivo TODA SEMANA! Inscreve-se agora e ativa o sininho 🔔!` },
+      { name: '💙 Comunidade', text: `Já somos mais de [X] pessoas aprendendo juntas no ${channelName}! Vem fazer parte você também → Inscreva-se agora!` },
+      { name: '⭐ Simples', text: `Esse conteúdo te ajudou? Deixa o LIKE 👍 e SE INSCREVE! É gratuito e me ajuda muito a continuar criando!` },
+    ],
+    engagement: [
+      { name: '💬 Pergunta', text: `Mas e você — o que acha sobre isso? Me conta nos comentários 👇 Vou responder todo mundo!` },
+      { name: '🗳️ Poll', text: `Qual tema você quer ver no próximo vídeo? Comenta aqui: A) Opção 1 ou B) Opção 2. O mais votado vem primeiro! 🗳️` },
+      { name: '🤝 Comunidade', text: `Compartilha esse vídeo com um amigo que vai amar esse conteúdo! Você vai ajudar ele E vai ajudar o canal 🙏` },
+    ],
+    sales: [
+      { name: '🛍️ Produto', text: `Quer ir mais fundo? O link para [PRODUTO/SERVIÇO] está na descrição ⬇️. Use o cupom [CUPOM] para desconto exclusivo!` },
+      { name: '🎁 Bônus', text: `Clica no link da descrição e garante o acesso + [BÔNUS EXCLUSIVO] por tempo limitado! ⏰` },
+      { name: '🔗 Link', text: `Tudo que mencionei nesse vídeo está linkado abaixo ⬇️ Clica, explora e dá o próximo passo!` },
+    ],
+    traffic: [
+      { name: '▶️ Próximo Vídeo', text: `Não para por aqui! Clica no próximo vídeo para aprofundar ainda mais ➡️` },
+      { name: '📋 Playlist', text: `Assiste a playlist completa sobre esse tema — está tudo linkado abaixo! 📚` },
+      { name: '🌐 Site', text: `Acessa o site ${channelName}.com.br para mais conteúdo e recursos exclusivos! 🌐` },
+    ],
+    community: [
+      { name: '👥 Discord/Grupo', text: `Entra no nosso grupo exclusivo! O link está na descrição. Lá a gente troca ideia, tira dúvidas e cresce junto! 🤝` },
+      { name: '📸 Instagram', text: `Me segue no Instagram ${channelName} para bastidores e conteúdo diário! 📸` },
+      { name: '🙌 Agradecimento', text: `Muito obrigado por chegar até aqui! Seu apoio é o combustível pra continuar criando! 💪` },
+    ],
+  };
+
+  const chosen = templates[goal] || templates.subscribers;
+  const el = document.getElementById('cta-output');
+  el.innerHTML = chosen.map(c => `
+    <div class="cta-card" onclick="selectCTA(this)">
+      <div class="cta-name">${c.name}</div>
+      <div class="cta-text">${escapeHtml(c.text)}</div>
+    </div>
+  `).join('');
+  showToast('CTAs gerados!');
+}
+
+function toggleChip(el) {
+  el.classList.toggle('selected');
+}
+
+function copySelectedCTA() {
+  if (!state.selectedCTA) { showToast('⚠️ Selecione um CTA!'); return; }
+  navigator.clipboard.writeText(state.selectedCTA).then(() => showToast('CTA copiado!'));
+}
+
+function addCTAToDescription() {
+  if (!state.selectedCTA) { showToast('⚠️ Selecione um CTA!'); return; }
+  const el = document.getElementById('output-content');
+  if (!el.innerHTML) { showToast('⚠️ Gere uma descrição primeiro!'); return; }
+  el.innerHTML += `\n<span class="cta">${escapeHtml(state.selectedCTA)}</span>`;
+  switchTab('description');
+  showToast('CTA adicionado à descrição!');
+}
+
+// ══════════════════════════════════════════════
+// UTILITY
+// ══════════════════════════════════════════════
+function copyOutput(id) {
+  const el = document.getElementById(id);
+  const text = el.innerText || el.textContent;
+  navigator.clipboard.writeText(text).then(() => showToast('Copiado para a área de transferência!'));
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => showToast(text + ' copiado!'));
+}
+
+let toastTimer;
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  document.getElementById('toast-text').textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+// ══════════════════════════════════════════════
+// DRAG & DROP
+// ══════════════════════════════════════════════
+['txt-upload','audio-upload'].forEach(id => {
+  const zone = document.getElementById(id);
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    if (id === 'txt-upload') {
+      document.getElementById('txt-file').files = e.dataTransfer.files;
+      handleTextFile({ target: { files: e.dataTransfer.files }});
+    } else {
+      document.getElementById('audio-file').files = e.dataTransfer.files;
+      handleAudioFile({ target: { files: e.dataTransfer.files }});
+    }
+  });
+});
+</script>
+
+</body>
+</html>

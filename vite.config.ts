@@ -8,9 +8,13 @@ export default defineConfig({
     react(),
     {
       name: 'remove-index-css',
-      transformIndexHtml(html) {
-        // Remove any reference to index.css that might be injected
-        return html.replace(/<link[^>]*href=["'].*?index\.css["'][^>]*>/gi, '');
+      enforce: 'post',
+      transformIndexHtml: {
+        order: 'post',
+        handler(html) {
+          // Remove any reference to index.css that might be injected
+          return html.replace(/\<link[^\>]*href=[\"'].*?index\.css[\"'][^\>]*\>/gi, '');
+        },
       },
     },
   ],
