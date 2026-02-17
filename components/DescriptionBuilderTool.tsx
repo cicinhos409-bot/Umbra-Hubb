@@ -108,9 +108,17 @@ const DescriptionBuilderTool: React.FC = () => {
   const [ctaResults, setCtaResults] = useState<any[]>([]);
   const [selectedCtaText, setSelectedCtaText] = useState('');
 
-  const apiKey = import.meta.env.VITE_GOOGLE_API_KEY || '';
-  const isValidKey = apiKey && apiKey !== 'PLACEHOLDER_API_KEY' && !apiKey.includes('PLACEHOLDER');
-  const ai = isValidKey ? new GoogleGenAI({ apiKey }) : null;
+  // Helper para obter instância do Google AI apenas quando necessário
+  const getAI = () => {
+    const apiKey = import.meta.env.VITE_GOOGLE_API_KEY || '';
+    const isValidKey = apiKey && apiKey !== 'PLACEHOLDER_API_KEY' && !apiKey.includes('PLACEHOLDER');
+
+    if (!isValidKey) {
+      throw new Error('Configure a chave API do Google Gemini no arquivo .env.local');
+    }
+
+    return new GoogleGenAI({ apiKey });
+  };
 
   // Helpers
   const formatDuration = (secs: number) => {
@@ -140,13 +148,14 @@ const DescriptionBuilderTool: React.FC = () => {
 
   const generateDescription = async () => {
     if (!videoTitle && !scriptText) return alert("⚠️ Adicione um título ou roteiro!");
-    if (!ai) return alert("⚠️ Configure a chave API do Google Gemini no arquivo .env.local");
+
     setIsGenerating(true);
     const steps = ['Analisando conteúdo...', 'Gerando introdução SEO...', 'Criando timestamps...', 'Otimizando hashtags...', 'Finalizando descrição...'];
     let si = 0;
     const iv = setInterval(() => setProgressText(steps[si++ % steps.length]), 600);
 
     try {
+      const ai = getAI(); // Lazy initialization
       const nicheData = NICHES.find(n => n.id === niche) || NICHES[0];
       const prompt = `Gere uma descrição de vídeo para o YouTube baseada nestas informações:
       Título: ${videoTitle}
@@ -197,9 +206,9 @@ const DescriptionBuilderTool: React.FC = () => {
 
   const findHashtags = async () => {
     if (!hhTopic) return alert("Digite um tema!");
-    if (!ai) return alert("⚠️ Configure a chave API do Google Gemini no arquivo .env.local");
     setIsGenerating(true);
     try {
+      const ai = getAI(); // Lazy initialization
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: `Gere uma lista de 30 hashtags virais para o tema: "${hhTopic}" no nicho ${niche}. 
