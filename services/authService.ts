@@ -8,6 +8,100 @@ export interface AuthResponse {
 }
 
 /**
+ * Cria uma nova conta com email e senha
+ */
+export const signUpWithEmail = async (email: string, password: string): Promise<AuthResponse> => {
+    try {
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                emailRedirectTo: window.location.origin,
+            },
+        });
+
+        if (error) {
+            return {
+                success: false,
+                message: error.message,
+            };
+        }
+
+        return {
+            success: true,
+            message: 'Conta criada! Verifique seu email para confirmar.',
+            user: data.user ?? undefined,
+        };
+    } catch (error) {
+        return {
+            success: false,
+            message: 'Erro ao criar conta. Tente novamente.',
+        };
+    }
+};
+
+/**
+ * Faz login com email e senha
+ */
+export const signInWithPassword = async (email: string, password: string): Promise<AuthResponse> => {
+    try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
+
+        if (error) {
+            return {
+                success: false,
+                message: error.message,
+            };
+        }
+
+        return {
+            success: true,
+            message: 'Login realizado com sucesso!',
+            user: data.user ?? undefined,
+        };
+    } catch (error) {
+        return {
+            success: false,
+            message: 'Erro ao fazer login. Tente novamente.',
+        };
+    }
+};
+
+/**
+ * Faz login com Google OAuth
+ */
+export const signInWithGoogle = async (): Promise<AuthResponse> => {
+    try {
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                redirectTo: window.location.origin,
+            },
+        });
+
+        if (error) {
+            return {
+                success: false,
+                message: error.message,
+            };
+        }
+
+        return {
+            success: true,
+            message: 'Redirecionando para Google...',
+        };
+    } catch (error) {
+        return {
+            success: false,
+            message: 'Erro ao autenticar com Google. Tente novamente.',
+        };
+    }
+};
+
+/**
  * Envia um magic link para o email do usuário
  */
 export const signInWithEmail = async (email: string): Promise<AuthResponse> => {
