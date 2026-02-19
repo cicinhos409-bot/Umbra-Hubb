@@ -48,8 +48,9 @@ import {
   Menu,
   ChevronLeft,
   X,
-  // Fix: Added missing Zap icon import
-  Zap
+  // Fix: Added missing Zap and Lock icon imports
+  Zap,
+  Lock
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -57,6 +58,12 @@ interface DashboardProps {
   userTier: ToolTier;
   onLogout: () => void;
 }
+
+const TIER_LEVELS = {
+  [ToolTier.FREE]: 0,
+  [ToolTier.PRO]: 1,
+  [ToolTier.TURBO]: 2,
+};
 
 const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) => {
   const [activeTab, setActiveTab] = useState<string>('home');
@@ -73,23 +80,43 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
 
   const selectedTool = TOOLS.find(t => t.id === activeTab);
 
-  const renderSidebarItem = (tool: Tool) => (
-    <button
-      key={tool.id}
-      onClick={() => {
-        setActiveTab(tool.id);
-        if (window.innerWidth < 768) setIsSidebarOpen(false);
-      }}
-      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all mb-1 group ${activeTab === tool.id
+  const isToolLocked = (toolTier: ToolTier) => {
+    return TIER_LEVELS[userTier] < TIER_LEVELS[toolTier];
+  };
+
+  const renderSidebarItem = (tool: Tool) => {
+    const locked = isToolLocked(tool.tier);
+
+    return (
+      <button
+        key={tool.id}
+        onClick={() => {
+          if (!locked) {
+            setActiveTab(tool.id);
+            if (window.innerWidth < 768) setIsSidebarOpen(false);
+          } else {
+            // Optional: Show upgrade modal or alert
+            // alert(`Esta ferramenta é exclusiva para o plano ${tool.tier}`);
+          }
+        }}
+        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all mb-1 group relative ${activeTab === tool.id
           ? 'bg-brand-purple/20 text-brand-purple border-l-2 border-brand-purple shadow-lg shadow-brand-purple/5'
-          : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
-        }`}
-    >
-      <span className="text-lg grayscale group-hover:grayscale-0 transition-all">{tool.icon}</span>
-      <span className="flex-1 text-left truncate font-bold">{tool.name}</span>
-      {tool.tier === ToolTier.TURBO && <div className="w-1.5 h-1.5 rounded-full bg-brand-pink shrink-0 animate-pulse"></div>}
-    </button>
-  );
+          : locked
+            ? 'text-gray-700 cursor-not-allowed opacity-60 hover:bg-transparent'
+            : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
+          }`}
+      >
+        <span className={`text-lg transition-all ${locked ? 'grayscale opacity-50' : 'grayscale group-hover:grayscale-0'}`}>
+          {tool.icon}
+        </span>
+        <span className="flex-1 text-left truncate font-bold flex items-center gap-2">
+          {tool.name}
+          {locked && <Lock className="w-3 h-3 text-gray-600" />}
+        </span>
+        {tool.tier === ToolTier.TURBO && !locked && <div className="w-1.5 h-1.5 rounded-full bg-brand-pink shrink-0 animate-pulse"></div>}
+      </button>
+    );
+  };
 
   const renderToolsList = (category: ToolCategory, title: string) => {
     const categoryTools = TOOLS.filter(t => t.category === category);
@@ -247,7 +274,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
               <div className="overflow-hidden">
                 <div className="text-sm font-bold text-white truncate">{userName}</div>
                 <div className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1 ${userTier === ToolTier.TURBO ? 'text-brand-pink' :
-                    userTier === ToolTier.PRO ? 'text-brand-purple' : 'text-gray-500'
+                  userTier === ToolTier.PRO ? 'text-brand-purple' : 'text-gray-500'
                   }`}>
                   <Zap className="w-2 h-2 fill-current" /> {userTier === ToolTier.FREE ? 'Plano Free' : `${userTier} Ativo`}
                 </div>
@@ -333,16 +360,36 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
                     Arsenal Rápido <div className="h-px flex-1 bg-white/5" />
                   </h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
-                    {TOOLS.slice(0, 5).map(tool => (
-                      <button
-                        key={tool.id}
-                        onClick={() => { setActiveTab(tool.id); if (window.innerWidth < 768) setIsSidebarOpen(false); }}
-                        className="p-6 bg-background-light/50 border border-white/5 rounded-3xl text-center hover:border-brand-purple/40 hover:bg-background-light transition-all group shadow-xl"
-                      >
-                        <span className="text-3xl mb-4 block group-hover:scale-110 transition-transform">{tool.icon}</span>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 group-hover:text-white">{tool.name}</span>
-                      </button>
-                    ))}
+                    {TOOLS.slice(0, 5).map(tool => {
+                      const locked = isToolLocked(tool.tier);
+                      return (
+                        <button
+                          key={tool.id}
+                          onClick={() => {
+                            if (!locked) {
+                              setActiveTab(tool.id);
+                              if (window.innerWidth < 768) setIsSidebarOpen(false);
+                            }
+                          }}
+                          className={`p-6 border border-white/5 rounded-3xl text-center transition-all group shadow-xl relative overflow-hidden ${locked
+                              ? 'bg-background-light/20 cursor-not-allowed opacity-60'
+                              : 'bg-background-light/50 hover:border-brand-purple/40 hover:bg-background-light'
+                            }`}
+                        >
+                          {locked && (
+                            <div className="absolute top-2 right-2">
+                              <Lock className="w-4 h-4 text-gray-500" />
+                            </div>
+                          )}
+                          <span className={`text-3xl mb-4 block transition-transform ${locked ? 'grayscale opacity-50' : 'group-hover:scale-110'}`}>
+                            {tool.icon}
+                          </span>
+                          <span className={`text-[10px] font-black uppercase tracking-widest ${locked ? 'text-gray-600' : 'text-gray-400 group-hover:text-white'}`}>
+                            {tool.name}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               </div>

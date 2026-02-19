@@ -57,9 +57,7 @@ Deno.serve(async (req) => {
             }
         }
 
-        return new Response(JSON.stringify({ received: true }), {
-            headers: { 'Content-Type': 'application/json' },
-        })
+        return new Response(JSON.stringify({ message: 'Webhook received' }), { status: 200 })
     } catch (error) {
         console.error('Webhook error:', error)
         return new Response(JSON.stringify({ error: error.message }), { status: 400 })
