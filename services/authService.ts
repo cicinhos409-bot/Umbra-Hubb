@@ -1,5 +1,13 @@
 import { supabase } from './supabaseClient';
 import type { User } from '@supabase/supabase-js';
+import { ToolTier } from '../types';
+
+export interface UserProfile {
+    id: string;
+    email: string;
+    tier: ToolTier;
+    updated_at: string;
+}
 
 export interface AuthResponse {
     success: boolean;
@@ -185,4 +193,26 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
 export const getSession = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     return session;
+};
+
+/**
+ * Obtém o perfil do usuário do banco de dados
+ */
+export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
+    try {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+        if (error) {
+            console.error('Erro ao buscar perfil:', error.message);
+            return null;
+        }
+
+        return data as UserProfile;
+    } catch (error) {
+        return null;
+    }
 };

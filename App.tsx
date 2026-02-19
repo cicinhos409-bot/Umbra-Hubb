@@ -8,22 +8,31 @@ import Dashboard from './components/Dashboard';
 import Login from './components/Login';
 import { TESTIMONIALS } from './constants';
 import { Star } from 'lucide-react';
-import { onAuthStateChange, signOut } from './services/authService';
+import { onAuthStateChange, signOut, getUserProfile } from './services/authService';
+import { ToolTier } from './types';
 import type { User } from '@supabase/supabase-js';
 
 const App: React.FC = () => {
   const [view, setView] = useState<'landing' | 'login' | 'dashboard'>('landing');
   const [user, setUser] = useState<User | null>(null);
+  const [userTier, setUserTier] = useState<ToolTier>(ToolTier.FREE);
   const [isLoading, setIsLoading] = useState(true);
 
   // Listener para mudanças no estado de autenticação
   useEffect(() => {
-    const { data: { subscription } } = onAuthStateChange((currentUser) => {
+    const { data: { subscription } } = onAuthStateChange(async (currentUser) => {
       setUser(currentUser);
+
       if (currentUser) {
+        // Buscar perfil do usuário para obter o tier
+        const profile = await getUserProfile(currentUser.id);
+        if (profile) {
+          setUserTier(profile.tier);
+        }
         setView('dashboard');
       } else {
         setView('landing');
+        setUserTier(ToolTier.FREE);
       }
       setIsLoading(false);
     });
@@ -65,7 +74,7 @@ const App: React.FC = () => {
   }
 
   if (view === 'dashboard' && user) {
-    return <Dashboard userName={user.email?.split('@')[0] || 'Criador'} onLogout={handleLogout} />;
+    return <Dashboard userName={user.email?.split('@')[0] || 'Criador'} userTier={userTier} onLogout={handleLogout} />;
   }
 
   return (
@@ -105,7 +114,7 @@ const App: React.FC = () => {
 
         <ToolsGrid />
 
-        <Pricing />
+        <Pricing userEmail={user?.email || undefined} />
 
         {/* Testimonials */}
         <section className="py-24 bg-background-mid/30" id="depoimentos">
