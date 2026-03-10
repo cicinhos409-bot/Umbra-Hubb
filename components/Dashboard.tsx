@@ -21,10 +21,7 @@ import PromptVaultTool from './PromptVaultTool';
 import UmbraSearchTool from './UmbraSearchTool';
 import VoiceForgeTool from './VoiceForgeTool';
 import TitleOptimizerTool from './TitleOptimizerTool';
-import UmbraReverseTool from './UmbraReverseTool';
-import UmbraExtrairTool from './UmbraExtrairTool';
-
-import UmbraTubeFinderTool from './UmbraTubeFinderTool';
+import UmbraYouTubeHub from './UmbraYouTubeHub';
 import ImageScoutTool from './ImageScoutTool';
 import SoraDownTool from './SoraDownTool';
 import UmbraPromptTool from './UmbraPromptTool';
@@ -441,13 +438,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
             {activeTab === 'umbra-search' && <UmbraSearchTool />}
             {activeTab === 'voice-forge' && <VoiceForgeTool />}
             {activeTab === 'title-opt' && <TitleOptimizerTool />}
-            {activeTab === 'umbra-reverse' && <UmbraReverseTool />}
-            {activeTab === 'umbra-script' && <UmbraScriptTool />}
-            {activeTab === 'umbra-connect' && <UmbraConnectTool />}
-            {activeTab === 'umbra-control' && <UmbraControlTool />}
-            {activeTab === 'umbra-extrair' && <UmbraExtrairTool />}
-
-            {activeTab === 'tube-finder' && <UmbraTubeFinderTool />}
+            {activeTab === 'youtube-hub' && <UmbraYouTubeHub />}
             {activeTab === 'umbra-image-scout' && <ImageScoutTool />}
             {activeTab === 'umbra-sora' && <SoraDownTool />}
             {activeTab === 'umbra-prompt' && <UmbraPromptTool />}
@@ -455,9 +446,13 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
             {activeTab === 'extensions' && <ExtensionsDownloadTool />}
 
 
+            {activeTab === 'umbra-script' && <UmbraScriptTool />}
+            {activeTab === 'umbra-connect' && <UmbraConnectTool />}
+            {activeTab === 'umbra-control' && <UmbraControlTool />}
+
             {/* Tool Loader / Fallback */}
             {activeTab !== 'home' && activeTab !== 'profile' && activeTab !== 'academy' && activeTab !== 'extensions' && !activeTab.includes('home') && selectedTool && (
-              !['meus-canais', 'srt', 'deepgram', 'screenshot', 'tiktok', 'umbra-sora', 'umbra-prompt', 'description-builder', 'persona', 'prompt-vault', 'umbra-search', 'voice-forge', 'title-opt', 'umbra-reverse', 'umbra-script', 'umbra-connect', 'umbra-control', 'umbra-extrair', 'tube-finder', 'umbra-image-scout'].includes(activeTab) && (
+              !['meus-canais', 'srt', 'deepgram', 'screenshot', 'tiktok', 'umbra-sora', 'umbra-prompt', 'description-builder', 'persona', 'prompt-vault', 'umbra-search', 'voice-forge', 'title-opt', 'youtube-hub', 'umbra-script', 'umbra-connect', 'umbra-control', 'umbra-image-scout'].includes(activeTab) && (
                 <div className="animate-in fade-in slide-in-from-bottom-8 duration-500">
                   <div className="mb-8 p-12 bg-background-mid border border-white/5 rounded-[56px] shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-brand-purple/5 to-transparent pointer-events-none" />

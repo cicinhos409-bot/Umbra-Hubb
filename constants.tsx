@@ -5,7 +5,7 @@ import { ToolTier, Tool, PricingPlan, Testimonial, ToolCategory } from './types'
 export const TOOLS: Tool[] = [
   { id: 'meus-canais', name: 'Meus Canais', description: 'Gerencie todos os seus canais do YouTube em um só lugar', tier: ToolTier.FREE, icon: '📺', category: ToolCategory.WEB },
 
-  { id: 'umbra-extrair', name: 'Umbra Extrair', description: 'Extração precisa de transcrições do YouTube via Supadata API.', tier: ToolTier.FREE, icon: '✂️', category: ToolCategory.WEB },
+  { id: 'youtube-hub', name: 'YouTube Hub', description: 'Extrair transcrições, análise viral e busca de vídeos — tudo em um só lugar.', tier: ToolTier.FREE, icon: '🔬', category: ToolCategory.WEB },
   { id: 'prompt-vault', name: 'Umbra Prompt Vault', description: 'Salve e organize seus melhores prompts.', tier: ToolTier.FREE, icon: '🔐', category: ToolCategory.WEB },
 
   { id: 'srt', name: 'Ferramentas de Edição', description: 'Conversor SRT, Divisor de Texto e Contador de Palavras para Scripts.', tier: ToolTier.FREE, icon: '📝', category: ToolCategory.WEB },
@@ -22,11 +22,11 @@ export const TOOLS: Tool[] = [
   { id: 'umbra-search', name: 'Umbra Search', description: 'Busca e Download de Mídia', tier: ToolTier.PRO, icon: '🔍', category: ToolCategory.WEB },
   { id: 'title-opt', name: 'Umbra Titulo Otimizado', description: 'Otimize títulos para máximo engajamento.', tier: ToolTier.PRO, icon: '✨', category: ToolCategory.MOTOR_SUPREMO },
   { id: 'voice-forge', name: 'Umbra Voice Forge', description: 'Crie vozes realistas com tecnologia avançada.', tier: ToolTier.PRO, icon: '🎙️', category: ToolCategory.WEB },
-  { id: 'tube-finder', name: 'Umbra Tube Finder', description: 'Encontre conteúdos virais e tendências.', tier: ToolTier.PRO, icon: '🔥', category: ToolCategory.WEB },
+
   { id: 'umbra-script', name: 'Umbra Script', description: 'Sistema v2.0 — Engenharia Reversa. Viral Script Reverse Engineering Engine', tier: ToolTier.PRO, icon: '💎', category: ToolCategory.MOTOR_SUPREMO },
   { id: 'umbra-connect', name: 'Umbra Connect', description: 'Sincroniza automaticamente seu áudio com os prompts de vídeo, gerando instruções perfeitamente alinhadas com cada momento da narração.', tier: ToolTier.TURBO, icon: '⚙️', category: ToolCategory.TOOLS_2IN1 },
   { id: 'umbra-control', name: 'Umbra Control', description: 'Identifica automaticamente quais vídeos faltaram gerar após uma sessão. Separa os prompts pendentes para você regenerar apenas o necessário.', tier: ToolTier.TURBO, icon: '🎛️', category: ToolCategory.TOOLS_2IN1 },
-  { id: 'umbra-reverse', name: 'Umbra Reverse', description: 'Analisa vídeos virais', tier: ToolTier.PRO, icon: '↩️', category: ToolCategory.WEB },
+
 
   { id: 'umbra-image-scout', name: 'Umbra Image Scout', description: 'Busca e download de mídia multi-API com visualização premium.', tier: ToolTier.PRO, icon: '🎨', category: ToolCategory.WEB },
 
