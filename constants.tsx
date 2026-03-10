@@ -10,8 +10,7 @@ export const TOOLS: Tool[] = [
 
   { id: 'srt', name: 'Ferramentas de Edição', description: 'Conversor SRT, Divisor de Texto e Contador de Palavras para Scripts.', tier: ToolTier.FREE, icon: '📝', category: ToolCategory.WEB },
   { id: 'screenshot', name: 'Tirador de Screenshots', description: 'Extraia screenshots de vídeos com detecção automática.', tier: ToolTier.FREE, icon: '📸', category: ToolCategory.WEB },
-  { id: 'tiktok', name: 'Umbra TikTok Downloader', description: 'Baixe vídeos do TikTok sem marca d\'água.', tier: ToolTier.FREE, icon: '📥', category: ToolCategory.WEB },
-  { id: 'umbra-sora', name: 'Umbra SoraDown', description: 'Baixe vídeos do Sora AI em alta qualidade sem marcas d\'água.', tier: ToolTier.FREE, icon: '🎬', category: ToolCategory.WEB },
+  { id: 'downloader-hub', name: 'Downloader Hub', description: 'Baixe vídeos do TikTok e Sora AI sem marcas d\'água.', tier: ToolTier.FREE, icon: '📥', category: ToolCategory.WEB },
 
 
 
@@ -45,7 +44,7 @@ export const PLANS: PricingPlan[] = [
       'Prompt Vault (1 grupo)',
       'Conversor SRT',
       'Tirador de Screenshots',
-      'TikTok Downloader'
+      'Downloader Hub'
     ],
     cta: 'COMEÇAR GRÁTIS',
     tier: ToolTier.FREE
