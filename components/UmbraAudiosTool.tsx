@@ -12,7 +12,7 @@ import {
     AudioLines,
     Sparkles
 } from 'lucide-react';
-import { supabase } from '../lib/supabase'; // Assuming supabase client is here
+import { supabase } from '../services/supabaseClient'; // Adjusted path to existing client
 
 const VOICES = [
     {
@@ -191,8 +191,8 @@ const UmbraAudiosTool: React.FC = () => {
                 {/* STATUS BAR */}
                 {status.type && (
                     <div className={`p-5 rounded-2xl border flex items-center gap-4 animate-in slide-in-from-top-2 duration-300 ${status.type === 'loading' ? 'bg-brand-purple/5 border-brand-purple/20 text-brand-purple' :
-                            status.type === 'success' ? 'bg-brand-green/10 border-brand-green/20 text-brand-green' :
-                                'bg-brand-pink/10 border-brand-pink/20 text-brand-pink'
+                        status.type === 'success' ? 'bg-brand-green/10 border-brand-green/20 text-brand-green' :
+                            'bg-brand-pink/10 border-brand-pink/20 text-brand-pink'
                         }`}>
                         {status.type === 'loading' ? <RefreshCw className="w-5 h-5 animate-spin" /> :
                             status.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
