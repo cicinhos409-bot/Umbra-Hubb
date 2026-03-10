@@ -1,18 +1,18 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import JSZip from 'https://esm.sh/jszip';
-import { 
-  Camera, 
-  Video, 
-  Clock, 
-  Scissors, 
-  Pointer, 
-  Trash2, 
-  Download, 
-  CheckCircle2, 
-  Layout, 
-  Zap, 
-  Settings, 
+import JSZip from 'jszip';
+import {
+  Camera,
+  Video,
+  Clock,
+  Scissors,
+  Pointer,
+  Trash2,
+  Download,
+  CheckCircle2,
+  Layout,
+  Zap,
+  Settings,
   X,
   ChevronLeft,
   ChevronRight,
@@ -33,15 +33,15 @@ const ScreenshotTool: React.FC = () => {
   const [mode, setMode] = useState<'scene' | 'interval' | 'manual'>('scene');
   const [format, setFormat] = useState<'png' | 'jpg' | 'webp'>('png');
   const [quality, setQuality] = useState(95);
-  
+
   // Scene settings
   const [sensitivity, setSensitivity] = useState(0.16);
   const [step, setStep] = useState(0.35);
   const [minGap, setMinGap] = useState(0.90);
-  
+
   // Interval settings
   const [interval, setIntervalVal] = useState(2);
-  
+
   // State
   const [shots, setShots] = useState<Shot[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -107,7 +107,7 @@ const ScreenshotTool: React.FC = () => {
 
     const mimeType = format === 'png' ? 'image/png' : format === 'jpg' ? 'image/jpeg' : 'image/webp';
     const blob = await new Promise<Blob>((res) => canvas.toBlob((b) => res(b!), mimeType, quality / 100));
-    
+
     const id = Math.random().toString(36).substr(2, 9);
     const safeTime = t.toFixed(2).replace('.', '_');
     const name = `capture_${safeTime}s.${format}`;
@@ -138,7 +138,7 @@ const ScreenshotTool: React.FC = () => {
     setScenesCount(0);
     const video = videoRef.current;
     const duration = video.duration;
-    
+
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) return;
@@ -164,7 +164,7 @@ const ScreenshotTool: React.FC = () => {
       }
       const pct = (t / duration) * 100;
       setProgress(pct);
-      
+
       await seekTo(t);
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const currData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
@@ -261,7 +261,7 @@ const ScreenshotTool: React.FC = () => {
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      
+
       if (e.key === ' ' && mode === 'manual' && videoUrl) {
         e.preventDefault();
         handleManualCapture();
@@ -284,7 +284,7 @@ const ScreenshotTool: React.FC = () => {
           </h1>
           <p className="text-gray-500 font-medium mt-1">Extração inteligente de frames para canais Dark e Edição</p>
         </div>
-        
+
         <div className="flex gap-4 flex-wrap justify-center">
           <div className="bg-background-deep border border-white/5 rounded-2xl px-5 py-3 text-center shadow-xl">
             <div className="text-2xl font-black text-brand-cyan leading-none mb-1">{capturesCount}</div>
@@ -305,7 +305,7 @@ const ScreenshotTool: React.FC = () => {
         {/* Left Control Panel */}
         <div className="lg:col-span-4 space-y-6">
           {/* Upload Area */}
-          <div 
+          <div
             onClick={() => fileInputRef.current?.click()}
             className={`group bg-background-mid border-2 border-dashed rounded-[32px] p-8 text-center cursor-pointer transition-all hover:border-brand-cyan/40 hover:bg-brand-cyan/5 ${videoFile ? 'border-brand-green/30 bg-brand-green/5' : 'border-white/10'}`}
           >
@@ -324,7 +324,7 @@ const ScreenshotTool: React.FC = () => {
               { id: 'interval', label: 'Intervalo', icon: Clock },
               { id: 'manual', label: 'Manual', icon: Pointer },
             ].map(m => (
-              <button 
+              <button
                 key={m.id}
                 onClick={() => setMode(m.id as any)}
                 className={`flex-1 flex flex-col items-center gap-2 py-4 rounded-2xl transition-all border ${mode === m.id ? 'bg-brand-cyan/10 border-brand-cyan/30 text-brand-cyan shadow-xl' : 'bg-transparent border-transparent text-gray-600 hover:text-gray-400'}`}
@@ -337,72 +337,72 @@ const ScreenshotTool: React.FC = () => {
 
           {/* Settings Sub-panel */}
           <div className="bg-background-mid border border-white/5 rounded-[32px] p-8 space-y-6 shadow-xl">
-             <div className="flex items-center gap-2 mb-2">
-               <Settings className="w-4 h-4 text-brand-purple" />
-               <h3 className="font-orbitron text-[10px] font-black uppercase tracking-widest text-white">Configurações</h3>
-             </div>
+            <div className="flex items-center gap-2 mb-2">
+              <Settings className="w-4 h-4 text-brand-purple" />
+              <h3 className="font-orbitron text-[10px] font-black uppercase tracking-widest text-white">Configurações</h3>
+            </div>
 
-             {mode === 'scene' && (
-               <div className="space-y-6">
-                 <div className="space-y-2">
-                   <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-                     <span className="text-gray-500">Sensibilidade</span>
-                     <span className="text-brand-cyan">{sensitivity.toFixed(2)}</span>
-                   </div>
-                   <input type="range" min="0.06" max="0.40" step="0.01" value={sensitivity} onChange={e => setSensitivity(parseFloat(e.target.value))} className="w-full h-1.5 bg-background-deep rounded-lg appearance-none cursor-pointer accent-brand-cyan" />
-                 </div>
-                 <div className="space-y-2">
-                   <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-                     <span className="text-gray-500">Passo de Análise</span>
-                     <span className="text-brand-cyan">{step.toFixed(2)}s</span>
-                   </div>
-                   <input type="range" min="0.10" max="1.50" step="0.05" value={step} onChange={e => setStep(parseFloat(e.target.value))} className="w-full h-1.5 bg-background-deep rounded-lg appearance-none cursor-pointer accent-brand-cyan" />
-                 </div>
-                 <div className="space-y-2">
-                   <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-                     <span className="text-gray-500">Gap Mínimo</span>
-                     <span className="text-brand-cyan">{minGap.toFixed(2)}s</span>
-                   </div>
-                   <input type="range" min="0.30" max="3.00" step="0.10" value={minGap} onChange={e => setMinGap(parseFloat(e.target.value))} className="w-full h-1.5 bg-background-deep rounded-lg appearance-none cursor-pointer accent-brand-cyan" />
-                 </div>
-               </div>
-             )}
+            {mode === 'scene' && (
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                    <span className="text-gray-500">Sensibilidade</span>
+                    <span className="text-brand-cyan">{sensitivity.toFixed(2)}</span>
+                  </div>
+                  <input type="range" min="0.06" max="0.40" step="0.01" value={sensitivity} onChange={e => setSensitivity(parseFloat(e.target.value))} className="w-full h-1.5 bg-background-deep rounded-lg appearance-none cursor-pointer accent-brand-cyan" />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                    <span className="text-gray-500">Passo de Análise</span>
+                    <span className="text-brand-cyan">{step.toFixed(2)}s</span>
+                  </div>
+                  <input type="range" min="0.10" max="1.50" step="0.05" value={step} onChange={e => setStep(parseFloat(e.target.value))} className="w-full h-1.5 bg-background-deep rounded-lg appearance-none cursor-pointer accent-brand-cyan" />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                    <span className="text-gray-500">Gap Mínimo</span>
+                    <span className="text-brand-cyan">{minGap.toFixed(2)}s</span>
+                  </div>
+                  <input type="range" min="0.30" max="3.00" step="0.10" value={minGap} onChange={e => setMinGap(parseFloat(e.target.value))} className="w-full h-1.5 bg-background-deep rounded-lg appearance-none cursor-pointer accent-brand-cyan" />
+                </div>
+              </div>
+            )}
 
-             {mode === 'interval' && (
-               <div className="space-y-2">
-                 <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-                   <span className="text-gray-500">Intervalo de tempo</span>
-                   <span className="text-brand-cyan">{interval.toFixed(1)}s</span>
-                 </div>
-                 <input type="range" min="0.5" max="10" step="0.5" value={interval} onChange={e => setIntervalVal(parseFloat(e.target.value))} className="w-full h-1.5 bg-background-deep rounded-lg appearance-none cursor-pointer accent-brand-cyan" />
-               </div>
-             )}
+            {mode === 'interval' && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                  <span className="text-gray-500">Intervalo de tempo</span>
+                  <span className="text-brand-cyan">{interval.toFixed(1)}s</span>
+                </div>
+                <input type="range" min="0.5" max="10" step="0.5" value={interval} onChange={e => setIntervalVal(parseFloat(e.target.value))} className="w-full h-1.5 bg-background-deep rounded-lg appearance-none cursor-pointer accent-brand-cyan" />
+              </div>
+            )}
 
-             {mode === 'manual' && (
-               <div className="p-4 bg-background-deep/50 rounded-2xl border border-white/5 text-center">
-                 <p className="text-xs text-gray-500 font-medium">Capture frames manualmente clicando no botão de captura ou pressionando <kbd className="bg-white/5 px-2 py-0.5 rounded text-brand-cyan font-bold">Espaço</kbd></p>
-               </div>
-             )}
+            {mode === 'manual' && (
+              <div className="p-4 bg-background-deep/50 rounded-2xl border border-white/5 text-center">
+                <p className="text-xs text-gray-500 font-medium">Capture frames manualmente clicando no botão de captura ou pressionando <kbd className="bg-white/5 px-2 py-0.5 rounded text-brand-cyan font-bold">Espaço</kbd></p>
+              </div>
+            )}
 
-             <div className="pt-4 border-t border-white/5 space-y-4">
-               <div className="space-y-2">
-                 <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Formato</label>
-                 <div className="flex gap-2">
-                   {['png', 'jpg', 'webp'].map(f => (
-                     <button key={f} onClick={() => setFormat(f as any)} className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-tighter border transition-all ${format === f ? 'bg-brand-purple/10 border-brand-purple text-brand-purple' : 'bg-background-deep border-white/5 text-gray-600'}`}>
-                       {f}
-                     </button>
-                   ))}
-                 </div>
-               </div>
-               <div className="space-y-2">
-                 <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-                   <span className="text-gray-500">Qualidade</span>
-                   <span className="text-brand-purple">{quality}%</span>
-                 </div>
-                 <input type="range" min="50" max="100" step="5" value={quality} onChange={e => setQuality(parseInt(e.target.value))} className="w-full h-1.5 bg-background-deep rounded-lg appearance-none cursor-pointer accent-brand-purple" />
-               </div>
-             </div>
+            <div className="pt-4 border-t border-white/5 space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Formato</label>
+                <div className="flex gap-2">
+                  {['png', 'jpg', 'webp'].map(f => (
+                    <button key={f} onClick={() => setFormat(f as any)} className={`flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-tighter border transition-all ${format === f ? 'bg-brand-purple/10 border-brand-purple text-brand-purple' : 'bg-background-deep border-white/5 text-gray-600'}`}>
+                      {f}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                  <span className="text-gray-500">Qualidade</span>
+                  <span className="text-brand-purple">{quality}%</span>
+                </div>
+                <input type="range" min="50" max="100" step="5" value={quality} onChange={e => setQuality(parseInt(e.target.value))} className="w-full h-1.5 bg-background-deep rounded-lg appearance-none cursor-pointer accent-brand-purple" />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -422,7 +422,7 @@ const ScreenshotTool: React.FC = () => {
 
             <div className="mt-8 flex flex-col sm:flex-row gap-4">
               {mode !== 'manual' ? (
-                <button 
+                <button
                   onClick={handleStart}
                   disabled={!videoUrl || isRunning}
                   className="flex-1 py-5 bg-gradient-to-r from-brand-cyan to-brand-green text-background-deep font-orbitron text-xs font-black tracking-[0.3em] rounded-2xl shadow-xl shadow-brand-cyan/20 hover:scale-105 transition-all disabled:opacity-30 uppercase flex items-center justify-center gap-3"
@@ -430,7 +430,7 @@ const ScreenshotTool: React.FC = () => {
                   <Zap className="w-5 h-5" /> Iniciar Processamento
                 </button>
               ) : (
-                <button 
+                <button
                   onClick={handleManualCapture}
                   disabled={!videoUrl}
                   className="flex-1 py-5 bg-brand-cyan text-background-deep font-orbitron text-xs font-black tracking-[0.3em] rounded-2xl shadow-xl shadow-brand-cyan/20 hover:scale-105 transition-all disabled:opacity-30 uppercase flex items-center justify-center gap-3"
@@ -438,9 +438,9 @@ const ScreenshotTool: React.FC = () => {
                   <Camera className="w-5 h-5" /> Capturar Frame Atual
                 </button>
               )}
-              
+
               {shots.length > 0 && (
-                <button 
+                <button
                   onClick={() => { setShots([]); setScenesCount(0); setSelectedIds(new Set()); }}
                   className="px-8 py-5 bg-white/5 border border-white/10 text-gray-500 font-orbitron text-xs font-black tracking-[0.3em] rounded-2xl hover:text-brand-pink hover:bg-brand-pink/10 transition-all uppercase flex items-center justify-center gap-3"
                 >
@@ -465,70 +465,70 @@ const ScreenshotTool: React.FC = () => {
 
           {/* Results Gallery */}
           <div className="bg-background-mid border border-white/5 rounded-[40px] p-8 shadow-2xl min-h-[400px]">
-             <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-10 pb-6 border-b border-white/5">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-brand-cyan/10 rounded-xl flex items-center justify-center text-brand-cyan shadow-xl"><Camera className="w-5 h-5" /></div>
-                  <h2 className="text-2xl font-black tracking-tight">Capturas Realizadas</h2>
-                </div>
-                
-                {shots.length > 0 && (
-                  <div className="flex gap-3">
-                    <button 
-                      onClick={() => {
-                        if (selectedIds.size === shots.length) setSelectedIds(new Set());
-                        else setSelectedIds(new Set(shots.map(s => s.id)));
-                      }}
-                      className="px-5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white hover:bg-white/10 transition-all"
-                    >
-                      {selectedIds.size === shots.length ? 'Desmarcar Tudo' : 'Selecionar Tudo'}
-                    </button>
-                    <button 
-                      onClick={downloadZip}
-                      className="px-6 py-2.5 bg-brand-green text-background-deep font-black rounded-xl text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-brand-green/20 hover:scale-105 transition-all flex items-center gap-2"
-                    >
-                      <Download className="w-4 h-4" /> Baixar ZIP
-                    </button>
-                  </div>
-                )}
-             </div>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-10 pb-6 border-b border-white/5">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 bg-brand-cyan/10 rounded-xl flex items-center justify-center text-brand-cyan shadow-xl"><Camera className="w-5 h-5" /></div>
+                <h2 className="text-2xl font-black tracking-tight">Capturas Realizadas</h2>
+              </div>
 
-             {shots.length === 0 ? (
-               <div className="py-24 text-center opacity-20">
-                 <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6"><Layout className="w-10 h-10" /></div>
-                 <p className="font-orbitron text-xs font-black uppercase tracking-widest">Nenhuma captura disponível</p>
-               </div>
-             ) : (
-               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
-                 {shots.map((shot, idx) => (
-                   <div key={shot.id} className={`group relative bg-background-deep border rounded-2xl overflow-hidden transition-all hover:scale-[1.03] ${selectedIds.has(shot.id) ? 'border-brand-cyan ring-1 ring-brand-cyan ring-offset-2 ring-offset-background-deep' : 'border-white/5'}`}>
-                     <div 
+              {shots.length > 0 && (
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      if (selectedIds.size === shots.length) setSelectedIds(new Set());
+                      else setSelectedIds(new Set(shots.map(s => s.id)));
+                    }}
+                    className="px-5 py-2.5 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white hover:bg-white/10 transition-all"
+                  >
+                    {selectedIds.size === shots.length ? 'Desmarcar Tudo' : 'Selecionar Tudo'}
+                  </button>
+                  <button
+                    onClick={downloadZip}
+                    className="px-6 py-2.5 bg-brand-green text-background-deep font-black rounded-xl text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-brand-green/20 hover:scale-105 transition-all flex items-center gap-2"
+                  >
+                    <Download className="w-4 h-4" /> Baixar ZIP
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {shots.length === 0 ? (
+              <div className="py-24 text-center opacity-20">
+                <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6"><Layout className="w-10 h-10" /></div>
+                <p className="font-orbitron text-xs font-black uppercase tracking-widest">Nenhuma captura disponível</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+                {shots.map((shot, idx) => (
+                  <div key={shot.id} className={`group relative bg-background-deep border rounded-2xl overflow-hidden transition-all hover:scale-[1.03] ${selectedIds.has(shot.id) ? 'border-brand-cyan ring-1 ring-brand-cyan ring-offset-2 ring-offset-background-deep' : 'border-white/5'}`}>
+                    <div
                       onClick={(e) => {
                         if (e.shiftKey) toggleSelect(shot.id);
                         else setLightboxIndex(idx);
                       }}
                       className="aspect-video relative cursor-pointer overflow-hidden"
-                     >
-                        <img src={shot.url} alt={shot.name} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <Maximize2 className="w-6 h-6 text-white" />
-                        </div>
-                     </div>
-                     
-                     <div className="p-4 flex items-center justify-between">
-                        <span className="px-2 py-1 bg-brand-cyan/10 border border-brand-cyan/20 rounded-lg text-[9px] font-black text-brand-cyan uppercase tracking-widest">{formatTime(shot.time)}</span>
-                        <div className="flex gap-2">
-                           <button onClick={() => toggleSelect(shot.id)} className={`p-2 rounded-lg transition-all ${selectedIds.has(shot.id) ? 'bg-brand-cyan text-background-deep' : 'bg-white/5 text-gray-500 hover:text-white'}`}>
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                           </button>
-                           <button onClick={() => deleteShot(shot.id)} className="p-2 bg-white/5 rounded-lg text-gray-600 hover:text-brand-pink transition-all">
-                              <Trash2 className="w-3.5 h-3.5" />
-                           </button>
-                        </div>
-                     </div>
-                   </div>
-                 ))}
-               </div>
-             )}
+                    >
+                      <img src={shot.url} alt={shot.name} className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Maximize2 className="w-6 h-6 text-white" />
+                      </div>
+                    </div>
+
+                    <div className="p-4 flex items-center justify-between">
+                      <span className="px-2 py-1 bg-brand-cyan/10 border border-brand-cyan/20 rounded-lg text-[9px] font-black text-brand-cyan uppercase tracking-widest">{formatTime(shot.time)}</span>
+                      <div className="flex gap-2">
+                        <button onClick={() => toggleSelect(shot.id)} className={`p-2 rounded-lg transition-all ${selectedIds.has(shot.id) ? 'bg-brand-cyan text-background-deep' : 'bg-white/5 text-gray-500 hover:text-white'}`}>
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button onClick={() => deleteShot(shot.id)} className="p-2 bg-white/5 rounded-lg text-gray-600 hover:text-brand-pink transition-all">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -538,27 +538,27 @@ const ScreenshotTool: React.FC = () => {
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
           <div className="absolute inset-0 bg-black/95 backdrop-blur-2xl" onClick={() => setLightboxIndex(null)} />
           <div className="relative max-w-7xl w-full max-h-full flex flex-col items-center">
-             <button onClick={() => setLightboxIndex(null)} className="absolute top-0 right-0 p-4 text-gray-500 hover:text-white transition-all"><X className="w-10 h-10" /></button>
-             <div className="relative w-full aspect-video flex items-center justify-center">
-                <button 
-                  onClick={() => setLightboxIndex(prev => prev! > 0 ? prev! - 1 : shots.length - 1)}
-                  className="absolute left-4 p-4 bg-white/5 hover:bg-white/10 rounded-full text-white transition-all shadow-2xl"
-                >
-                  <ChevronLeft className="w-10 h-10" />
-                </button>
-                <img src={shots[lightboxIndex].url} className="max-h-full max-w-full rounded-2xl shadow-2xl border border-white/10" />
-                <button 
-                  onClick={() => setLightboxIndex(prev => prev! < shots.length - 1 ? prev! + 1 : 0)}
-                  className="absolute right-4 p-4 bg-white/5 hover:bg-white/10 rounded-full text-white transition-all shadow-2xl"
-                >
-                  <ChevronRight className="w-10 h-10" />
-                </button>
-             </div>
-             <div className="mt-8 px-8 py-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-6">
-                <span className="text-sm font-bold text-gray-400">Captura em {formatTime(shots[lightboxIndex].time)}</span>
-                <span className="text-gray-700">|</span>
-                <span className="text-xs font-black uppercase tracking-[0.2em] text-brand-cyan">{lightboxIndex + 1} / {shots.length}</span>
-             </div>
+            <button onClick={() => setLightboxIndex(null)} className="absolute top-0 right-0 p-4 text-gray-500 hover:text-white transition-all"><X className="w-10 h-10" /></button>
+            <div className="relative w-full aspect-video flex items-center justify-center">
+              <button
+                onClick={() => setLightboxIndex(prev => prev! > 0 ? prev! - 1 : shots.length - 1)}
+                className="absolute left-4 p-4 bg-white/5 hover:bg-white/10 rounded-full text-white transition-all shadow-2xl"
+              >
+                <ChevronLeft className="w-10 h-10" />
+              </button>
+              <img src={shots[lightboxIndex].url} className="max-h-full max-w-full rounded-2xl shadow-2xl border border-white/10" />
+              <button
+                onClick={() => setLightboxIndex(prev => prev! < shots.length - 1 ? prev! + 1 : 0)}
+                className="absolute right-4 p-4 bg-white/5 hover:bg-white/10 rounded-full text-white transition-all shadow-2xl"
+              >
+                <ChevronRight className="w-10 h-10" />
+              </button>
+            </div>
+            <div className="mt-8 px-8 py-4 bg-white/5 border border-white/10 rounded-2xl flex items-center gap-6">
+              <span className="text-sm font-bold text-gray-400">Captura em {formatTime(shots[lightboxIndex].time)}</span>
+              <span className="text-gray-700">|</span>
+              <span className="text-xs font-black uppercase tracking-[0.2em] text-brand-cyan">{lightboxIndex + 1} / {shots.length}</span>
+            </div>
           </div>
         </div>
       )}
