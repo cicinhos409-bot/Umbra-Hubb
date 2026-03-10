@@ -22,6 +22,7 @@ export const TOOLS: Tool[] = [
 
 
 
+  { id: 'umbra-audios', name: 'Umbra Audios', description: 'Sintetização de Voz Neural via Google Cloud TTS.', tier: ToolTier.PRO, icon: '🎙️', category: ToolCategory.WEB },
 ];
 
 export const PLANS: PricingPlan[] = [
