@@ -3,8 +3,7 @@ import React, { useState } from 'react';
 import { TOOLS } from '../constants';
 import { ToolTier, ToolCategory, Tool } from '../types';
 
-import UmbraConnectTool from './UmbraConnectTool';
-import UmbraControlTool from './UmbraControlTool';
+import UmbraTurboHub from './UmbraTurboHub';
 import MeusCanaisTool from './MeusCanaisTool';
 
 import EditingToolsTool from './EditingToolsTool';
@@ -18,11 +17,9 @@ import UmbraDownloaderHub from './UmbraDownloaderHub';
 
 
 import PromptVaultTool from './PromptVaultTool';
-import UmbraSearchTool from './UmbraSearchTool';
-
+import UmbraMediaHub from './UmbraMediaHub';
 import UmbraMotorHub from './UmbraMotorHub';
 import UmbraYouTubeHub from './UmbraYouTubeHub';
-import ImageScoutTool from './ImageScoutTool';
 
 
 import AcademyTool from './AcademyTool';
@@ -434,22 +431,18 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
 
 
 
-            {activeTab === 'prompt-vault' && <PromptVaultTool />}
-            {activeTab === 'umbra-search' && <UmbraSearchTool />}
+            {activeTab === 'media-hub' && <UmbraMediaHub />}
 
             {activeTab === 'motor-hub' && <UmbraMotorHub />}
             {activeTab === 'academy' && <AcademyTool />}
             {activeTab === 'extensions' && <ExtensionsDownloadTool />}
 
-
             {activeTab === 'youtube-hub' && <UmbraYouTubeHub />}
-            {activeTab === 'umbra-image-scout' && <ImageScoutTool />}
-            {activeTab === 'umbra-connect' && <UmbraConnectTool />}
-            {activeTab === 'umbra-control' && <UmbraControlTool />}
+            {activeTab === 'turbo-hub' && <UmbraTurboHub />}
 
             {/* Tool Loader / Fallback */}
             {activeTab !== 'home' && activeTab !== 'profile' && activeTab !== 'academy' && activeTab !== 'extensions' && !activeTab.includes('home') && selectedTool && (
-              !['meus-canais', 'srt', 'screenshot', 'downloader-hub', 'motor-hub', 'prompt-vault', 'umbra-search', 'youtube-hub', 'umbra-connect', 'umbra-control', 'umbra-image-scout'].includes(activeTab) && (
+              !['meus-canais', 'srt', 'screenshot', 'downloader-hub', 'motor-hub', 'prompt-vault', 'media-hub', 'youtube-hub', 'turbo-hub'].includes(activeTab) && (
                 <div className="animate-in fade-in slide-in-from-bottom-8 duration-500">
                   <div className="mb-8 p-12 bg-background-mid border border-white/5 rounded-[56px] shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-brand-purple/5 to-transparent pointer-events-none" />
