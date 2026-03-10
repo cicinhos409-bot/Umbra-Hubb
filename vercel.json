@@ -2,5 +2,15 @@
     "buildCommand": "npm run build",
     "outputDirectory": "dist",
     "framework": "vite",
-    "installCommand": "npm install"
+    "installCommand": "npm install",
+    "rewrites": [
+        {
+            "source": "/api/sora_down",
+            "destination": "/api/sora_down.js"
+        },
+        {
+            "source": "/api/(.*)",
+            "destination": "/api/index.py"
+        }
+    ]
 }

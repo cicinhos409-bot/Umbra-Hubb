@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import {
   FileText,
   Search,
@@ -24,7 +24,6 @@ import {
   Upload,
   BarChart,
   Brain,
-  // Fix: Add missing icon imports
   X,
   Settings
 } from 'lucide-react';
@@ -106,18 +105,10 @@ const DescriptionBuilderTool: React.FC = () => {
   const [ctaGoal, setCtaGoal] = useState('subscribers');
   const [ctaChannelName, setCtaChannelName] = useState('');
   const [ctaResults, setCtaResults] = useState<any[]>([]);
-  const [selectedCtaText, setSelectedCtaText] = useState('');
 
-  // Helper para obter instância do Google AI apenas quando necessário
   const getAI = () => {
-    const apiKey = import.meta.env.VITE_GOOGLE_API_KEY || '';
-    const isValidKey = apiKey && apiKey !== 'PLACEHOLDER_API_KEY' && !apiKey.includes('PLACEHOLDER');
-
-    if (!isValidKey) {
-      throw new Error('Configure a chave API do Google Gemini no arquivo .env.local');
-    }
-
-    return new GoogleGenAI({ apiKey });
+    const apiKey = (import.meta as any).env.VITE_GOOGLE_API_KEY || (process as any).env.API_KEY || '';
+    return new GoogleGenerativeAI(apiKey);
   };
 
   // Helpers
@@ -155,7 +146,8 @@ const DescriptionBuilderTool: React.FC = () => {
     const iv = setInterval(() => setProgressText(steps[si++ % steps.length]), 600);
 
     try {
-      const ai = getAI(); // Lazy initialization
+      const genAI = getAI();
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
       const nicheData = NICHES.find(n => n.id === niche) || NICHES[0];
       const prompt = `Gere uma descrição de vídeo para o YouTube baseada nestas informações:
       Título: ${videoTitle}
@@ -173,13 +165,9 @@ const DescriptionBuilderTool: React.FC = () => {
       3. Use 5 a 8 hashtags específicas no final.
       4. Responda APENAS com a descrição completa formatada para copiar e colar.`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: prompt,
-        config: { temperature: 0.7 }
-      });
-
-      const fullText = response.text;
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const fullText = response.text();
 
       // Calculate SEO Score (Mock)
       let score = 30;
@@ -192,7 +180,7 @@ const DescriptionBuilderTool: React.FC = () => {
         full: fullText,
         html: fullText.replace(/\n/g, '<br/>'),
         hashtags: fullText.match(/#\w+/g) || [],
-        timestamps: [], // Extracted if needed
+        timestamps: [],
         score
       });
     } catch (err) {
@@ -208,22 +196,21 @@ const DescriptionBuilderTool: React.FC = () => {
     if (!hhTopic) return alert("Digite um tema!");
     setIsGenerating(true);
     try {
-      const ai = getAI(); // Lazy initialization
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `Gere uma lista de 30 hashtags virais para o tema: "${hhTopic}" no nicho ${niche}. 
+      const genAI = getAI();
+      const model = genAI.getGenerativeModel({
+        model: "gemini-1.5-flash",
+        generationConfig: { responseMimeType: "application/json" }
+      });
+      const response = await model.generateContent(`Gere uma lista de 30 hashtags virais para o tema: "${hhTopic}" no nicho ${niche}. 
         Divida em 3 grupos de 10: 
         1. Baixa competição (Alto volume)
         2. Média competição
         3. Alta competição (Nicho específico)
-        Responda em JSON com as chaves: low, med, high (arrays de strings).`,
-        config: { responseMimeType: 'application/json' }
-      });
+        Responda em JSON com as chaves: low, med, high (arrays de strings).`);
 
-      const data = JSON.parse(response.text);
+      const data = JSON.parse(response.response.text());
       setHhResults(data);
 
-      // Comp Analysis Mock
       const analysis = data.low.slice(0, 8).map((tag: string) => ({
         tag,
         comp: Math.floor(Math.random() * 100),
@@ -271,7 +258,6 @@ const DescriptionBuilderTool: React.FC = () => {
         { name: '🛍️ Produto', text: `Quer ir mais fundo? O link para nosso treinamento está na descrição ⬇️. Use o cupom UMBRA para desconto exclusivo!` },
       ]
     };
-    ctaResults;
     setCtaResults(goalMap[ctaGoal] || goalMap.subscribers);
   };
 
@@ -294,22 +280,22 @@ const DescriptionBuilderTool: React.FC = () => {
           { id: 'hashtags', label: 'Hashtag Hunter', icon: Search },
           { id: 'timestamps', label: 'Timestamps', icon: Clock },
           { id: 'cta', label: 'CTA Builder', icon: Target },
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`flex items-center gap-3 px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-brand-cyan text-background-deep shadow-lg shadow-brand-cyan/20' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}
-          >
-            <tab.icon className="w-4 h-4" /> {tab.label}
-          </button>
-        ))}
+        ].map(tab => {
+          const Icon = tab.icon;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`flex items-center gap-3 px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === tab.id ? 'bg-brand-cyan text-background-deep shadow-lg shadow-brand-cyan/20' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}
+            >
+              <Icon className="w-4 h-4" /> {tab.label}
+            </button>
+          )
+        })}
       </div>
 
       <main className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
-        {/* LEFT COLUMN: INPUTS */}
         <div className="lg:col-span-7 space-y-8">
-
           {activeTab === 'description' && (
             <div className="space-y-8 animate-in slide-in-from-left-4">
               <section className="bg-background-mid border border-white/5 rounded-[40px] p-8 shadow-xl space-y-6">
@@ -491,13 +477,9 @@ const DescriptionBuilderTool: React.FC = () => {
               </section>
             </div>
           )}
-
         </div>
 
-        {/* RIGHT COLUMN: OUTPUTS */}
         <div className="lg:col-span-5 space-y-8">
-
-          {/* Progress Overlay */}
           {isGenerating && (
             <div className="bg-background-mid border border-brand-cyan/20 rounded-[40px] p-8 shadow-2xl space-y-4 animate-pulse">
               <div className="flex items-center gap-4 text-brand-cyan">
@@ -510,7 +492,6 @@ const DescriptionBuilderTool: React.FC = () => {
             </div>
           )}
 
-          {/* DESCRIPTION OUTPUT */}
           {activeTab === 'description' && generatedResult.full && (
             <div className="space-y-6 animate-in slide-in-from-right-4 duration-500">
               <div className="bg-background-mid border border-white/10 rounded-[40px] overflow-hidden shadow-2xl">
@@ -544,7 +525,6 @@ const DescriptionBuilderTool: React.FC = () => {
             </div>
           )}
 
-          {/* HASHTAG OUTPUT */}
           {activeTab === 'hashtags' && (
             <div className="space-y-6 animate-in slide-in-from-right-4">
               {['low', 'med', 'high'].map(lvl => (
@@ -587,7 +567,6 @@ const DescriptionBuilderTool: React.FC = () => {
             </div>
           )}
 
-          {/* TIMESTAMPS OUTPUT */}
           {activeTab === 'timestamps' && (
             <div className="space-y-6 animate-in slide-in-from-right-4">
               <div className="bg-background-mid border border-white/5 rounded-[40px] p-8 shadow-2xl space-y-6">
@@ -595,7 +574,6 @@ const DescriptionBuilderTool: React.FC = () => {
                   <h3 className="text-xl font-black tracking-tight">Capítulos Gerados</h3>
                   <button onClick={() => { navigator.clipboard.writeText(tsList.map(t => `${t.time} ${t.label}`).join('\n')); alert("Copiado!"); }} className="p-3 bg-white/5 rounded-xl hover:text-brand-green transition-all shadow-lg"><Copy className="w-5 h-5" /></button>
                 </div>
-
                 <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
                   {tsList.length === 0 ? (
                     <div className="py-20 text-center opacity-20">
@@ -612,7 +590,6 @@ const DescriptionBuilderTool: React.FC = () => {
                     ))
                   )}
                 </div>
-
                 <div className="pt-8 border-t border-white/5 space-y-6">
                   <h4 className="text-[10px] font-black text-gray-600 uppercase tracking-widest px-2">Adicionar Manual</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -625,7 +602,6 @@ const DescriptionBuilderTool: React.FC = () => {
             </div>
           )}
 
-          {/* CTA OUTPUT */}
           {activeTab === 'cta' && (
             <div className="space-y-6 animate-in slide-in-from-right-4">
               {ctaResults.length === 0 ? (
@@ -652,7 +628,6 @@ const DescriptionBuilderTool: React.FC = () => {
               )}
             </div>
           )}
-
         </div>
       </main>
 
@@ -663,7 +638,7 @@ const DescriptionBuilderTool: React.FC = () => {
           <h4 className="text-2xl font-black tracking-tighter">Otimização Multimodal</h4>
           <p className="text-gray-500 text-sm max-w-xl mx-auto leading-relaxed">Nossa IA analisa padrões de retenção dos maiores canais do mundo para construir descrições que não só melhoram o SEO, mas prendem o espectador.</p>
           <div className="flex justify-center gap-4 flex-wrap">
-            <div className="px-6 py-2 bg-background-deep border border-white/5 rounded-xl text-[10px] font-black text-gray-600 uppercase tracking-widest">Model: Gemini 3 Flash</div>
+            <div className="px-6 py-2 bg-background-deep border border-white/5 rounded-xl text-[10px] font-black text-gray-600 uppercase tracking-widest">Model: Gemini 1.5 Flash</div>
             <div className="px-6 py-2 bg-background-deep border border-white/5 rounded-xl text-[10px] font-black text-gray-600 uppercase tracking-widest">Strategy: Viral SEO v5</div>
           </div>
         </div>

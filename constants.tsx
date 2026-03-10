@@ -5,19 +5,22 @@ import { ToolTier, Tool, PricingPlan, Testimonial, ToolCategory } from './types'
 export const TOOLS: Tool[] = [
   { id: 'meus-canais', name: 'Meus Canais', description: 'Gerencie todos os seus canais do YouTube em um só lugar', tier: ToolTier.FREE, icon: '📺', category: ToolCategory.WEB },
   { id: 'api-keys', name: 'Api Keys', description: 'Guia completo para obter chaves de API das principais plataformas de Inteligência Artificial.', tier: ToolTier.FREE, icon: '🔑', category: ToolCategory.WEB },
+  { id: 'umbra-extrair', name: 'Umbra Extrair', description: 'Extração precisa de transcrições do YouTube via Supadata API.', tier: ToolTier.FREE, icon: '✂️', category: ToolCategory.WEB },
+  { id: 'prompt-vault', name: 'Umbra Prompt Vault', description: 'Salve e organize seus melhores prompts.', tier: ToolTier.FREE, icon: '🔐', category: ToolCategory.WEB },
+  { id: 'idea-forge', name: 'Umbra Idea Forge', description: 'Transforme ideias em prompts poderosos para IA.', tier: ToolTier.FREE, icon: '💡', category: ToolCategory.WEB },
   { id: 'srt', name: 'Ferramentas de Edição', description: 'Conversor SRT, Divisor de Texto e Contador de Palavras para Scripts.', tier: ToolTier.FREE, icon: '📝', category: ToolCategory.WEB },
-  { id: 'deepgram', name: 'Deepgram Tts Dark', description: 'Transforme texto em voz natural com Deepgram API.', tier: ToolTier.PRO, icon: '🔊', category: ToolCategory.WEB },
   { id: 'screenshot', name: 'Tirador de Screenshots', description: 'Extraia screenshots de vídeos com detecção automática.', tier: ToolTier.FREE, icon: '📸', category: ToolCategory.WEB },
   { id: 'tiktok', name: 'Umbra TikTok Downloader', description: 'Baixe vídeos do TikTok sem marca d\'água.', tier: ToolTier.FREE, icon: '📥', category: ToolCategory.WEB },
+  { id: 'umbra-sora', name: 'Umbra SoraDown', description: 'Baixe vídeos do Sora AI em alta qualidade sem marcas d\'água.', tier: ToolTier.FREE, icon: '🎬', category: ToolCategory.WEB },
+  { id: 'deepgram', name: 'Deepgram Tts Dark', description: 'Transforme texto em voz natural com Deepgram API.', tier: ToolTier.PRO, icon: '🔊', category: ToolCategory.WEB },
   { id: 'autotube', name: 'Umbra Autotube', description: 'Crie prompts otimizados para thumbnails usando qualquer IA de imagem, facilitando a criação de visuais atrativos.', tier: ToolTier.PRO, icon: '🎬', category: ToolCategory.WEB },
   { id: 'batch-trans', name: 'Umbra Batch Translator', description: 'Traduza múltiplos textos de uma vez só.', tier: ToolTier.PRO, icon: '🌍', category: ToolCategory.WEB },
-  { id: 'bg-remove', name: 'Umbra Bg Remover', description: 'Remova fundos de imagens automaticamente.', tier: ToolTier.PRO, icon: '🖼️', category: ToolCategory.WEB },
-  { id: 'description-builder', name: 'Umbra Description Builder', description: 'Crie descrições otimizadas para seus vídeos com SEO, Timestamps e Hashtags.', tier: ToolTier.PRO, icon: '📋', category: ToolCategory.WEB },
-  { id: 'idea-forge', name: 'Umbra Idea Forge', description: 'Transforme ideias em prompts poderosos para IA.', tier: ToolTier.FREE, icon: '💡', category: ToolCategory.WEB },
+
+  { id: 'umbra-prompt', name: 'Umbra Prompt', description: 'Geração de prompts Veo 3 via áudio (io.net + Mistral).', tier: ToolTier.FREE, icon: '🎙️', category: ToolCategory.MOTOR_SUPREMO },
+  { id: 'description-builder', name: 'Umbra Description Builder', description: 'Crie descrições otimizadas para seus vídeos com SEO, Timestamps e Hashtags.', tier: ToolTier.PRO, icon: '📋', category: ToolCategory.MOTOR_SUPREMO },
   { id: 'persona', name: 'Umbra Persona', description: 'Crie e gerencie personas consistentes para IA.', tier: ToolTier.PRO, icon: '👤', category: ToolCategory.WEB },
-  { id: 'prompt-vault', name: 'Umbra Prompt Vault', description: 'Salve e organize seus melhores prompts.', tier: ToolTier.FREE, icon: '🔐', category: ToolCategory.WEB },
   { id: 'umbra-search', name: 'Umbra Search', description: 'Busca e Download de Mídia', tier: ToolTier.PRO, icon: '🔍', category: ToolCategory.WEB },
-  { id: 'title-opt', name: 'Umbra Titulo Otimizado', description: 'Otimize títulos para máximo engajamento.', tier: ToolTier.PRO, icon: '✨', category: ToolCategory.WEB },
+  { id: 'title-opt', name: 'Umbra Titulo Otimizado', description: 'Otimize títulos para máximo engajamento.', tier: ToolTier.PRO, icon: '✨', category: ToolCategory.MOTOR_SUPREMO },
   { id: 'voice-forge', name: 'Umbra Voice Forge', description: 'Crie vozes realistas com tecnologia avançada.', tier: ToolTier.PRO, icon: '🎙️', category: ToolCategory.WEB },
   { id: 'tube-finder', name: 'Umbra Tube Finder', description: 'Encontre conteúdos virais e tendências.', tier: ToolTier.PRO, icon: '🔥', category: ToolCategory.WEB },
   { id: 'umbra-script', name: 'Umbra Script', description: 'Sistema v2.0 — Engenharia Reversa. Viral Script Reverse Engineering Engine', tier: ToolTier.PRO, icon: '💎', category: ToolCategory.MOTOR_SUPREMO },
@@ -25,7 +28,10 @@ export const TOOLS: Tool[] = [
   { id: 'umbra-control', name: 'Umbra Control', description: 'Identifica automaticamente quais vídeos faltaram gerar após uma sessão. Separa os prompts pendentes para você regenerar apenas o necessário.', tier: ToolTier.TURBO, icon: '🎛️', category: ToolCategory.TOOLS_2IN1 },
   { id: 'umbra-reverse', name: 'Umbra Reverse', description: 'Analisa vídeos virais', tier: ToolTier.PRO, icon: '↩️', category: ToolCategory.WEB },
   { id: 'umbra-revai', name: 'Umbra Revai Transcrição', description: 'Converta qualquer áudio em texto com IA de última geração via Rev AI.', tier: ToolTier.PRO, icon: '👂', category: ToolCategory.WEB },
-  { id: 'umbra-extrair', name: 'Umbra Extrair', description: 'Extração precisa de transcrições do YouTube via Supadata API.', tier: ToolTier.FREE, icon: '✂️', category: ToolCategory.WEB },
+  { id: 'umbra-image-scout', name: 'Umbra Image Scout', description: 'Busca e download de mídia multi-API com visualização premium.', tier: ToolTier.PRO, icon: '🎨', category: ToolCategory.WEB },
+  { id: 'chatbot', name: 'Umbra Persona', description: 'O mestre na criação de personagens e mundos.', tier: ToolTier.PRO, icon: '👤', category: ToolCategory.CHATBOTS },
+  { id: 'anime-chat', name: 'Anime Forge v3', description: 'Especialista em personagens e prompts de anime.', tier: ToolTier.PRO, icon: '⚡', category: ToolCategory.CHATBOTS },
+  { id: 'anime-creator', name: 'Anime Creator Bot', description: 'Guia interativo para criar seu anime do zero.', tier: ToolTier.PRO, icon: '🎌', category: ToolCategory.CHATBOTS },
 ];
 
 export const PLANS: PricingPlan[] = [
@@ -65,7 +71,7 @@ export const PLANS: PricingPlan[] = [
       'Tube Finder & Reverse',
       'Umbra Script (Motor Supremo)',
       'Umbra Persona',
-      'Autotube & BG Remover'
+      'Autotube'
     ],
     cta: 'ASSINAR PRO',
     ctaLink: 'https://pay.cakto.com.br/3dko6xr_769683',

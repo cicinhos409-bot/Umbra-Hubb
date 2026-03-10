@@ -1,16 +1,16 @@
 
 import React, { useState, useEffect } from 'react';
-import { GoogleGenAI } from "@google/genai";
-import { 
-  Globe, 
-  Languages, 
-  Zap, 
-  Settings, 
-  Key, 
-  Copy, 
-  Download, 
-  FileJson, 
-  FileSpreadsheet, 
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import {
+  Globe,
+  Languages,
+  Zap,
+  Settings,
+  Key,
+  Copy,
+  Download,
+  FileJson,
+  FileSpreadsheet,
   FileText,
   RefreshCw,
   AlertCircle,
@@ -117,10 +117,6 @@ const BatchTranslatorTool: React.FC = () => {
   const [translations, setTranslations] = useState<Record<string, TranslationData>>({});
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Gemini is special - uses app key if user doesn't provide one, as per guidelines for this app context
-  // But strictly following guidelines: "must be obtained exclusively from the environment variable process.env.API_KEY"
-  // So for Gemini option, we will always use the internal key.
-
   const selectGroup = (type: 'popular' | 'european' | 'asian' | 'all' | 'none') => {
     if (type === 'none') {
       setSelectedLangs(new Set());
@@ -153,13 +149,11 @@ const BatchTranslatorTool: React.FC = () => {
     const fullPrompt = `${contextPrompts[context]}\n\nTexto original:\n${text}\n\nResponda APENAS com a tradução, sem explicações ou texto adicional.`;
 
     if (selectedAPI === 'gemini') {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: fullPrompt,
-        config: { temperature: 0.3 }
-      });
-      return response.text.trim();
+      const genAI = new GoogleGenerativeAI(process.env.API_KEY || '');
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const result = await model.generateContent(fullPrompt);
+      const response = await result.response;
+      return response.text().trim();
     } else if (selectedAPI === 'openai') {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -200,7 +194,6 @@ const BatchTranslatorTool: React.FC = () => {
     setTranslations({});
     setProgress(0);
 
-    // Fix: Explicitly type langsToProcess as string[] to avoid unknown type issues
     const langsToProcess: string[] = Array.from(selectedLangs);
     const total = langsToProcess.length;
     let completed = 0;
@@ -208,7 +201,6 @@ const BatchTranslatorTool: React.FC = () => {
     for (const code of langsToProcess) {
       const lang = LANGUAGES.find(l => l.code === code);
       try {
-        // Fix: Explicitly using 'code' as string is now safe as langsToProcess is string[]
         const text = await translateText(inputText, lang?.name || code, contextType);
         setTranslations(prev => {
           const next = { ...prev };
@@ -239,12 +231,10 @@ const BatchTranslatorTool: React.FC = () => {
       mime = 'application/json';
       ext = 'json';
     } else if (format === 'csv') {
-      // Fix for unknown property access on Object.entries by casting to known type
       content = 'Idioma,Codigo,Traducao\n' + (Object.entries(translations) as [string, TranslationData][]).map(([code, d]) => `"${d.language}","${code}","${d.text.replace(/"/g, '""')}"`).join('\n');
       mime = 'text/csv';
       ext = 'csv';
     } else {
-      // Fix for unknown property access on Object.entries by casting to known type
       content = (Object.entries(translations) as [string, TranslationData][]).map(([_, d]) => `=== ${d.language} ===\n${d.text}\n\n`).join('');
     }
 
@@ -282,7 +272,7 @@ const BatchTranslatorTool: React.FC = () => {
             { id: 'claude', name: 'Claude 3.5', color: 'bg-[#cc785c]' },
             { id: 'gemini', name: 'Google Gemini', color: 'bg-[#4285f4]' },
           ].map(api => (
-            <button 
+            <button
               key={api.id}
               onClick={() => setSelectedAPI(api.id as any)}
               className={`p-6 rounded-[24px] border-2 transition-all flex flex-col items-center gap-4 ${selectedAPI === api.id ? 'border-brand-purple bg-brand-purple/5' : 'border-white/5 bg-background-light/50 grayscale hover:grayscale-0'}`}
@@ -297,7 +287,7 @@ const BatchTranslatorTool: React.FC = () => {
 
         {selectedAPI !== 'gemini' && (
           <div className="animate-in slide-in-from-top-2">
-            <input 
+            <input
               type="password"
               placeholder={`Digite sua ${selectedAPI === 'openai' ? 'OpenAI Secret Key' : 'Claude API Key'}...`}
               className="w-full bg-background-deep border border-white/10 rounded-2xl p-5 text-xs font-space text-brand-cyan focus:border-brand-cyan/40 outline-none"
@@ -312,8 +302,8 @@ const BatchTranslatorTool: React.FC = () => {
 
         {selectedAPI === 'gemini' && (
           <div className="p-4 bg-brand-cyan/5 border border-brand-cyan/10 rounded-2xl flex items-center gap-3">
-             <CheckCircle2 className="w-5 h-5 text-brand-cyan" />
-             <p className="text-[10px] text-brand-cyan/70 font-bold uppercase tracking-widest">Usando motor interno da plataforma (Quota incluída)</p>
+            <CheckCircle2 className="w-5 h-5 text-brand-cyan" />
+            <p className="text-[10px] text-brand-cyan/70 font-bold uppercase tracking-widest">Usando motor interno da plataforma (Quota incluída)</p>
           </div>
         )}
       </div>
@@ -332,7 +322,7 @@ const BatchTranslatorTool: React.FC = () => {
               { id: 'general', label: 'Texto Geral' },
               { id: 'marketing', label: 'Marketing' },
             ].map(type => (
-              <button 
+              <button
                 key={type.id}
                 onClick={() => setContextType(type.id)}
                 className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${contextType === type.id ? 'bg-brand-purple border-brand-purple text-white shadow-lg' : 'text-gray-400 hover:text-white hover:bg-white/5 border-transparent'}`}
@@ -351,7 +341,7 @@ const BatchTranslatorTool: React.FC = () => {
             </div>
             <span className="text-[9px] font-black text-gray-700 uppercase tracking-widest">{inputText.length} Caracteres</span>
           </div>
-          <textarea 
+          <textarea
             value={inputText}
             onChange={e => setInputText(e.target.value)}
             placeholder="Cole aqui o prompt, roteiro ou legenda que deseja traduzir..."
@@ -377,7 +367,7 @@ const BatchTranslatorTool: React.FC = () => {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-64 overflow-y-auto p-4 bg-background-deep/50 rounded-[32px] border border-white/5 custom-scrollbar">
             {LANGUAGES.map(lang => (
-              <button 
+              <button
                 key={lang.code}
                 onClick={() => toggleLang(lang.code)}
                 className={`p-3 rounded-xl border text-[10px] font-bold text-left transition-all truncate flex items-center gap-2 ${selectedLangs.has(lang.code) ? 'bg-brand-green/10 border-brand-green text-brand-green' : 'bg-background-light border-white/5 text-gray-600 hover:border-white/20'}`}
@@ -391,11 +381,11 @@ const BatchTranslatorTool: React.FC = () => {
 
         {errorMsg && (
           <div className="p-4 bg-brand-pink/10 border border-brand-pink/20 rounded-2xl text-brand-pink text-xs font-bold uppercase tracking-widest flex items-center gap-3">
-             <AlertCircle className="w-5 h-5" /> {errorMsg}
+            <AlertCircle className="w-5 h-5" /> {errorMsg}
           </div>
         )}
 
-        <button 
+        <button
           onClick={handleTranslateAll}
           disabled={isProcessing}
           className="w-full py-6 bg-gradient-to-r from-brand-cyan via-brand-purple to-brand-pink text-white font-orbitron text-xs font-black tracking-[0.4em] rounded-[24px] shadow-2xl hover:shadow-[0_0_40px_rgba(168,85,247,0.4)] transition-all flex items-center justify-center gap-4 disabled:opacity-30 uppercase active:scale-[0.98]"
@@ -404,22 +394,6 @@ const BatchTranslatorTool: React.FC = () => {
           Disparar Tradução em Lote
         </button>
       </div>
-
-      {/* LOADING OVERLAY */}
-      {isProcessing && (
-        <div className="bg-background-mid border border-brand-cyan/20 rounded-[40px] p-10 shadow-2xl space-y-6 animate-in slide-in-from-bottom-4">
-           <div className="flex justify-between items-center px-2">
-              <div className="flex items-center gap-3">
-                <RefreshCw className="w-5 h-5 text-brand-cyan animate-spin" />
-                <span className="font-orbitron text-[10px] font-black text-brand-cyan uppercase tracking-widest">Processando Fluxo Multi-Língue</span>
-              </div>
-              <span className="font-orbitron text-xs font-black text-white">{progress}%</span>
-           </div>
-           <div className="h-1.5 bg-background-deep rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-brand-cyan to-brand-purple transition-all duration-300" style={{ width: `${progress}%` }} />
-           </div>
-        </div>
-      )}
 
       {/* RESULTS */}
       {Object.keys(translations).length > 0 && (
@@ -434,7 +408,6 @@ const BatchTranslatorTool: React.FC = () => {
               <button onClick={() => exportData('csv')} className="p-3 bg-white/5 border border-white/10 rounded-xl hover:text-brand-green transition-all" title="CSV"><FileSpreadsheet className="w-5 h-5" /></button>
               <button onClick={() => exportData('txt')} className="p-3 bg-white/5 border border-white/10 rounded-xl hover:text-brand-purple transition-all" title="TXT"><FileText className="w-5 h-5" /></button>
               <button onClick={() => {
-                // Fix for unknown property access on Object.entries by casting to known type
                 const all = (Object.entries(translations) as [string, TranslationData][]).map(([_, d]) => `=== ${d.language} ===\n${d.text}\n\n`).join('');
                 navigator.clipboard.writeText(all);
               }} className="px-6 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center gap-2">
@@ -444,24 +417,23 @@ const BatchTranslatorTool: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Fix for unknown property access on Object.entries by casting to known type */}
             {(Object.entries(translations) as [string, TranslationData][]).map(([code, d]) => (
               <div key={code} className={`p-8 bg-background-mid border rounded-[32px] shadow-xl group transition-all hover:border-white/10 ${d.error ? 'border-brand-pink/20' : 'border-white/5'}`}>
-                 <div className="flex justify-between items-center mb-6">
-                    <span className="px-4 py-1.5 bg-background-deep border border-white/5 rounded-full text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                       <div className={`w-1.5 h-1.5 rounded-full ${d.error ? 'bg-brand-pink' : 'bg-brand-green'}`} />
-                       {d.language}
-                    </span>
-                    <button 
-                      onClick={() => { navigator.clipboard.writeText(d.text); }}
-                      className="p-3 bg-white/5 rounded-xl opacity-0 group-hover:opacity-100 hover:text-brand-cyan transition-all"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </button>
-                 </div>
-                 <div className={`text-sm leading-relaxed font-medium ${d.error ? 'text-brand-pink/70 italic' : 'text-gray-400'}`}>
-                    {d.text}
-                 </div>
+                <div className="flex justify-between items-center mb-6">
+                  <span className="px-4 py-1.5 bg-background-deep border border-white/5 rounded-full text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                    <div className={`w-1.5 h-1.5 rounded-full ${d.error ? 'bg-brand-pink' : 'bg-brand-green'}`} />
+                    {d.language}
+                  </span>
+                  <button
+                    onClick={() => { navigator.clipboard.writeText(d.text); }}
+                    className="p-3 bg-white/5 rounded-xl opacity-0 group-hover:opacity-100 hover:text-brand-cyan transition-all"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className={`text-sm leading-relaxed font-medium ${d.error ? 'text-brand-pink/70 italic' : 'text-gray-400'}`}>
+                  {d.text}
+                </div>
               </div>
             ))}
           </div>

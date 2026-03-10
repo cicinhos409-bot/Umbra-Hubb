@@ -1,14 +1,14 @@
 
 import React, { useState } from 'react';
-import { 
-  Music, 
-  Search, 
-  Download, 
-  RefreshCw, 
-  AlertCircle, 
-  CheckCircle2, 
-  Video, 
-  User, 
+import {
+  Music,
+  Search,
+  Download,
+  RefreshCw,
+  AlertCircle,
+  CheckCircle2,
+  Video,
+  User,
   FileText,
   Youtube,
   Heart,
@@ -30,13 +30,14 @@ const TiktokDownloaderTool: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [status, setStatus] = useState<{ type: 'info' | 'success' | 'error' | null, message: string }>({ type: null, message: '' });
   const [videoData, setVideoData] = useState<VideoData | null>(null);
+  const [downloadingUrl, setDownloadingUrl] = useState<string | null>(null);
 
   const handleSearch = async () => {
     if (!url.trim()) {
       setStatus({ type: 'error', message: '❌ Cole o link do TikTok primeiro!' });
       return;
     }
-    
+
     if (!url.includes('tiktok')) {
       setStatus({ type: 'error', message: '❌ Link inválido! Use um link do TikTok' });
       return;
@@ -60,26 +61,41 @@ const TiktokDownloaderTool: React.FC = () => {
     } catch (err: any) {
       console.error(err);
       setStatus({ type: 'error', message: `❌ Erro: ${err.message}. Tente outro link.` });
-      
-      // SnapTik fallback suggestion logic could go here, but keeping it simple for the React tool
     } finally {
       setIsProcessing(false);
     }
   };
 
-  const handleDownload = (videoUrl: string, label: string) => {
-    // Abrir em nova aba
-    window.open(videoUrl, '_blank');
-    
-    // Tentar download direto
-    const link = document.createElement('a');
-    link.href = videoUrl;
-    link.download = `@${videoData?.author?.unique_id || 'umbra'}_tiktok_${Date.now()}.mp4`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    setStatus({ type: 'success', message: `✅ Download (${label}) iniciado! Verifique sua nova aba.` });
+  const handleDownload = async (videoUrl: string, label: string) => {
+    setDownloadingUrl(videoUrl);
+    setStatus({ type: 'info', message: `📥 Baixando (${label})...` });
+
+    try {
+      // Usar proxy ou fetch direto (tikwm urls geralmente permitem CORS ou o navegador lida bem com blobs)
+      const response = await fetch(videoUrl);
+      if (!response.ok) throw new Error('Falha no download');
+
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = `@${videoData?.author?.unique_id || 'umbra'}_tiktok_${Date.now()}.mp4`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Cleanup
+      window.URL.revokeObjectURL(blobUrl);
+      setStatus({ type: 'success', message: `✅ Download (${label}) concluído!` });
+    } catch (err) {
+      console.error('Download error:', err);
+      // Fallback: abrir em nova aba se o blob falhar (ex: CORS)
+      window.open(videoUrl, '_blank');
+      setStatus({ type: 'success', message: `✅ Download (${label}) aberto em nova aba!` });
+    } finally {
+      setDownloadingUrl(null);
+    }
   };
 
   return (
@@ -96,11 +112,11 @@ const TiktokDownloaderTool: React.FC = () => {
 
       <div className="bg-background-mid border border-white/5 rounded-[40px] p-10 shadow-2xl space-y-8 relative overflow-hidden backdrop-blur-xl">
         <div className="absolute top-0 right-0 w-64 h-64 bg-brand-cyan/5 blur-[100px] -z-10" />
-        
+
         <div className="space-y-4">
           <div className="relative">
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={url}
               onChange={e => setUrl(e.target.value)}
               onKeyPress={e => e.key === 'Enter' && !isProcessing && handleSearch()}
@@ -108,8 +124,8 @@ const TiktokDownloaderTool: React.FC = () => {
               className="w-full bg-background-deep border-2 border-white/10 rounded-2xl p-6 text-sm font-bold text-white focus:border-brand-cyan/50 outline-none transition-all placeholder:text-gray-700"
             />
           </div>
-          
-          <button 
+
+          <button
             onClick={handleSearch}
             disabled={isProcessing || !url.trim()}
             className="w-full py-5 bg-gradient-to-r from-brand-cyan via-brand-purple to-brand-pink text-white font-orbitron text-xs font-black tracking-[0.3em] rounded-2xl shadow-xl hover:shadow-[0_0_30px_rgba(0,245,255,0.3)] transition-all disabled:opacity-30 uppercase flex items-center justify-center gap-3 active:scale-95"
@@ -120,13 +136,12 @@ const TiktokDownloaderTool: React.FC = () => {
         </div>
 
         {status.type && (
-          <div className={`p-5 rounded-2xl border flex items-center gap-4 animate-in slide-in-from-top-2 duration-300 ${
-            status.type === 'info' ? 'bg-brand-cyan/5 border-brand-cyan/20 text-brand-cyan' :
+          <div className={`p-5 rounded-2xl border flex items-center gap-4 animate-in slide-in-from-top-2 duration-300 ${status.type === 'info' ? 'bg-brand-cyan/5 border-brand-cyan/20 text-brand-cyan' :
             status.type === 'success' ? 'bg-brand-green/10 border-brand-green/20 text-brand-green' :
-            'bg-brand-pink/10 border-brand-pink/20 text-brand-pink'
-          }`}>
-            {status.type === 'info' ? <RefreshCw className="w-5 h-5 animate-spin" /> : 
-             status.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+              'bg-brand-pink/10 border-brand-pink/20 text-brand-pink'
+            }`}>
+            {status.type === 'info' ? <RefreshCw className="w-5 h-5 animate-spin" /> :
+              status.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
             <span className="text-xs font-bold uppercase tracking-widest">{status.message}</span>
           </div>
         )}
@@ -137,7 +152,7 @@ const TiktokDownloaderTool: React.FC = () => {
               <Video className="w-6 h-6 text-brand-cyan" />
               <h3 className="font-orbitron text-[10px] font-black uppercase text-white tracking-widest">Informações do Vídeo</h3>
             </div>
-            
+
             <div className="space-y-4">
               <div className="flex justify-between items-center py-4 border-b border-white/5">
                 <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest flex items-center gap-2"><User className="w-3 h-3" /> Criador</span>
@@ -151,25 +166,31 @@ const TiktokDownloaderTool: React.FC = () => {
 
             <div className="grid grid-cols-1 gap-3 pt-4">
               {videoData.hdplay && (
-                <button 
+                <button
                   onClick={() => handleDownload(videoData.hdplay!, 'HD')}
-                  className="w-full py-4 bg-gradient-to-r from-brand-cyan to-brand-purple text-background-deep font-black rounded-xl text-[10px] uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2"
+                  disabled={!!downloadingUrl}
+                  className="w-full py-4 bg-gradient-to-r from-brand-cyan to-brand-purple text-background-deep font-black rounded-xl text-[10px] uppercase tracking-widest shadow-xl transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  <Download className="w-4 h-4" /> HD (Sem Marca d'água)
+                  {downloadingUrl === videoData.hdplay ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  HD (Sem Marca d'água)
                 </button>
               )}
-              <button 
+              <button
                 onClick={() => handleDownload(videoData.play, 'Normal')}
-                className="w-full py-4 bg-white/5 border border-white/10 text-white font-black rounded-xl text-[10px] uppercase tracking-widest transition-all hover:bg-white/10 flex items-center justify-center gap-2"
+                disabled={!!downloadingUrl}
+                className="w-full py-4 bg-white/5 border border-white/10 text-white font-black rounded-xl text-[10px] uppercase tracking-widest transition-all hover:bg-white/10 flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                <Download className="w-4 h-4 text-brand-purple" /> Qualidade Normal
+                {downloadingUrl === videoData.play ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 text-brand-purple" />}
+                Qualidade Normal
               </button>
               {videoData.wmplay && (
-                <button 
+                <button
                   onClick={() => handleDownload(videoData.wmplay!, 'Rápido')}
-                  className="w-full py-4 bg-white/5 border border-white/10 text-gray-500 font-black rounded-xl text-[10px] uppercase tracking-widest transition-all hover:text-white flex items-center justify-center gap-2"
+                  disabled={!!downloadingUrl}
+                  className="w-full py-4 bg-white/5 border border-white/10 text-gray-500 font-black rounded-xl text-[10px] uppercase tracking-widest transition-all hover:text-white flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  <Download className="w-4 h-4" /> Download Rápido (Com WM)
+                  {downloadingUrl === videoData.wmplay ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  Download Rápido (Com WM)
                 </button>
               )}
             </div>
@@ -178,8 +199,8 @@ const TiktokDownloaderTool: React.FC = () => {
 
         <div className="bg-brand-cyan/5 border border-brand-cyan/20 rounded-[28px] p-6 space-y-4">
           <div className="flex items-center gap-3">
-             <AlertCircle className="w-4 h-4 text-brand-cyan" />
-             <h4 className="font-orbitron text-[10px] font-black uppercase text-white tracking-widest">Como Usar</h4>
+            <AlertCircle className="w-4 h-4 text-brand-cyan" />
+            <h4 className="font-orbitron text-[10px] font-black uppercase text-white tracking-widest">Como Usar</h4>
           </div>
           <ol className="text-xs text-gray-500 space-y-2 list-decimal ml-4 font-medium">
             <li>Abra o TikTok e copie o link do vídeo</li>

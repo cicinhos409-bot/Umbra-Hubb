@@ -13,7 +13,7 @@ import ScreenshotTool from './ScreenshotTool';
 import TiktokDownloaderTool from './TiktokDownloaderTool';
 import AutotubeTool from './AutotubeTool';
 import BatchTranslatorTool from './BatchTranslatorTool';
-import BgRemoverTool from './BgRemoverTool';
+
 import DescriptionBuilderTool from './DescriptionBuilderTool';
 import IdeaForgeTool from './IdeaForgeTool';
 import PersonaTool from './PersonaTool';
@@ -25,6 +25,14 @@ import UmbraReverseTool from './UmbraReverseTool';
 import UmbraExtrairTool from './UmbraExtrairTool';
 import UmbraRevaiTool from './UmbraRevaiTool';
 import UmbraTubeFinderTool from './UmbraTubeFinderTool';
+import ImageScoutTool from './ImageScoutTool';
+import SoraDownTool from './SoraDownTool';
+import UmbraPromptTool from './UmbraPromptTool';
+import AcademyTool from './AcademyTool';
+import ExtensionsDownloadTool from './ExtensionsDownloadTool';
+import UmbraPersonaChat from './UmbraPersonaChat';
+import UmbraAnimeChat from './UmbraAnimeChat';
+import UmbraAnimeCreatorBot from './UmbraAnimeCreatorBot';
 import {
   LayoutDashboard,
   Search,
@@ -48,9 +56,11 @@ import {
   Menu,
   ChevronLeft,
   X,
-  // Fix: Added missing Zap and Lock icon imports
   Zap,
-  Lock
+  Lock,
+  MessageCircle,
+  Package,
+  FileText
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -72,6 +82,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
     [ToolCategory.MOTOR_SUPREMO]: true,
     [ToolCategory.TOOLS_2IN1]: true,
     [ToolCategory.WEB]: true,
+    [ToolCategory.CHATBOTS]: true,
   });
 
   const toggleCategory = (cat: string) => {
@@ -252,15 +263,33 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
             >
               <User className="w-5 h-5" /> Meu Perfil
             </button>
-            <button className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-gray-400 hover:text-white hover:bg-white/5 font-bold text-sm transition-all">
+            <button
+              onClick={() => { setActiveTab('academy'); if (window.innerWidth < 768) setIsSidebarOpen(false); }}
+              className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all font-bold text-sm ${activeTab === 'academy' ? 'bg-brand-purple text-white shadow-xl shadow-brand-purple/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+            >
               <BookOpen className="w-5 h-5" /> Umbra Academy
             </button>
-          </div>
-
-          <div className="space-y-4">
+            <button
+              onClick={() => { setActiveTab('extensions'); if (window.innerWidth < 768) setIsSidebarOpen(false); }}
+              className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all font-bold text-sm ${activeTab === 'extensions' ? 'bg-brand-purple text-white shadow-xl shadow-brand-purple/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+            >
+              <Package className="w-5 h-5" /> Downloads Extensões
+            </button>
+            {renderToolsList(ToolCategory.CHATBOTS, 'ChatBots')}
+            {renderToolsList(ToolCategory.WEB, 'Arsenal Web')}
             {renderToolsList(ToolCategory.MOTOR_SUPREMO, 'Motor Supremo')}
             {renderToolsList(ToolCategory.TOOLS_2IN1, 'Automação 2 em 1')}
-            {renderToolsList(ToolCategory.WEB, 'Arsenal Web')}
+          </div>
+
+          <div className="mt-10 px-3">
+            <a
+              href="https://chat.whatsapp.com/LHE7HDJUtxMIEqncAs1PvT"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl bg-brand-green/10 text-brand-green border border-brand-green/20 hover:bg-brand-green/20 transition-all font-black text-sm uppercase tracking-widest shadow-lg shadow-brand-green/5 group"
+            >
+              <MessageCircle className="w-5 h-5 group-hover:scale-110 transition-transform" /> Grupo WhatsApp
+            </a>
           </div>
         </div>
 
@@ -303,7 +332,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
 
             <div className="flex flex-col">
               <h2 className="text-base md:text-xl font-black text-white uppercase tracking-tighter truncate max-w-[180px] md:max-w-none">
-                {activeTab === 'home' ? 'Visão Geral' : activeTab === 'profile' ? 'Configurações' : selectedTool?.name}
+                {activeTab === 'home' ? 'Visão Geral' : activeTab === 'profile' ? 'Configurações' : activeTab === 'extensions' ? 'Downloads' : activeTab === 'chatbot' ? 'Umbra Persona Chat' : activeTab === 'anime-chat' ? 'Anime Character Forge' : activeTab === 'anime-creator' ? 'Anime Creator Bot' : selectedTool?.name}
               </h2>
               {activeTab !== 'home' && activeTab !== 'profile' && (
                 <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest hidden md:block">Ferramenta Ativa</span>
@@ -372,8 +401,8 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
                             }
                           }}
                           className={`p-6 border border-white/5 rounded-3xl text-center transition-all group shadow-xl relative overflow-hidden ${locked
-                              ? 'bg-background-light/20 cursor-not-allowed opacity-60'
-                              : 'bg-background-light/50 hover:border-brand-purple/40 hover:bg-background-light'
+                            ? 'bg-background-light/20 cursor-not-allowed opacity-60'
+                            : 'bg-background-light/50 hover:border-brand-purple/40 hover:bg-background-light'
                             }`}
                         >
                           {locked && (
@@ -406,7 +435,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
             {activeTab === 'tiktok' && <TiktokDownloaderTool />}
             {activeTab === 'autotube' && <AutotubeTool />}
             {activeTab === 'batch-trans' && <BatchTranslatorTool />}
-            {activeTab === 'bg-remove' && <BgRemoverTool />}
+
             {activeTab === 'description-builder' && <DescriptionBuilderTool />}
             {activeTab === 'idea-forge' && <IdeaForgeTool />}
             {activeTab === 'persona' && <PersonaTool />}
@@ -421,10 +450,18 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
             {activeTab === 'umbra-extrair' && <UmbraExtrairTool />}
             {activeTab === 'umbra-revai' && <UmbraRevaiTool />}
             {activeTab === 'tube-finder' && <UmbraTubeFinderTool />}
+            {activeTab === 'umbra-image-scout' && <ImageScoutTool />}
+            {activeTab === 'umbra-sora' && <SoraDownTool />}
+            {activeTab === 'umbra-prompt' && <UmbraPromptTool />}
+            {activeTab === 'academy' && <AcademyTool />}
+            {activeTab === 'extensions' && <ExtensionsDownloadTool />}
+            {activeTab === 'chatbot' && <UmbraPersonaChat />}
+            {activeTab === 'anime-chat' && <UmbraAnimeChat />}
+            {activeTab === 'anime-creator' && <UmbraAnimeCreatorBot />}
 
             {/* Tool Loader / Fallback */}
-            {activeTab !== 'home' && activeTab !== 'profile' && !activeTab.includes('home') && selectedTool && (
-              !['meus-canais', 'api-keys', 'srt', 'deepgram', 'screenshot', 'tiktok', 'autotube', 'batch-trans', 'bg-remove', 'description-builder', 'idea-forge', 'persona', 'prompt-vault', 'umbra-search', 'voice-forge', 'title-opt', 'umbra-reverse', 'umbra-script', 'umbra-connect', 'umbra-control', 'umbra-extrair', 'umbra-revai', 'tube-finder'].includes(activeTab) && (
+            {activeTab !== 'home' && activeTab !== 'profile' && activeTab !== 'academy' && activeTab !== 'extensions' && activeTab !== 'chatbot' && activeTab !== 'anime-chat' && !activeTab.includes('home') && selectedTool && (
+              !['meus-canais', 'api-keys', 'srt', 'deepgram', 'screenshot', 'tiktok', 'umbra-sora', 'umbra-prompt', 'autotube', 'batch-trans', 'description-builder', 'idea-forge', 'persona', 'prompt-vault', 'umbra-search', 'voice-forge', 'title-opt', 'umbra-reverse', 'umbra-script', 'umbra-connect', 'umbra-control', 'umbra-extrair', 'umbra-revai', 'tube-finder', 'umbra-image-scout'].includes(activeTab) && (
                 <div className="animate-in fade-in slide-in-from-bottom-8 duration-500">
                   <div className="mb-8 p-12 bg-background-mid border border-white/5 rounded-[56px] shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-brand-purple/5 to-transparent pointer-events-none" />

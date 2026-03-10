@@ -1,11 +1,11 @@
 
 import React, { useState } from 'react';
-import { GoogleGenAI } from "@google/genai";
-import { 
-  Terminal, 
-  Zap, 
-  Copy, 
-  Trash2, 
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import {
+  Terminal,
+  Zap,
+  Copy,
+  Trash2,
   RefreshCw,
   Clock,
   Eye,
@@ -53,7 +53,7 @@ const UmbraScriptTool: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [modelStructure, setModelStructure] = useState<string | null>(null);
   const [resultScript, setResultScript] = useState<string | null>(null);
-  
+
   // Generation Params
   const [minWords, setMinWords] = useState(600);
   const [maxWords, setMaxWords] = useState(1000);
@@ -64,14 +64,15 @@ const UmbraScriptTool: React.FC = () => {
 
   const executeAiCall = async (prompt: string, modelType: 'flash' | 'pro') => {
     if (provider === 'gemini') {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const modelName = modelType === 'flash' ? 'gemini-3-flash-preview' : 'gemini-3-pro-preview';
-      const response = await ai.models.generateContent({
+      const genAI = new GoogleGenerativeAI(process.env.API_KEY || '');
+      const modelName = modelType === 'flash' ? 'gemini-1.5-flash' : 'gemini-1.5-pro';
+      const model = genAI.getGenerativeModel({
         model: modelName,
-        contents: prompt,
-        config: { temperature: modelType === 'flash' ? 0.3 : 0.7 }
+        generationConfig: { temperature: modelType === 'flash' ? 0.3 : 0.7 }
       });
-      return response.text;
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      return response.text();
     } else {
       let endpoint = '';
       let headers: any = { 'Content-Type': 'application/json' };
@@ -111,7 +112,7 @@ const UmbraScriptTool: React.FC = () => {
 
       if (!res.ok) throw new Error(`Erro na API ${provider.toUpperCase()}`);
       const data = await res.json();
-      
+
       if (provider === 'openai' || provider === 'mistral') return data.choices[0].message.content;
       if (provider === 'claude') return data.content[0].text;
       return "";
@@ -121,7 +122,7 @@ const UmbraScriptTool: React.FC = () => {
   const handleAnalyze = async () => {
     if (!scripts[0].trim()) return alert("Insira pelo menos um roteiro para análise.");
     if (provider !== 'gemini' && !userApiKey) return alert(`Por favor, insira sua API Key para ${provider.toUpperCase()}`);
-    
+
     setIsAnalyzing(true);
     setPhase(1);
     setPhaseStatus(['Analisando estruturas...', 'Calculando síntese...', 'Gerando modelo...']);
@@ -129,7 +130,7 @@ const UmbraScriptTool: React.FC = () => {
     try {
       const prompt = `${MASTER_PROMPT}\n\nROTEIROS DE ENTRADA:\n${scripts.filter(s => s.trim()).join('\n---\n')}`;
       const result = await executeAiCall(prompt, 'flash');
-      
+
       setModelStructure(result || "Erro na extração.");
       setPhase(2);
       setPhaseStatus(['Absorção concluída ✓', 'Síntese finalizada ✓', 'Pronto para gerar...']);
@@ -144,9 +145,9 @@ const UmbraScriptTool: React.FC = () => {
   const handleGenerate = async () => {
     if (!modelStructure) return;
     if (provider !== 'gemini' && !userApiKey) return alert(`Por favor, insira sua API Key para ${provider.toUpperCase()}`);
-    
+
     setIsGenerating(true);
-    
+
     const genPrompt = `USANDO O MODELO EXTRAÍDO:
     ${modelStructure}
     
@@ -183,18 +184,18 @@ const UmbraScriptTool: React.FC = () => {
 
   return (
     <div className="font-rajdhani animate-in fade-in duration-700 pb-20 space-y-8">
-      
+
       {/* API CONFIGURATION PANEL */}
       <section className="bg-background-mid border border-white/5 rounded-[40px] p-8 shadow-xl space-y-8 relative overflow-hidden backdrop-blur-xl">
         <div className="absolute top-0 right-0 w-64 h-64 bg-brand-cyan/5 blur-[100px] -z-10" />
-        
+
         <div className="space-y-6">
           <div className="flex items-center gap-3">
             <h3 className="font-bebas text-2xl tracking-widest text-white uppercase flex items-center gap-2">
-               CONFIGURAÇÃO DE API
+              CONFIGURAÇÃO DE API
             </h3>
           </div>
-          
+
           <div className="space-y-4">
             <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
               ⚡ Provedor de IA
@@ -206,14 +207,13 @@ const UmbraScriptTool: React.FC = () => {
                 { id: 'gemini', label: 'Gemini', icon: '💎' },
                 { id: 'mistral', label: 'Mistral', icon: '🌊' }
               ].map((api) => (
-                <button 
+                <button
                   key={api.id}
                   onClick={() => setProvider(api.id as any)}
-                  className={`flex flex-col items-center justify-center gap-2 py-4 rounded-2xl border transition-all ${
-                    provider === api.id 
-                    ? 'bg-brand-cyan/10 border-brand-cyan text-brand-cyan shadow-[0_0_20px_rgba(0,245,255,0.15)]' 
-                    : 'bg-background-deep border-white/5 text-gray-500 hover:text-gray-300 hover:border-white/10'
-                  }`}
+                  className={`flex flex-col items-center justify-center gap-2 py-4 rounded-2xl border transition-all ${provider === api.id
+                      ? 'bg-brand-cyan/10 border-brand-cyan text-brand-cyan shadow-[0_0_20px_rgba(0,245,255,0.15)]'
+                      : 'bg-background-deep border-white/5 text-gray-500 hover:text-gray-300 hover:border-white/10'
+                    }`}
                 >
                   <span className="text-2xl">{api.icon}</span>
                   <span className="text-[10px] font-black uppercase tracking-widest">{api.label}</span>
@@ -234,18 +234,17 @@ const UmbraScriptTool: React.FC = () => {
               )}
             </div>
             <div className="relative group">
-              <input 
+              <input
                 type={showKey ? 'text' : 'password'}
                 value={provider === 'gemini' ? '••••••••••••••••••••••••••••' : userApiKey}
                 disabled={provider === 'gemini'}
                 onChange={e => setUserApiKey(e.target.value)}
-                className={`w-full bg-background-deep border border-white/10 rounded-2xl p-5 text-xs font-space outline-none transition-all pr-14 shadow-inner ${
-                  provider === 'gemini' ? 'text-brand-green/50 border-brand-green/20' : 'text-brand-cyan focus:border-brand-cyan'
-                }`}
+                className={`w-full bg-background-deep border border-white/10 rounded-2xl p-5 text-xs font-space outline-none transition-all pr-14 shadow-inner ${provider === 'gemini' ? 'text-brand-green/50 border-brand-green/20' : 'text-brand-cyan focus:border-brand-cyan'
+                  }`}
                 placeholder={provider === 'gemini' ? 'Configurado pelo Sistema' : "sk-..."}
               />
               {provider !== 'gemini' && (
-                <button 
+                <button
                   onClick={() => setShowKey(!showKey)}
                   className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white transition-colors"
                 >
@@ -260,15 +259,14 @@ const UmbraScriptTool: React.FC = () => {
       {/* Phases Header */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[1, 2, 3].map((num) => (
-          <div key={num} className={`p-4 rounded-xl border transition-all ${
-            phase >= num ? 'bg-brand-purple/10 border-brand-purple/40 shadow-lg shadow-brand-purple/5' : 'bg-white/5 border-white/5 opacity-40'
-          }`}>
+          <div key={num} className={`p-4 rounded-xl border transition-all ${phase >= num ? 'bg-brand-purple/10 border-brand-purple/40 shadow-lg shadow-brand-purple/5' : 'bg-white/5 border-white/5 opacity-40'
+            }`}>
             <div className="font-bebas text-xs tracking-[0.2em] text-brand-cyan/70 mb-1">FASE 0{num}</div>
             <div className="font-orbitron text-[10px] font-black text-white mb-2 uppercase tracking-wider">
               {num === 1 ? 'ABSORÇÃO TOTAL' : num === 2 ? 'SÍNTESE UNIFICADORA' : 'MODELO GERADOR'}
             </div>
             <div className={`text-[10px] font-space tracking-wider ${phase >= num ? 'text-brand-cyan' : 'text-gray-600'}`}>
-              {phaseStatus[num-1]}
+              {phaseStatus[num - 1]}
             </div>
           </div>
         ))}
@@ -279,29 +277,29 @@ const UmbraScriptTool: React.FC = () => {
         {scripts.map((s, idx) => (
           <div key={idx} className="relative group flex flex-col">
             <div className="flex items-center justify-between mb-3 px-2">
-              <span className="font-space text-[10px] text-brand-purple font-black tracking-[0.2em] uppercase">⬡ Roteiro 0{idx+1}</span>
+              <span className="font-space text-[10px] text-brand-purple font-black tracking-[0.2em] uppercase">⬡ Roteiro 0{idx + 1}</span>
               <button onClick={() => {
                 const newScripts = [...scripts];
                 newScripts[idx] = '';
                 setScripts(newScripts);
               }} className="text-[10px] text-gray-600 hover:text-brand-pink font-bold transition-colors">LIMPAR</button>
             </div>
-            <textarea 
+            <textarea
               value={s}
               onChange={(e) => {
                 const newScripts = [...scripts];
                 newScripts[idx] = e.target.value;
                 setScripts(newScripts);
               }}
-              placeholder={`Cole aqui o roteiro viral 0${idx+1}...`}
+              placeholder={`Cole aqui o roteiro viral 0${idx + 1}...`}
               className="w-full h-72 bg-background-mid border border-white/5 rounded-[24px] p-6 text-xs font-space leading-relaxed focus:outline-none focus:border-brand-purple/40 focus:bg-background-light transition-all resize-none shadow-inner"
             />
-            <div className="absolute bottom-6 right-8 font-bebas text-6xl text-white/[0.03] pointer-events-none group-hover:text-white/[0.06] transition-colors">0{idx+1}</div>
+            <div className="absolute bottom-6 right-8 font-bebas text-6xl text-white/[0.03] pointer-events-none group-hover:text-white/[0.06] transition-colors">0{idx + 1}</div>
           </div>
         ))}
       </div>
 
-      <button 
+      <button
         onClick={handleAnalyze}
         disabled={isAnalyzing || !scripts[0]}
         className="group relative w-full py-5 bg-gradient-to-r from-brand-purple/20 to-brand-cyan/20 border border-brand-purple/50 hover:border-brand-cyan text-white font-orbitron text-xs font-black tracking-[0.3em] rounded-2xl shadow-xl transition-all active:scale-[0.99] disabled:opacity-30 overflow-hidden"
@@ -318,8 +316,8 @@ const UmbraScriptTool: React.FC = () => {
         <div className="animate-in slide-in-from-bottom-4 duration-500">
           <div className="bg-background-mid border border-white/10 rounded-[32px] p-8 relative overflow-hidden">
             <div className="flex items-center gap-3 mb-6">
-               <Cpu className="w-5 h-5 text-brand-pink" />
-               <h3 className="font-orbitron text-[10px] font-black text-white tracking-[0.2em] uppercase">Modelo Gerador Unificado v2.0</h3>
+              <Cpu className="w-5 h-5 text-brand-pink" />
+              <h3 className="font-orbitron text-[10px] font-black text-white tracking-[0.2em] uppercase">Modelo Gerador Unificado v2.0</h3>
             </div>
             <div className="bg-background-deep/50 border border-white/5 rounded-2xl p-6 font-space text-[11px] leading-loose text-brand-cyan/70 whitespace-pre-wrap shadow-inner max-h-80 overflow-y-auto custom-scrollbar">
               {modelStructure}
@@ -337,7 +335,7 @@ const UmbraScriptTool: React.FC = () => {
       {modelStructure && (
         <div className="bg-background-mid border border-white/10 rounded-[40px] p-10 shadow-2xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-brand-green/5 blur-[100px] -z-10" />
-          
+
           <div className="flex items-center gap-3 mb-10">
             <div className="w-12 h-12 bg-brand-green/10 rounded-2xl flex items-center justify-center text-brand-green shadow-lg shadow-brand-green/10">
               <Zap className="w-6 h-6" />
@@ -400,18 +398,18 @@ const UmbraScriptTool: React.FC = () => {
 
           <div className="space-y-4 mb-10">
             <label className="block font-space text-[10px] text-gray-500 font-bold uppercase tracking-widest">✍️ Título do Vídeo</label>
-            <textarea 
-              value={videoTitle} 
-              onChange={e => setVideoTitle(e.target.value)} 
-              placeholder="Ex: A queda secreta do Império Romano..." 
-              className="w-full bg-background-light border border-white/5 rounded-2xl px-6 py-4 text-sm text-white font-medium h-24 resize-none focus:border-brand-green/50 outline-none transition-all" 
+            <textarea
+              value={videoTitle}
+              onChange={e => setVideoTitle(e.target.value)}
+              placeholder="Ex: A queda secreta do Império Romano..."
+              className="w-full bg-background-light border border-white/5 rounded-2xl px-6 py-4 text-sm text-white font-medium h-24 resize-none focus:border-brand-green/50 outline-none transition-all"
             />
           </div>
 
-          <button 
+          <button
             onClick={handleGenerate}
             disabled={isGenerating || !videoTitle}
-            className="w-full py-5 bg-brand-green text-background-deep font-orbitron text-xs font-black tracking-[0.4em] rounded-2xl hover:bg-brand-green/90 hover:shadow-2xl hover:shadow-brand-green/20 transition-all disabled:opacity-30 flex items-center justify-center gap-3 uppercase"
+            className="w-full py-5 bg-brand-green text-background-deep font-orbitron text-xs font-black tracking-[0.4em] rounded-2xl hover:bg-brand-green/90 hover:shadow-2xl hover:shadow-brand-green/10 transition-all disabled:opacity-30 flex items-center justify-center gap-3 uppercase"
           >
             {isGenerating ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5" />}
             DISPARAR GERAÇÃO SUPREMA
@@ -424,7 +422,7 @@ const UmbraScriptTool: React.FC = () => {
         <div className="animate-in fade-in slide-in-from-bottom-8 duration-700">
           <div className="bg-background-mid border border-white/10 rounded-[48px] p-12 relative overflow-hidden shadow-2xl">
             <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-brand-cyan via-brand-purple to-brand-pink" />
-            
+
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-10">
               <div className="flex items-center gap-4">
                 <div className="px-5 py-2.5 bg-brand-cyan/10 border border-brand-cyan/20 rounded-xl text-[10px] font-space font-black text-brand-cyan tracking-widest uppercase">
@@ -443,7 +441,7 @@ const UmbraScriptTool: React.FC = () => {
                 </button>
               </div>
             </div>
-            
+
             <div className="text-gray-200 text-lg leading-[1.9] font-rajdhani whitespace-pre-wrap max-h-[700px] overflow-y-auto custom-scrollbar pr-4">
               {resultScript}
             </div>

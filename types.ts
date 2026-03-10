@@ -9,7 +9,8 @@ export enum ToolCategory {
   WEB = 'WEB',
   MOTOR_SUPREMO = 'MOTOR SUPREMO',
   TOOLS_2IN1 = '2 EM 1',
-  SPECIAL = 'SPECIAL'
+  SPECIAL = 'SPECIAL',
+  CHATBOTS = 'CHATBOTS'
 }
 
 export interface Tool {
