@@ -12,7 +12,7 @@ export const TOOLS: Tool[] = [
   { id: 'screenshot', name: 'Tirador de Screenshots', description: 'Extraia screenshots de vídeos com detecção automática.', tier: ToolTier.FREE, icon: '📸', category: ToolCategory.WEB },
   { id: 'tiktok', name: 'Umbra TikTok Downloader', description: 'Baixe vídeos do TikTok sem marca d\'água.', tier: ToolTier.FREE, icon: '📥', category: ToolCategory.WEB },
   { id: 'umbra-sora', name: 'Umbra SoraDown', description: 'Baixe vídeos do Sora AI em alta qualidade sem marcas d\'água.', tier: ToolTier.FREE, icon: '🎬', category: ToolCategory.WEB },
-  { id: 'deepgram', name: 'Deepgram Tts Dark', description: 'Transforme texto em voz natural com Deepgram API.', tier: ToolTier.PRO, icon: '🔊', category: ToolCategory.WEB },
+
 
 
 
@@ -21,7 +21,7 @@ export const TOOLS: Tool[] = [
   { id: 'persona', name: 'Umbra Persona', description: 'Crie e gerencie personas consistentes para IA.', tier: ToolTier.PRO, icon: '👤', category: ToolCategory.WEB },
   { id: 'umbra-search', name: 'Umbra Search', description: 'Busca e Download de Mídia', tier: ToolTier.PRO, icon: '🔍', category: ToolCategory.WEB },
   { id: 'title-opt', name: 'Umbra Titulo Otimizado', description: 'Otimize títulos para máximo engajamento.', tier: ToolTier.PRO, icon: '✨', category: ToolCategory.MOTOR_SUPREMO },
-  { id: 'voice-forge', name: 'Umbra Voice Forge', description: 'Crie vozes realistas com tecnologia avançada.', tier: ToolTier.PRO, icon: '🎙️', category: ToolCategory.WEB },
+
 
   { id: 'umbra-script', name: 'Umbra Script', description: 'Sistema v2.0 — Engenharia Reversa. Viral Script Reverse Engineering Engine', tier: ToolTier.PRO, icon: '💎', category: ToolCategory.MOTOR_SUPREMO },
   { id: 'umbra-connect', name: 'Umbra Connect', description: 'Sincroniza automaticamente seu áudio com os prompts de vídeo, gerando instruções perfeitamente alinhadas com cada momento da narração.', tier: ToolTier.TURBO, icon: '⚙️', category: ToolCategory.TOOLS_2IN1 },
@@ -60,9 +60,8 @@ export const PLANS: PricingPlan[] = [
       'Tudo do Básico +',
       'Umbra Search & Mídia',
       'Título Otimizado',
-      'Voice Forge (Vozes Reais)',
       'Description Builder',
-      'Deepgram TTS Dark',
+
       'RevAI (Limite maior)',
       'Tube Finder & Reverse',
       'Umbra Script (Motor Supremo)',

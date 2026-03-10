@@ -8,7 +8,7 @@ import UmbraControlTool from './UmbraControlTool';
 import MeusCanaisTool from './MeusCanaisTool';
 
 import EditingToolsTool from './EditingToolsTool';
-import DeepgramTtsTool from './DeepgramTtsTool';
+
 import ScreenshotTool from './ScreenshotTool';
 import TiktokDownloaderTool from './TiktokDownloaderTool';
 
@@ -19,7 +19,7 @@ import DescriptionBuilderTool from './DescriptionBuilderTool';
 import PersonaTool from './PersonaTool';
 import PromptVaultTool from './PromptVaultTool';
 import UmbraSearchTool from './UmbraSearchTool';
-import VoiceForgeTool from './VoiceForgeTool';
+
 import TitleOptimizerTool from './TitleOptimizerTool';
 import UmbraYouTubeHub from './UmbraYouTubeHub';
 import ImageScoutTool from './ImageScoutTool';
@@ -425,7 +425,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
             {activeTab === 'meus-canais' && <MeusCanaisTool />}
 
             {activeTab === 'srt' && <EditingToolsTool />}
-            {activeTab === 'deepgram' && <DeepgramTtsTool />}
+
             {activeTab === 'screenshot' && <ScreenshotTool />}
             {activeTab === 'tiktok' && <TiktokDownloaderTool />}
 
@@ -436,7 +436,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
             {activeTab === 'persona' && <PersonaTool />}
             {activeTab === 'prompt-vault' && <PromptVaultTool />}
             {activeTab === 'umbra-search' && <UmbraSearchTool />}
-            {activeTab === 'voice-forge' && <VoiceForgeTool />}
+
             {activeTab === 'title-opt' && <TitleOptimizerTool />}
             {activeTab === 'youtube-hub' && <UmbraYouTubeHub />}
             {activeTab === 'umbra-image-scout' && <ImageScoutTool />}
@@ -452,7 +452,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
 
             {/* Tool Loader / Fallback */}
             {activeTab !== 'home' && activeTab !== 'profile' && activeTab !== 'academy' && activeTab !== 'extensions' && !activeTab.includes('home') && selectedTool && (
-              !['meus-canais', 'srt', 'deepgram', 'screenshot', 'tiktok', 'umbra-sora', 'umbra-prompt', 'description-builder', 'persona', 'prompt-vault', 'umbra-search', 'voice-forge', 'title-opt', 'youtube-hub', 'umbra-script', 'umbra-connect', 'umbra-control', 'umbra-image-scout'].includes(activeTab) && (
+              !['meus-canais', 'srt', 'screenshot', 'tiktok', 'umbra-sora', 'umbra-prompt', 'description-builder', 'persona', 'prompt-vault', 'umbra-search', 'title-opt', 'youtube-hub', 'umbra-script', 'umbra-connect', 'umbra-control', 'umbra-image-scout'].includes(activeTab) && (
                 <div className="animate-in fade-in slide-in-from-bottom-8 duration-500">
                   <div className="mb-8 p-12 bg-background-mid border border-white/5 rounded-[56px] shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-brand-purple/5 to-transparent pointer-events-none" />
