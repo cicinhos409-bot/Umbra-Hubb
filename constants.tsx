@@ -14,7 +14,7 @@ export const TOOLS: Tool[] = [
   { id: 'umbra-sora', name: 'Umbra SoraDown', description: 'Baixe vídeos do Sora AI em alta qualidade sem marcas d\'água.', tier: ToolTier.FREE, icon: '🎬', category: ToolCategory.WEB },
   { id: 'deepgram', name: 'Deepgram Tts Dark', description: 'Transforme texto em voz natural com Deepgram API.', tier: ToolTier.PRO, icon: '🔊', category: ToolCategory.WEB },
   { id: 'autotube', name: 'Umbra Autotube', description: 'Crie prompts otimizados para thumbnails usando qualquer IA de imagem, facilitando a criação de visuais atrativos.', tier: ToolTier.PRO, icon: '🎬', category: ToolCategory.WEB },
-  { id: 'batch-trans', name: 'Umbra Batch Translator', description: 'Traduza múltiplos textos de uma vez só.', tier: ToolTier.PRO, icon: '🌍', category: ToolCategory.WEB },
+
 
   { id: 'umbra-prompt', name: 'Umbra Prompt', description: 'Geração de prompts Veo 3 via áudio (io.net + Mistral).', tier: ToolTier.FREE, icon: '🎙️', category: ToolCategory.MOTOR_SUPREMO },
   { id: 'description-builder', name: 'Umbra Description Builder', description: 'Crie descrições otimizadas para seus vídeos com SEO, Timestamps e Hashtags.', tier: ToolTier.PRO, icon: '📋', category: ToolCategory.MOTOR_SUPREMO },
@@ -67,7 +67,6 @@ export const PLANS: PricingPlan[] = [
       'Description Builder',
       'Deepgram TTS Dark',
       'RevAI (Limite maior)',
-      'Batch Translator',
       'Tube Finder & Reverse',
       'Umbra Script (Motor Supremo)',
       'Umbra Persona',

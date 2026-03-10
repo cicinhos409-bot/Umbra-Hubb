@@ -12,7 +12,7 @@ import DeepgramTtsTool from './DeepgramTtsTool';
 import ScreenshotTool from './ScreenshotTool';
 import TiktokDownloaderTool from './TiktokDownloaderTool';
 import AutotubeTool from './AutotubeTool';
-import BatchTranslatorTool from './BatchTranslatorTool';
+
 
 import DescriptionBuilderTool from './DescriptionBuilderTool';
 import IdeaForgeTool from './IdeaForgeTool';
@@ -434,7 +434,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
             {activeTab === 'screenshot' && <ScreenshotTool />}
             {activeTab === 'tiktok' && <TiktokDownloaderTool />}
             {activeTab === 'autotube' && <AutotubeTool />}
-            {activeTab === 'batch-trans' && <BatchTranslatorTool />}
+
 
             {activeTab === 'description-builder' && <DescriptionBuilderTool />}
             {activeTab === 'idea-forge' && <IdeaForgeTool />}
@@ -461,7 +461,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
 
             {/* Tool Loader / Fallback */}
             {activeTab !== 'home' && activeTab !== 'profile' && activeTab !== 'academy' && activeTab !== 'extensions' && activeTab !== 'chatbot' && activeTab !== 'anime-chat' && !activeTab.includes('home') && selectedTool && (
-              !['meus-canais', 'api-keys', 'srt', 'deepgram', 'screenshot', 'tiktok', 'umbra-sora', 'umbra-prompt', 'autotube', 'batch-trans', 'description-builder', 'idea-forge', 'persona', 'prompt-vault', 'umbra-search', 'voice-forge', 'title-opt', 'umbra-reverse', 'umbra-script', 'umbra-connect', 'umbra-control', 'umbra-extrair', 'umbra-revai', 'tube-finder', 'umbra-image-scout'].includes(activeTab) && (
+              !['meus-canais', 'api-keys', 'srt', 'deepgram', 'screenshot', 'tiktok', 'umbra-sora', 'umbra-prompt', 'autotube', 'description-builder', 'idea-forge', 'persona', 'prompt-vault', 'umbra-search', 'voice-forge', 'title-opt', 'umbra-reverse', 'umbra-script', 'umbra-connect', 'umbra-control', 'umbra-extrair', 'umbra-revai', 'tube-finder', 'umbra-image-scout'].includes(activeTab) && (
                 <div className="animate-in fade-in slide-in-from-bottom-8 duration-500">
                   <div className="mb-8 p-12 bg-background-mid border border-white/5 rounded-[56px] shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-brand-purple/5 to-transparent pointer-events-none" />
