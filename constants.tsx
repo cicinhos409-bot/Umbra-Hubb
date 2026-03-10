@@ -18,7 +18,7 @@ export const TOOLS: Tool[] = [
 
   { id: 'umbra-prompt', name: 'Umbra Prompt', description: 'Geração de prompts Veo 3 via áudio (io.net + Mistral).', tier: ToolTier.FREE, icon: '🎙️', category: ToolCategory.MOTOR_SUPREMO },
   { id: 'description-builder', name: 'Umbra Description Builder', description: 'Crie descrições otimizadas para seus vídeos com SEO, Timestamps e Hashtags.', tier: ToolTier.PRO, icon: '📋', category: ToolCategory.MOTOR_SUPREMO },
-  { id: 'persona', name: 'Umbra Persona', description: 'Crie e gerencie personas consistentes para IA.', tier: ToolTier.PRO, icon: '👤', category: ToolCategory.WEB },
+
   { id: 'umbra-search', name: 'Umbra Search', description: 'Busca e Download de Mídia', tier: ToolTier.PRO, icon: '🔍', category: ToolCategory.WEB },
   { id: 'title-opt', name: 'Umbra Titulo Otimizado', description: 'Otimize títulos para máximo engajamento.', tier: ToolTier.PRO, icon: '✨', category: ToolCategory.MOTOR_SUPREMO },
 
@@ -64,8 +64,7 @@ export const PLANS: PricingPlan[] = [
 
       'RevAI (Limite maior)',
       'Tube Finder & Reverse',
-      'Umbra Script (Motor Supremo)',
-      'Umbra Persona'
+      'Umbra Script (Motor Supremo)'
     ],
     cta: 'ASSINAR PRO',
     ctaLink: 'https://pay.cakto.com.br/3dko6xr_769683',

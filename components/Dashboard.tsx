@@ -16,7 +16,7 @@ import TiktokDownloaderTool from './TiktokDownloaderTool';
 
 import DescriptionBuilderTool from './DescriptionBuilderTool';
 
-import PersonaTool from './PersonaTool';
+
 import PromptVaultTool from './PromptVaultTool';
 import UmbraSearchTool from './UmbraSearchTool';
 
@@ -433,7 +433,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
 
             {activeTab === 'description-builder' && <DescriptionBuilderTool />}
 
-            {activeTab === 'persona' && <PersonaTool />}
+
             {activeTab === 'prompt-vault' && <PromptVaultTool />}
             {activeTab === 'umbra-search' && <UmbraSearchTool />}
 
@@ -452,7 +452,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
 
             {/* Tool Loader / Fallback */}
             {activeTab !== 'home' && activeTab !== 'profile' && activeTab !== 'academy' && activeTab !== 'extensions' && !activeTab.includes('home') && selectedTool && (
-              !['meus-canais', 'srt', 'screenshot', 'tiktok', 'umbra-sora', 'umbra-prompt', 'description-builder', 'persona', 'prompt-vault', 'umbra-search', 'title-opt', 'youtube-hub', 'umbra-script', 'umbra-connect', 'umbra-control', 'umbra-image-scout'].includes(activeTab) && (
+              !['meus-canais', 'srt', 'screenshot', 'tiktok', 'umbra-sora', 'umbra-prompt', 'description-builder', 'prompt-vault', 'umbra-search', 'title-opt', 'youtube-hub', 'umbra-script', 'umbra-connect', 'umbra-control', 'umbra-image-scout'].includes(activeTab) && (
                 <div className="animate-in fade-in slide-in-from-bottom-8 duration-500">
                   <div className="mb-8 p-12 bg-background-mid border border-white/5 rounded-[56px] shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-brand-purple/5 to-transparent pointer-events-none" />
