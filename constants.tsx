@@ -15,14 +15,8 @@ export const TOOLS: Tool[] = [
 
 
 
-  { id: 'umbra-prompt', name: 'Umbra Prompt', description: 'Geração de prompts Veo 3 via áudio (io.net + Mistral).', tier: ToolTier.FREE, icon: '🎙️', category: ToolCategory.MOTOR_SUPREMO },
-  { id: 'description-builder', name: 'Umbra Description Builder', description: 'Crie descrições otimizadas para seus vídeos com SEO, Timestamps e Hashtags.', tier: ToolTier.PRO, icon: '📋', category: ToolCategory.MOTOR_SUPREMO },
-
   { id: 'umbra-search', name: 'Umbra Search', description: 'Busca e Download de Mídia', tier: ToolTier.PRO, icon: '🔍', category: ToolCategory.WEB },
-  { id: 'title-opt', name: 'Umbra Titulo Otimizado', description: 'Otimize títulos para máximo engajamento.', tier: ToolTier.PRO, icon: '✨', category: ToolCategory.MOTOR_SUPREMO },
-
-
-  { id: 'umbra-script', name: 'Umbra Script', description: 'Sistema v2.0 — Engenharia Reversa. Viral Script Reverse Engineering Engine', tier: ToolTier.PRO, icon: '💎', category: ToolCategory.MOTOR_SUPREMO },
+  { id: 'motor-hub', name: 'Motor Supremo', description: 'Prompt Veo 3, Script Reverso, Título Otimizado e Description Builder — tudo em um só lugar.', tier: ToolTier.FREE, icon: '💎', category: ToolCategory.MOTOR_SUPREMO },
   { id: 'umbra-connect', name: 'Umbra Connect', description: 'Sincroniza automaticamente seu áudio com os prompts de vídeo, gerando instruções perfeitamente alinhadas com cada momento da narração.', tier: ToolTier.TURBO, icon: '⚙️', category: ToolCategory.TOOLS_2IN1 },
   { id: 'umbra-control', name: 'Umbra Control', description: 'Identifica automaticamente quais vídeos faltaram gerar após uma sessão. Separa os prompts pendentes para você regenerar apenas o necessário.', tier: ToolTier.TURBO, icon: '🎛️', category: ToolCategory.TOOLS_2IN1 },
 
@@ -58,12 +52,7 @@ export const PLANS: PricingPlan[] = [
     features: [
       'Tudo do Básico +',
       'Umbra Search & Mídia',
-      'Título Otimizado',
-      'Description Builder',
-
-      'RevAI (Limite maior)',
-      'Tube Finder & Reverse',
-      'Umbra Script (Motor Supremo)'
+      'Motor Supremo'
     ],
     cta: 'ASSINAR PRO',
     ctaLink: 'https://pay.cakto.com.br/3dko6xr_769683',

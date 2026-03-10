@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { TOOLS } from '../constants';
 import { ToolTier, ToolCategory, Tool } from '../types';
-import UmbraScriptTool from './UmbraScriptTool';
+
 import UmbraConnectTool from './UmbraConnectTool';
 import UmbraControlTool from './UmbraControlTool';
 import MeusCanaisTool from './MeusCanaisTool';
@@ -14,17 +14,17 @@ import UmbraDownloaderHub from './UmbraDownloaderHub';
 
 
 
-import DescriptionBuilderTool from './DescriptionBuilderTool';
+
 
 
 import PromptVaultTool from './PromptVaultTool';
 import UmbraSearchTool from './UmbraSearchTool';
 
-import TitleOptimizerTool from './TitleOptimizerTool';
+import UmbraMotorHub from './UmbraMotorHub';
 import UmbraYouTubeHub from './UmbraYouTubeHub';
 import ImageScoutTool from './ImageScoutTool';
 
-import UmbraPromptTool from './UmbraPromptTool';
+
 import AcademyTool from './AcademyTool';
 import ExtensionsDownloadTool from './ExtensionsDownloadTool';
 
@@ -431,28 +431,25 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
 
 
 
-            {activeTab === 'description-builder' && <DescriptionBuilderTool />}
+
 
 
             {activeTab === 'prompt-vault' && <PromptVaultTool />}
             {activeTab === 'umbra-search' && <UmbraSearchTool />}
 
-            {activeTab === 'title-opt' && <TitleOptimizerTool />}
-            {activeTab === 'youtube-hub' && <UmbraYouTubeHub />}
-            {activeTab === 'umbra-image-scout' && <ImageScoutTool />}
-
-            {activeTab === 'umbra-prompt' && <UmbraPromptTool />}
+            {activeTab === 'motor-hub' && <UmbraMotorHub />}
             {activeTab === 'academy' && <AcademyTool />}
             {activeTab === 'extensions' && <ExtensionsDownloadTool />}
 
 
-            {activeTab === 'umbra-script' && <UmbraScriptTool />}
+            {activeTab === 'youtube-hub' && <UmbraYouTubeHub />}
+            {activeTab === 'umbra-image-scout' && <ImageScoutTool />}
             {activeTab === 'umbra-connect' && <UmbraConnectTool />}
             {activeTab === 'umbra-control' && <UmbraControlTool />}
 
             {/* Tool Loader / Fallback */}
             {activeTab !== 'home' && activeTab !== 'profile' && activeTab !== 'academy' && activeTab !== 'extensions' && !activeTab.includes('home') && selectedTool && (
-              !['meus-canais', 'srt', 'screenshot', 'downloader-hub', 'umbra-prompt', 'description-builder', 'prompt-vault', 'umbra-search', 'title-opt', 'youtube-hub', 'umbra-script', 'umbra-connect', 'umbra-control', 'umbra-image-scout'].includes(activeTab) && (
+              !['meus-canais', 'srt', 'screenshot', 'downloader-hub', 'motor-hub', 'prompt-vault', 'umbra-search', 'youtube-hub', 'umbra-connect', 'umbra-control', 'umbra-image-scout'].includes(activeTab) && (
                 <div className="animate-in fade-in slide-in-from-bottom-8 duration-500">
                   <div className="mb-8 p-12 bg-background-mid border border-white/5 rounded-[56px] shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-brand-purple/5 to-transparent pointer-events-none" />
