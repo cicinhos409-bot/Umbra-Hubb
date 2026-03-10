@@ -6,16 +6,16 @@ import UmbraScriptTool from './UmbraScriptTool';
 import UmbraConnectTool from './UmbraConnectTool';
 import UmbraControlTool from './UmbraControlTool';
 import MeusCanaisTool from './MeusCanaisTool';
-import ApiKeysTool from './ApiKeysTool';
+
 import EditingToolsTool from './EditingToolsTool';
 import DeepgramTtsTool from './DeepgramTtsTool';
 import ScreenshotTool from './ScreenshotTool';
 import TiktokDownloaderTool from './TiktokDownloaderTool';
-import AutotubeTool from './AutotubeTool';
+
 
 
 import DescriptionBuilderTool from './DescriptionBuilderTool';
-import IdeaForgeTool from './IdeaForgeTool';
+
 import PersonaTool from './PersonaTool';
 import PromptVaultTool from './PromptVaultTool';
 import UmbraSearchTool from './UmbraSearchTool';
@@ -23,16 +23,14 @@ import VoiceForgeTool from './VoiceForgeTool';
 import TitleOptimizerTool from './TitleOptimizerTool';
 import UmbraReverseTool from './UmbraReverseTool';
 import UmbraExtrairTool from './UmbraExtrairTool';
-import UmbraRevaiTool from './UmbraRevaiTool';
+
 import UmbraTubeFinderTool from './UmbraTubeFinderTool';
 import ImageScoutTool from './ImageScoutTool';
 import SoraDownTool from './SoraDownTool';
 import UmbraPromptTool from './UmbraPromptTool';
 import AcademyTool from './AcademyTool';
 import ExtensionsDownloadTool from './ExtensionsDownloadTool';
-import UmbraPersonaChat from './UmbraPersonaChat';
-import UmbraAnimeChat from './UmbraAnimeChat';
-import UmbraAnimeCreatorBot from './UmbraAnimeCreatorBot';
+
 import {
   LayoutDashboard,
   Search,
@@ -332,7 +330,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
 
             <div className="flex flex-col">
               <h2 className="text-base md:text-xl font-black text-white uppercase tracking-tighter truncate max-w-[180px] md:max-w-none">
-                {activeTab === 'home' ? 'Visão Geral' : activeTab === 'profile' ? 'Configurações' : activeTab === 'extensions' ? 'Downloads' : activeTab === 'chatbot' ? 'Umbra Persona Chat' : activeTab === 'anime-chat' ? 'Anime Character Forge' : activeTab === 'anime-creator' ? 'Anime Creator Bot' : selectedTool?.name}
+                {activeTab === 'home' ? 'Visão Geral' : activeTab === 'profile' ? 'Configurações' : activeTab === 'extensions' ? 'Downloads' : selectedTool?.name}
               </h2>
               {activeTab !== 'home' && activeTab !== 'profile' && (
                 <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest hidden md:block">Ferramenta Ativa</span>
@@ -428,16 +426,16 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
 
             {/* Tools Rendering */}
             {activeTab === 'meus-canais' && <MeusCanaisTool />}
-            {activeTab === 'api-keys' && <ApiKeysTool />}
+
             {activeTab === 'srt' && <EditingToolsTool />}
             {activeTab === 'deepgram' && <DeepgramTtsTool />}
             {activeTab === 'screenshot' && <ScreenshotTool />}
             {activeTab === 'tiktok' && <TiktokDownloaderTool />}
-            {activeTab === 'autotube' && <AutotubeTool />}
+
 
 
             {activeTab === 'description-builder' && <DescriptionBuilderTool />}
-            {activeTab === 'idea-forge' && <IdeaForgeTool />}
+
             {activeTab === 'persona' && <PersonaTool />}
             {activeTab === 'prompt-vault' && <PromptVaultTool />}
             {activeTab === 'umbra-search' && <UmbraSearchTool />}
@@ -448,20 +446,18 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
             {activeTab === 'umbra-connect' && <UmbraConnectTool />}
             {activeTab === 'umbra-control' && <UmbraControlTool />}
             {activeTab === 'umbra-extrair' && <UmbraExtrairTool />}
-            {activeTab === 'umbra-revai' && <UmbraRevaiTool />}
+
             {activeTab === 'tube-finder' && <UmbraTubeFinderTool />}
             {activeTab === 'umbra-image-scout' && <ImageScoutTool />}
             {activeTab === 'umbra-sora' && <SoraDownTool />}
             {activeTab === 'umbra-prompt' && <UmbraPromptTool />}
             {activeTab === 'academy' && <AcademyTool />}
             {activeTab === 'extensions' && <ExtensionsDownloadTool />}
-            {activeTab === 'chatbot' && <UmbraPersonaChat />}
-            {activeTab === 'anime-chat' && <UmbraAnimeChat />}
-            {activeTab === 'anime-creator' && <UmbraAnimeCreatorBot />}
+
 
             {/* Tool Loader / Fallback */}
-            {activeTab !== 'home' && activeTab !== 'profile' && activeTab !== 'academy' && activeTab !== 'extensions' && activeTab !== 'chatbot' && activeTab !== 'anime-chat' && !activeTab.includes('home') && selectedTool && (
-              !['meus-canais', 'api-keys', 'srt', 'deepgram', 'screenshot', 'tiktok', 'umbra-sora', 'umbra-prompt', 'autotube', 'description-builder', 'idea-forge', 'persona', 'prompt-vault', 'umbra-search', 'voice-forge', 'title-opt', 'umbra-reverse', 'umbra-script', 'umbra-connect', 'umbra-control', 'umbra-extrair', 'umbra-revai', 'tube-finder', 'umbra-image-scout'].includes(activeTab) && (
+            {activeTab !== 'home' && activeTab !== 'profile' && activeTab !== 'academy' && activeTab !== 'extensions' && !activeTab.includes('home') && selectedTool && (
+              !['meus-canais', 'srt', 'deepgram', 'screenshot', 'tiktok', 'umbra-sora', 'umbra-prompt', 'description-builder', 'persona', 'prompt-vault', 'umbra-search', 'voice-forge', 'title-opt', 'umbra-reverse', 'umbra-script', 'umbra-connect', 'umbra-control', 'umbra-extrair', 'tube-finder', 'umbra-image-scout'].includes(activeTab) && (
                 <div className="animate-in fade-in slide-in-from-bottom-8 duration-500">
                   <div className="mb-8 p-12 bg-background-mid border border-white/5 rounded-[56px] shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-brand-purple/5 to-transparent pointer-events-none" />
