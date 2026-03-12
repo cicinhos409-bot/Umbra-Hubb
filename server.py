@@ -88,29 +88,33 @@ def facebook():
 @app.route('/api/pinterest', methods=['GET'])
 def download():
     url = request.args.get('download')
-    filename = request.args.get('filename', 'pinterest.mp4')
+    filename = request.args.get('filename', 'video.mp4')
     if not url:
         return 'URL não fornecida', 400
 
+    import tempfile, os, glob
+
     with tempfile.TemporaryDirectory() as tmpdir:
-        output_path = os.path.join(tmpdir, 'video.mp4')
+        output_template = os.path.join(tmpdir, 'video.%(ext)s')
         
         result = subprocess.run(
-            ['yt-dlp', '-o', output_path,
-             '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-             '--merge-output-format', 'mp4',
-             '--no-playlist', url],
-            capture_output=True, text=True, timeout=60
+            [
+                'yt-dlp',
+                '-o', output_template,
+                '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best',
+                '--merge-output-format', 'mp4',
+                '--no-playlist',
+                url
+            ],
+            capture_output=True, text=True, timeout=120
         )
-        
-        if result.returncode != 0:
-            return jsonify({'error': 'Falha ao baixar vídeo'}), 500
 
-        if not os.path.exists(output_path):
-            files = os.listdir(tmpdir)
-            if not files:
-                return jsonify({'error': 'Arquivo não encontrado'}), 500
-            output_path = os.path.join(tmpdir, files[0])
+        # Pega qualquer arquivo que foi gerado na pasta
+        files = glob.glob(os.path.join(tmpdir, '*'))
+        if not files:
+            return jsonify({'error': 'Arquivo não gerado. ' + result.stderr}), 500
+
+        output_path = files[0]
 
         return send_file(
             output_path,
