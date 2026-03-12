@@ -25,6 +25,7 @@ import UmbraAudiosTool from './UmbraAudiosTool';
 
 import AcademyTool from './AcademyTool';
 import ExtensionsDownloadTool from './ExtensionsDownloadTool';
+import LicensesTool from './LicensesTool';
 
 import {
   LayoutDashboard,
@@ -53,12 +54,14 @@ import {
   Lock,
   MessageCircle,
   Package,
-  FileText
+  FileText,
+  Key
 } from 'lucide-react';
 
 interface DashboardProps {
   userName: string;
   userTier: ToolTier;
+  userEmail: string;
   onLogout: () => void;
 }
 
@@ -68,8 +71,16 @@ const TIER_LEVELS = {
   [ToolTier.TURBO]: 2,
 };
 
-const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) => {
-  const [activeTab, setActiveTab] = useState<string>('home');
+const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, onLogout }) => {
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    return localStorage.getItem('umbra_active_tab') || 'home';
+  });
+
+  // Persistir a aba ativa no localStorage
+  React.useEffect(() => {
+    localStorage.setItem('umbra_active_tab', activeTab);
+  }, [activeTab]);
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
     [ToolCategory.MOTOR_SUPREMO]: true,
@@ -268,6 +279,12 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
             >
               <Package className="w-5 h-5" /> Downloads Extensões
             </button>
+            <button
+              onClick={() => { setActiveTab('licenses'); if (window.innerWidth < 768) setIsSidebarOpen(false); }}
+              className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all font-bold text-sm ${activeTab === 'licenses' ? 'bg-brand-purple text-white shadow-xl shadow-brand-purple/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+            >
+              <Key className="w-5 h-5" /> Minhas Licenças
+            </button>
             {renderToolsList(ToolCategory.CHATBOTS, 'ChatBots')}
             {renderToolsList(ToolCategory.WEB, 'Arsenal Web')}
             {renderToolsList(ToolCategory.MOTOR_SUPREMO, 'Motor Supremo')}
@@ -325,7 +342,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
 
             <div className="flex flex-col">
               <h2 className="text-base md:text-xl font-black text-white uppercase tracking-tighter truncate max-w-[180px] md:max-w-none">
-                {activeTab === 'home' ? 'Visão Geral' : activeTab === 'profile' ? 'Configurações' : activeTab === 'extensions' ? 'Downloads' : selectedTool?.name}
+                {activeTab === 'home' ? 'Visão Geral' : activeTab === 'profile' ? 'Configurações' : activeTab === 'extensions' ? 'Downloads' : activeTab === 'licenses' ? 'Licenças' : selectedTool?.name}
               </h2>
               {activeTab !== 'home' && activeTab !== 'profile' && (
                 <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest hidden md:block">Ferramenta Ativa</span>
@@ -347,8 +364,8 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
         </header>
 
         {/* Scrollable Content Viewport */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10">
-          <div className="max-w-7xl mx-auto w-full">
+        <div className={`flex-1 overflow-y-auto custom-scrollbar ${activeTab === 'umbra-edit' ? 'p-2 md:p-4' : 'p-6 md:p-10'}`}>
+          <div className={`${activeTab === 'umbra-edit' ? 'max-w-none' : 'max-w-7xl'} mx-auto w-full h-full flex flex-col`}>
             {activeTab === 'home' && (
               <div className="animate-in fade-in slide-in-from-bottom-6 duration-700 space-y-12">
                 <div className="space-y-2">
@@ -357,23 +374,48 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                  <div className="p-10 bg-background-mid border border-white/5 rounded-[48px] shadow-2xl hover:border-brand-cyan/20 transition-all relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-brand-cyan/5 -mr-16 -mt-16 rounded-full blur-3xl group-hover:bg-brand-cyan/10 transition-all" />
-                    <div className="w-14 h-14 bg-brand-cyan/10 rounded-2xl flex items-center justify-center text-brand-cyan mb-8 shadow-xl"><Youtube className="w-7 h-7" /></div>
-                    <h3 className="text-2xl font-black mb-3">3 Canais Ativos</h3>
-                    <p className="text-gray-500 font-medium leading-relaxed">Monitorando crescimento orgânico e automação de roteiros.</p>
-                  </div>
+                  {/* Dynamic Status Card */}
                   <div className="p-10 bg-background-mid border border-white/5 rounded-[48px] shadow-2xl hover:border-brand-purple/20 transition-all relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-brand-purple/5 -mr-16 -mt-16 rounded-full blur-3xl group-hover:bg-brand-purple/10 transition-all" />
-                    <div className="w-14 h-14 bg-brand-purple/10 rounded-2xl flex items-center justify-center text-brand-purple mb-8 shadow-xl"><Sparkles className="w-7 h-7" /></div>
-                    <h3 className="text-2xl font-black mb-3">Créditos Ilimitados</h3>
-                    <p className="text-gray-500 font-medium leading-relaxed">Sua assinatura Turbo garante acesso prioritário a todos os motores.</p>
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-8 shadow-xl ${userTier === ToolTier.TURBO ? 'bg-brand-pink/10 text-brand-pink' :
+                      userTier === ToolTier.PRO ? 'bg-brand-purple/10 text-brand-purple' : 'bg-gray-500/10 text-gray-500'
+                      }`}>
+                      <Zap className="w-7 h-7 fill-current" />
+                    </div>
+                    <h3 className="text-2xl font-black mb-1 uppercase tracking-tighter">
+                      Plano <span className={userTier === ToolTier.TURBO ? 'text-brand-pink' : userTier === ToolTier.PRO ? 'text-brand-purple' : 'text-gray-500'}>{userTier}</span>
+                    </h3>
+                    <p className="text-gray-500 font-medium leading-relaxed mb-6">
+                      {userTier === ToolTier.TURBO ? 'Você tem acesso total e prioritário.' : 'Faça upgrade para liberar o Motor Supremo.'}
+                    </p>
+                    {userTier !== ToolTier.TURBO && (
+                      <button
+                        onClick={() => setActiveTab('profile')}
+                        className="text-[10px] font-black uppercase tracking-widest text-brand-purple flex items-center gap-2 group/btn"
+                      >
+                        Ver Detalhes <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                      </button>
+                    )}
                   </div>
+
+                  {/* Quick Navigation Card */}
+                  <div onClick={() => setActiveTab('meus-canais')} className="p-10 bg-background-mid border border-white/5 rounded-[48px] shadow-2xl hover:border-brand-cyan/20 transition-all relative overflow-hidden group cursor-pointer">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-brand-cyan/5 -mr-16 -mt-16 rounded-full blur-3xl group-hover:bg-brand-cyan/10 transition-all" />
+                    <div className="w-14 h-14 bg-brand-cyan/10 rounded-2xl flex items-center justify-center text-brand-cyan mb-8 shadow-xl">
+                      <Youtube className="w-7 h-7" />
+                    </div>
+                    <h3 className="text-2xl font-black mb-3 uppercase tracking-tighter">Meus Canais</h3>
+                    <p className="text-gray-500 font-medium leading-relaxed">Gerencie seus canais Dark e monitore o crescimento em tempo real.</p>
+                  </div>
+
+                  {/* Insight / Trends Card */}
                   <div className="p-10 bg-gradient-to-br from-brand-purple to-brand-pink border border-white/10 rounded-[48px] text-white shadow-2xl shadow-brand-purple/20 hover:scale-[1.02] transition-all relative overflow-hidden group">
                     <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-white mb-8 shadow-inner"><TrendingUp className="w-7 h-7" /></div>
-                    <h3 className="text-2xl font-black mb-3">Tendência: História</h3>
-                    <p className="text-white/80 font-bold leading-relaxed italic">Documentários de IA estão em alta no BR e EUA esta semana.</p>
+                    <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-white mb-8 shadow-inner">
+                      <TrendingUp className="w-7 h-7" />
+                    </div>
+                    <h3 className="text-2xl font-black mb-3 uppercase tracking-tighter">Insight do Dia</h3>
+                    <p className="text-white/80 font-bold leading-relaxed italic">"Documentários com vozes neurais profundas estão com 4x mais retenção."</p>
                   </div>
                 </div>
 
@@ -436,15 +478,17 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, onLogout }) =
 
             {activeTab === 'motor-hub' && <UmbraMotorHub />}
             {activeTab === 'academy' && <AcademyTool />}
-            {activeTab === 'extensions' && <ExtensionsDownloadTool />}
+            {activeTab === 'extensions' && <ExtensionsDownloadTool userTier={userTier} />}
+            {activeTab === 'licenses' && <LicensesTool userTier={userTier} userEmail={userEmail} />}
 
             {activeTab === 'youtube-hub' && <UmbraYouTubeHub />}
             {activeTab === 'turbo-hub' && <UmbraTurboHub />}
-            {activeTab === 'umbra-audios' && <UmbraAudiosTool />}
+            {activeTab === 'umbra-audios' && <UmbraAudiosTool userTier={userTier} />}
+            {activeTab === 'prompt-vault' && <PromptVaultTool />}
 
             {/* Tool Loader / Fallback */}
             {activeTab !== 'home' && activeTab !== 'profile' && activeTab !== 'academy' && activeTab !== 'extensions' && !activeTab.includes('home') && selectedTool && (
-              !['meus-canais', 'srt', 'screenshot', 'downloader-hub', 'motor-hub', 'prompt-vault', 'media-hub', 'youtube-hub', 'turbo-hub', 'umbra-audios'].includes(activeTab) && (
+              !['meus-canais', 'srt', 'screenshot', 'downloader-hub', 'motor-hub', 'prompt-vault', 'media-hub', 'youtube-hub', 'turbo-hub', 'umbra-audios', 'umbra-edit'].includes(activeTab) && (
                 <div className="animate-in fade-in slide-in-from-bottom-8 duration-500">
                   <div className="mb-8 p-12 bg-background-mid border border-white/5 rounded-[56px] shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-brand-purple/5 to-transparent pointer-events-none" />
