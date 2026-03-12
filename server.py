@@ -1,7 +1,6 @@
-# Sync with Railway - 12/03/2026
-from flask import Flask, request, jsonify, Response
+from flask import Flask, request, jsonify, Response, send_file
 from flask_cors import CORS
-import subprocess, json, requests
+import subprocess, json, requests, tempfile, os
 
 app = Flask(__name__)
 CORS(app)
@@ -51,22 +50,29 @@ def download():
     if not url:
         return 'URL não fornecida', 400
 
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        'Referer': 'https://www.pinterest.com/',
-    }
+    with tempfile.TemporaryDirectory() as tmpdir:
+        output_path = os.path.join(tmpdir, 'video.mp4')
+        
+        result = subprocess.run(
+            ['yt-dlp', '-o', output_path, '--no-playlist', url],
+            capture_output=True, text=True, timeout=60
+        )
+        
+        if result.returncode != 0:
+            return jsonify({'error': 'Falha ao baixar vídeo'}), 500
 
-    r = requests.get(url, stream=True, headers=headers, allow_redirects=True, timeout=60)
-    
-    response_headers = {
-        'Content-Disposition': f'attachment; filename="{filename}"',
-        'Content-Type': r.headers.get('Content-Type', 'video/mp4'),
-    }
-    
-    if 'Content-Length' in r.headers:
-        response_headers['Content-Length'] = r.headers['Content-Length']
+        if not os.path.exists(output_path):
+            files = os.listdir(tmpdir)
+            if not files:
+                return jsonify({'error': 'Arquivo não encontrado'}), 500
+            output_path = os.path.join(tmpdir, files[0])
 
-    return Response(r.iter_content(chunk_size=65536), headers=response_headers, status=r.status_code)
+        return send_file(
+            output_path,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='video/mp4'
+        )
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000)
