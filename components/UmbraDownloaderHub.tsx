@@ -3,9 +3,13 @@ import React, { useState } from 'react';
 import { Download, Film } from 'lucide-react';
 import TiktokDownloaderTool from './TiktokDownloaderTool';
 import SoraDownTool from './SoraDownTool';
+import PinterestDownloaderTool from './PinterestDownloaderTool';
+import FacebookDownloaderTool from './FacebookDownloaderTool';
 
 const TABS = [
     { id: 'tiktok', label: 'TikTok Downloader', icon: Download, color: 'from-pink-500 to-red-500' },
+    { id: 'pinterest', label: 'Pinterest Down', icon: Download, color: 'from-red-600 to-red-500' },
+    { id: 'facebook', label: 'Facebook Down', icon: Download, color: 'from-blue-700 to-blue-600' },
     { id: 'sora', label: 'Sora AI Down', icon: Film, color: 'from-brand-cyan to-blue-500' },
 ] as const;
 
@@ -40,6 +44,8 @@ const UmbraDownloaderHub: React.FC = () => {
             {/* Tab Content */}
             <div className="animate-in fade-in duration-300">
                 {activeTab === 'tiktok' && <TiktokDownloaderTool />}
+                {activeTab === 'pinterest' && <PinterestDownloaderTool />}
+                {activeTab === 'facebook' && <FacebookDownloaderTool />}
                 {activeTab === 'sora' && <SoraDownTool />}
             </div>
         </div>
