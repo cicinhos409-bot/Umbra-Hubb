@@ -92,7 +92,10 @@ def download():
         output_path = os.path.join(tmpdir, 'video.mp4')
         
         result = subprocess.run(
-            ['yt-dlp', '-o', output_path, '--no-playlist', url],
+            ['yt-dlp', '-o', output_path,
+             '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+             '--merge-output-format', 'mp4',
+             '--no-playlist', url],
             capture_output=True, text=True, timeout=60
         )
         
