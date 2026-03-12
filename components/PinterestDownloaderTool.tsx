@@ -76,7 +76,7 @@ const PinterestDownloaderTool: React.FC = () => {
     const getDownloadUrl = (item: MediaItem) => {
         const ext = data?.type === 'video' ? 'mp4' : 'jpg';
         const base = PINTEREST_API_URL || '';
-        return `${base}/api/pinterest?download=${encodeURIComponent(item.url)}&filename=pinterest_${item.label}_${data?.pinId}.${ext}`;
+        return `${base}/api/download?url=${encodeURIComponent(url)}&filename=pinterest_${item.label}_${data?.pinId}.${ext}&height=${item.height}`;
     };
 
     return (

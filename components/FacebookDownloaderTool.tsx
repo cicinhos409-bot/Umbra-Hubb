@@ -73,7 +73,7 @@ const FacebookDownloaderTool: React.FC = () => {
 
     const getDownloadUrl = (item: MediaItem) => {
         const ext = 'mp4';
-        return `${API_BASE_URL}/api/pinterest?download=${encodeURIComponent(item.url)}&filename=facebook_${item.label}_${data?.pinId}.${ext}`;
+        return `${API_BASE_URL}/api/download?url=${encodeURIComponent(url)}&filename=facebook_${item.label}_${data?.pinId}.${ext}&height=${item.height}`;
     };
 
     return (
