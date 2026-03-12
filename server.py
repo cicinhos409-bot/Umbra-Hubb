@@ -12,7 +12,9 @@ def pinterest():
         return jsonify({'error': 'URL não fornecida'}), 400
 
     result = subprocess.run(
-        ['yt-dlp', '--dump-json', '--no-playlist', url],
+        ['yt-dlp', '--dump-json', '--no-playlist',
+         '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+         url],
         capture_output=True, text=True, timeout=30
     )
 
@@ -50,7 +52,9 @@ def facebook():
         return jsonify({'error': 'URL não fornecida'}), 400
 
     result = subprocess.run(
-        ['yt-dlp', '--dump-json', '--no-playlist', url],
+        ['yt-dlp', '--dump-json', '--no-playlist',
+         '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+         url],
         capture_output=True, text=True, timeout=30
     )
 
