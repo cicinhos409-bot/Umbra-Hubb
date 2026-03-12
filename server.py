@@ -51,12 +51,22 @@ def download():
     if not url:
         return 'URL não fornecida', 400
 
-    r = requests.get(url, stream=True, headers={'Referer': 'https://www.pinterest.com/'})
     headers = {
-        'Content-Disposition': f'attachment; filename="{filename}"',
-        'Content-Type': r.headers.get('Content-Type', 'video/mp4')
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Referer': 'https://www.pinterest.com/',
     }
-    return Response(r.iter_content(chunk_size=8192), headers=headers)
+
+    r = requests.get(url, stream=True, headers=headers, allow_redirects=True, timeout=60)
+    
+    response_headers = {
+        'Content-Disposition': f'attachment; filename="{filename}"',
+        'Content-Type': r.headers.get('Content-Type', 'video/mp4'),
+    }
+    
+    if 'Content-Length' in r.headers:
+        response_headers['Content-Length'] = r.headers['Content-Length']
+
+    return Response(r.iter_content(chunk_size=65536), headers=response_headers, status=r.status_code)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000)
