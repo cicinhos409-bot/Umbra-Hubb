@@ -15,6 +15,10 @@ const UmbraTTSGenerator: React.FC<UmbraTTSProps> = ({ userTier }) => {
     const [voice, setVoice] = useState('2EiwWnXFnvU5JabPnv8nP');
     const [format, setFormat] = useState('mp3');
     const [speed, setSpeed] = useState(1.0);
+    const [stability, setStability] = useState(0.5);
+    const [similarity, setSimilarity] = useState(0.75);
+    const [styleExag, setStyleExag] = useState(0);
+    const [speakerBoost, setSpeakerBoost] = useState(true);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [currentAudio, setCurrentAudio] = useState<string | null>(null);
@@ -97,6 +101,10 @@ const UmbraTTSGenerator: React.FC<UmbraTTSProps> = ({ userTier }) => {
                 model: 'elevenlabs',
                 response_format: format,
                 speed: String(speed),
+                stability: String(stability),
+                similarity_boost: String(similarity),
+                style: String(styleExag),
+                use_speaker_boost: String(speakerBoost),
                 key: POLLINATIONS_KEY,
             });
 
@@ -254,20 +262,24 @@ const UmbraTTSGenerator: React.FC<UmbraTTSProps> = ({ userTier }) => {
                             >
                                 <div className="flex items-center justify-between w-full">
                                     <span className="text-[10px] font-black uppercase tracking-tight">{v.label}</span>
-                                    <span
-                                        onClick={e => {
+                                    <button
+                                        type="button"
+                                        onClick={async (e) => {
                                             e.stopPropagation();
-                                            const sampleText = 'Hello, this is a preview of my voice.';
-                                            const p = new URLSearchParams({ voice: v.id, model: 'elevenlabs', key: POLLINATIONS_KEY });
-                                            fetch(`https://gen.pollinations.ai/audio/${encodeURIComponent(sampleText)}?${p}`)
-                                                .then(r => r.blob())
-                                                .then(b => new Audio(URL.createObjectURL(b)).play())
-                                                .catch(() => {});
+                                            try {
+                                                const sampleText = 'Hello, this is a preview of my voice.';
+                                                const p = new URLSearchParams({ voice: v.id, model: 'elevenlabs', key: POLLINATIONS_KEY });
+                                                const res = await fetch(`https://gen.pollinations.ai/audio/${encodeURIComponent(sampleText)}?${p}`);
+                                                if (!res.ok) return;
+                                                const blob = await res.blob();
+                                                const audio = new Audio(URL.createObjectURL(blob));
+                                                audio.play();
+                                            } catch {}
                                         }}
-                                        className="p-1 rounded-lg bg-white/5 hover:bg-brand-cyan/20 transition-all cursor-pointer"
+                                        className="p-1 rounded-lg bg-white/5 hover:bg-brand-cyan/20 transition-all"
                                     >
                                         <Volume2 className="w-3 h-3" />
-                                    </span>
+                                    </button>
                                 </div>
                                 <span className="text-[8px] text-gray-600 leading-tight">{v.style}</span>
                             </button>
@@ -331,6 +343,72 @@ const UmbraTTSGenerator: React.FC<UmbraTTSProps> = ({ userTier }) => {
                             <span>1.0x Normal</span>
                             <span>2.0x Rápido</span>
                         </div>
+                    </div>
+                </div>
+
+                {/* Controles Avançados ElevenLabs */}
+                <div className="space-y-4">
+                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">
+                        Controles Avançados
+                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 bg-background-deep/50 border border-white/5 rounded-2xl">
+                        <div className="space-y-2">
+                            <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest flex justify-between">
+                                <span>Estabilidade</span>
+                                <span className="text-brand-cyan">{Math.round(stability * 100)}%</span>
+                            </label>
+                            <input
+                                type="range" min="0" max="1" step="0.05" value={stability}
+                                onChange={e => setStability(parseFloat(e.target.value))}
+                                disabled={loading} className="w-full accent-brand-cyan"
+                            />
+                            <div className="flex justify-between text-[7px] text-gray-600">
+                                <span>Variável</span><span>Estável</span>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest flex justify-between">
+                                <span>Similaridade</span>
+                                <span className="text-brand-cyan">{Math.round(similarity * 100)}%</span>
+                            </label>
+                            <input
+                                type="range" min="0" max="1" step="0.05" value={similarity}
+                                onChange={e => setSimilarity(parseFloat(e.target.value))}
+                                disabled={loading} className="w-full accent-brand-cyan"
+                            />
+                            <div className="flex justify-between text-[7px] text-gray-600">
+                                <span>Baixa</span><span>Alta</span>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest flex justify-between">
+                                <span>Estilo</span>
+                                <span className="text-brand-cyan">{Math.round(styleExag * 100)}%</span>
+                            </label>
+                            <input
+                                type="range" min="0" max="1" step="0.05" value={styleExag}
+                                onChange={e => setStyleExag(parseFloat(e.target.value))}
+                                disabled={loading} className="w-full accent-brand-cyan"
+                            />
+                            <div className="flex justify-between text-[7px] text-gray-600">
+                                <span>Neutro</span><span>Expressivo</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-3 ml-2">
+                        <button
+                            type="button"
+                            onClick={() => setSpeakerBoost(!speakerBoost)}
+                            disabled={loading}
+                            className={`w-10 h-6 rounded-full transition-all relative ${
+                                speakerBoost ? 'bg-brand-cyan' : 'bg-white/10'
+                            }`}
+                        >
+                            <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-all ${
+                                speakerBoost ? 'left-5' : 'left-1'
+                            }`} />
+                        </button>
+                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Speaker Boost</span>
                     </div>
                 </div>
 
