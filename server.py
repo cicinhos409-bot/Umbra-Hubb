@@ -290,29 +290,23 @@ def proxy_image():
         return 'URL não fornecida', 400
     
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
     }
     
-    # Tenta até 3 vezes com delay crescente se necessário
-    for attempt in range(3):
-        try:
-            response = requests.get(url, timeout=55, headers=headers)
-            if response.status_code == 200 and len(response.content) > 1000:
-                return Response(
-                    response.content,
-                    mimetype=response.headers.get('Content-Type', 'image/jpeg'),
-                    headers={
-                        "Cache-Control": "public, max-age=3600",
-                        "Access-Control-Allow-Origin": "*"
-                    }
-                )
-            time.sleep(5)
-        except Exception as e:
-            if attempt == 2:
-                return jsonify({'error': str(e)}), 500
-            time.sleep(5)
-    
-    return jsonify({'error': 'Pollinations não respondeu após 3 tentativas'}), 504
+    try:
+        # Timeout curto — só verifica se a imagem está pronta
+        response = requests.get(url, timeout=25, headers=headers)
+        if response.status_code == 200 and len(response.content) > 1000:
+            return Response(
+                response.content,
+                mimetype=response.headers.get('Content-Type', 'image/jpeg'),
+                headers={"Cache-Control": "public, max-age=3600", "Access-Control-Allow-Origin": "*"}
+            )
+        return jsonify({'error': 'not_ready'}), 202  # Still generating
+    except requests.Timeout:
+        return jsonify({'error': 'not_ready'}), 202
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000)

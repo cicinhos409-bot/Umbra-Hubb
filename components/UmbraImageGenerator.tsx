@@ -102,13 +102,31 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
                 const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=flux`;
                 const proxyUrl = `${API_BASE_URL}/api/proxy-image?url=${encodeURIComponent(pollinationsUrl)}`;
 
-                // ✅ Faz fetch direto — o backend já aguarda a imagem estar pronta
-                const res = await fetch(proxyUrl);
-                if (!res.ok) {
-                    throw new Error('Erro ao gerar imagem. O servidor demorou muito ou falhou. Tente novamente.');
+                // Polling: tenta a cada 8s por até 3 minutos
+                let blob: Blob | null = null;
+                const maxAttempts = 22;
+                
+                for (let attempt = 0; attempt < maxAttempts; attempt++) {
+                    await new Promise(resolve => setTimeout(resolve, attempt === 0 ? 3000 : 8000));
+                    
+                    try {
+                        const res = await fetch(proxyUrl);
+                        
+                        if (res.status === 202) continue; // Ainda gerando, tenta de novo
+                        
+                        if (res.ok) {
+                            blob = await res.blob();
+                            if (blob.size > 1000) break; // Imagem válida recebida!
+                        }
+                    } catch {
+                        continue; // Ignora erros de rede e tenta de novo
+                    }
                 }
                 
-                const blob = await res.blob();
+                if (!blob || blob.size <= 1000) {
+                    throw new Error('O Pollinations demorou muito. Tente novamente.');
+                }
+                
                 imageUrl = URL.createObjectURL(blob);
 
             } else {
