@@ -41,6 +41,7 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
     const [negativePrompt, setNegativePrompt] = useState('');
     const [aspectRatio, setAspectRatio] = useState('1:1');
     const [engine, setEngine] = useState<'pollinations' | 'dalle3'>('pollinations');
+    const [pollinationsModel, setPollinationsModel] = useState('flux');
     const [style, setStyle] = useState('cinematic');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -76,6 +77,18 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
         { id: '9:16', icon: Smartphone, label: 'Mobile/Shorts', size: '1024x1792' },
         { id: '4:3', icon: Grid, label: 'Classic', size: '1024x768' },
     ];
+    
+    const pollinationsModels = [
+        { id: 'flux', label: 'Flux Schnell' },
+        { id: 'flux-2-dev', label: 'FLUX.2 Dev' },
+        { id: 'dirtberry', label: 'Dirtberry' },
+        { id: 'zimage', label: 'Z-Image Turbo' },
+        { id: 'imagen-4', label: 'Imagen 4' },
+        { id: 'grok-imagine', label: 'Grok Imagine' },
+        { id: 'klein', label: 'FLUX.2 Klein 4B' },
+        { id: 'gptimage', label: 'GPT Image 1 Mini' },
+        { id: 'dirtberry-pro', label: 'Dirtberry Pro' },
+    ];
 
     const generateImage = async () => {
         if (!prompt) {
@@ -101,7 +114,7 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
                 
                 // ✅ Novo endpoint oficial gen.pollinations.ai
                 const params = new URLSearchParams({
-                    model: 'flux',
+                    model: pollinationsModel,
                     width,
                     height,
                     seed: String(seed),
@@ -313,6 +326,25 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
                                 {engine === 'dalle3' && <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand-purple to-brand-pink" />}
                             </button>
                         </div>
+
+                        {engine === 'pollinations' && (
+                            <div className="mt-8 space-y-4 animate-in fade-in slide-in-from-top-4 duration-500">
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2 flex items-center gap-2">
+                                    <Layers className="w-3 h-3 text-brand-cyan" /> Selecionar Motor (Free Tier)
+                                </label>
+                                <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
+                                    {pollinationsModels.map(m => (
+                                        <button
+                                            key={m.id}
+                                            onClick={() => setPollinationsModel(m.id)}
+                                            className={`p-3 rounded-xl border text-[9px] font-black uppercase tracking-tight transition-all ${pollinationsModel === m.id ? 'bg-brand-cyan/20 border-brand-cyan text-white' : 'bg-background-deep border-white/5 text-gray-500 hover:border-white/10'}`}
+                                        >
+                                            {m.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         <button 
                             onClick={generateImage} 
