@@ -1,6 +1,3 @@
-
-
-
 const API_BASE_URL = 'https://umbra-hubb-production.up.railway.app';
 
 interface UmbraImageGeneratorProps {
