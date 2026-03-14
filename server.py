@@ -5,6 +5,21 @@ import subprocess, json, requests, tempfile, os
 app = Flask(__name__)
 CORS(app)
 
+def convert_cookies_to_netscape(raw_cookies: str) -> str:
+    """Converte cookies no formato header HTTP para Netscape"""
+    if raw_cookies.startswith('# Netscape HTTP Cookie File'):
+        return raw_cookies
+    lines = ['# Netscape HTTP Cookie File']
+    for cookie in raw_cookies.split(';'):
+        cookie = cookie.strip()
+        if '=' not in cookie:
+            continue
+        name, _, value = cookie.partition('=')
+        name = name.strip()
+        value = value.strip()
+        lines.append(f'.youtube.com\tTRUE\t/\tTRUE\t9999999999\t{name}\t{value}')
+    return '\n'.join(lines)
+
 @app.route('/api/pinterest', methods=['POST'])
 def pinterest():
     url = request.json.get('url')
@@ -89,15 +104,16 @@ def facebook():
 def youtube():
     data = request.json
     url = data.get('url')
-    cookies_str = data.get('cookies', '')
+    cookies_raw = data.get('cookies', '')
     if not url:
         return jsonify({'error': 'URL não fornecida'}), 400
 
     with tempfile.TemporaryDirectory() as tmpdir:
         cookies_file = os.path.join(tmpdir, 'cookies.txt')
-        if cookies_str:
+        if cookies_raw:
+            cookies_netscape = convert_cookies_to_netscape(cookies_raw)
             with open(cookies_file, 'w', encoding='utf-8') as f:
-                f.write(cookies_str)
+                f.write(cookies_netscape)
         else:
             cookies_file = '/app/youtube_cookies.txt'
 
@@ -152,12 +168,12 @@ def download():
         original_url = data.get('url')
         filename = data.get('filename', 'video.mp4')
         height = data.get('height', 'best')
-        cookies_str = data.get('cookies', '')
+        cookies_raw = data.get('cookies', '')
     else:
         original_url = request.args.get('url')
         filename = request.args.get('filename', 'video.mp4')
         height = request.args.get('height', 'best')
-        cookies_str = ''
+        cookies_raw = ''
 
     if not original_url:
         return 'URL não fornecida', 400
@@ -166,9 +182,10 @@ def download():
 
     with tempfile.TemporaryDirectory() as tmpdir:
         cookies_file = os.path.join(tmpdir, 'cookies.txt')
-        if cookies_str:
+        if cookies_raw:
+            cookies_netscape = convert_cookies_to_netscape(cookies_raw)
             with open(cookies_file, 'w', encoding='utf-8') as f:
-                f.write(cookies_str)
+                f.write(cookies_netscape)
         else:
             cookies_file = '/app/youtube_cookies.txt'
 
