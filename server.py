@@ -119,9 +119,10 @@ def youtube():
 
         result = subprocess.run(
             ['yt-dlp', '--dump-json', '--no-playlist',
+             '--remote-components', 'ejs:github',
              '--cookies', cookies_file,
              url],
-            capture_output=True, text=True, timeout=30
+            capture_output=True, text=True, timeout=60
         )
 
     if result.returncode != 0:
@@ -203,6 +204,7 @@ def download():
                 '-f', fmt,
                 '--merge-output-format', 'mp4',
                 '--no-playlist',
+                '--remote-components', 'ejs:github',
                 '--cookies', cookies_file,
                 original_url
             ],
