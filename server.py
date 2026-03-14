@@ -283,5 +283,21 @@ def openai_image_proxy():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/proxy-image', methods=['GET'])
+def proxy_image():
+    url = request.args.get('url')
+    if not url:
+        return 'URL não fornecida', 400
+    
+    try:
+        response = requests.get(url, timeout=60, stream=True)
+        return Response(
+            response.content,
+            mimetype=response.headers.get('Content-Type', 'image/jpeg'),
+            headers={"Cache-Control": "public, max-age=3600"}
+        )
+    except Exception as e:
+        return str(e), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000)

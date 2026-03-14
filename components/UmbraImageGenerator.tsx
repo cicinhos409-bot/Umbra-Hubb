@@ -99,24 +99,18 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
                 const width = ratioData?.size.split('x')[0] || '1024';
                 const height = ratioData?.size.split('x')[1] || '1024';
                 
-                // Stable endpoint for Flux
-                imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=flux`;
+                const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=flux`;
                 
-                // Short pre-load to "warm up" the generation but proceed quickly
-                const img = new Image();
-                img.src = imageUrl;
+                // Proxy pelo backend para evitar CORS
+                imageUrl = `${API_BASE_URL}/api/proxy-image?url=${encodeURIComponent(pollinationsUrl)}`;
                 
-                await new Promise((resolve) => {
-                    const timer = setTimeout(resolve, 3000); // Only wait 3s max
-                    img.onload = resolve;
-                    img.onerror = resolve;
-                });
+                // No more blocking pre-load to ensure UI fluidity
+                await new Promise(resolve => setTimeout(resolve, 800));
             } else {
-                // OpenAI DALL-E 3 mapping (Strictly 1024x1024, 1792x1024, or 1024x1792)
+                // OpenAI DALL-E 3 mapping
                 let dalleSize = '1024x1024';
                 if (aspectRatio === '16:9') dalleSize = '1792x1024';
                 else if (aspectRatio === '9:16') dalleSize = '1024x1792';
-                // Note: 4:3 is mapped to 1024x1024 for DALL-E 3 as it doesn't support 4:3 directly
 
                 const res = await fetch(`${API_BASE_URL}/api/openai-image`, {
                     method: 'POST',
@@ -237,7 +231,7 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
                             </div>
 
                             <div className="space-y-4">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">Proporção {engine === 'dalle3' && '(Otimizado p/ DALL-E)'}</label>
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">Proporção (Aspect Ratio)</label>
                                 <div className="grid grid-cols-2 gap-2">
                                     {ratios.map(r => (
                                         <button 
@@ -367,9 +361,8 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
                                         <img 
                                             src={currentImage} 
                                             alt="Generated" 
-                                            key={currentImage} // Force re-render if URL changes
+                                            key={currentImage}
                                             className="max-w-full max-h-[85vh] object-contain shadow-2xl" 
-                                            onLoad={() => console.log('Image loaded')}
                                         />
                                     )}
                                     <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity">
