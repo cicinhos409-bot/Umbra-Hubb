@@ -99,20 +99,39 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
                 const width = ratioData?.size.split('x')[0] || '1024';
                 const height = ratioData?.size.split('x')[1] || '1024';
                 
-                // Chama Pollinations DIRETAMENTE — sem proxy, sem backend
                 const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=flux&nofeed=true`;
+
+                // Tenta buscar a imagem via fetch com retry
+                let blob: Blob | null = null;
                 
-                // Aguarda a imagem carregar diretamente no browser
-                await new Promise<void>((resolve, reject) => {
-                    const img = new Image();
-                    img.crossOrigin = 'anonymous';
-                    const timer = setTimeout(() => reject(new Error('Pollinations demorou muito. Tente novamente.')), 120000);
-                    img.onload = () => { clearTimeout(timer); resolve(); };
-                    img.onerror = () => { clearTimeout(timer); reject(new Error('Erro ao gerar imagem. Tente novamente.')); };
-                    img.src = pollinationsUrl;
-                });
+                for (let attempt = 0; attempt < 5; attempt++) {
+                    if (attempt > 0) await new Promise(r => setTimeout(r, 10000)); // 10s entre tentativas
+                    
+                    try {
+                        const controller = new AbortController();
+                        const timeout = setTimeout(() => controller.abort(), 50000); // 50s por tentativa
+                        
+                        const res = await fetch(pollinationsUrl, {
+                            signal: controller.signal,
+                            headers: { 'Accept': 'image/*' }
+                        });
+                        clearTimeout(timeout);
+                        
+                        if (res.ok) {
+                            const candidate = await res.blob();
+                            if (candidate.size > 5000 && candidate.type.startsWith('image/')) {
+                                blob = candidate;
+                                break;
+                            }
+                        }
+                    } catch {
+                        continue;
+                    }
+                }
                 
-                imageUrl = pollinationsUrl;
+                if (!blob) throw new Error('Não foi possível gerar a imagem. Tente novamente.');
+                
+                imageUrl = URL.createObjectURL(blob);
 
             } else {
                 // OpenAI DALL-E 3 mapping
