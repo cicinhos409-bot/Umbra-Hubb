@@ -40,17 +40,20 @@ const UmbraVideoGenerator: React.FC<UmbraVideoGeneratorProps> = ({ userTier }) =
         setProgress('Enviando para o servidor...');
 
         try {
-            const isExternalUrl = referenceImage.startsWith('http');
+            // Determina width/height baseado na proporção
+            const width = aspectRatio === '16:9' ? '1280' : '720';
+            const height = aspectRatio === '16:9' ? '720' : '1280';
 
             const params = new URLSearchParams({
                 model: 'grok-video',
-                aspectRatio,
+                width,
+                height,
                 duration: String(duration),
                 key: POLLINATIONS_KEY,
             });
 
-            // Só adiciona image se for URL externa (não base64)
-            if (referenceImage && isExternalUrl) {
+            // Só adiciona image se for URL externa
+            if (referenceImage && referenceImage.startsWith('http')) {
                 params.append('image', referenceImage);
             }
 
