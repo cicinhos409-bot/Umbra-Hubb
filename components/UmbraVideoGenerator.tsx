@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
     Sparkles, RefreshCw, Download, AlertCircle,
     CheckCircle2, Send, X, Video, ImageIcon, Trash2, Lock, Zap
@@ -19,7 +19,7 @@ const UmbraVideoGenerator: React.FC<UmbraVideoGeneratorProps> = ({ userTier }) =
     const [error, setError] = useState<string | null>(null);
     const [currentVideo, setCurrentVideo] = useState<string | null>(null);
     const [progress, setProgress] = useState('');
-    const fileInputRef = useRef<HTMLInputElement>(null);
+
 
     const aspectRatios = [
         { id: '16:9', label: 'Widescreen', icon: '🖥️' },
@@ -40,13 +40,19 @@ const UmbraVideoGenerator: React.FC<UmbraVideoGeneratorProps> = ({ userTier }) =
         setProgress('Enviando para o servidor...');
 
         try {
+            const isExternalUrl = referenceImage.startsWith('http');
+
             const params = new URLSearchParams({
                 model: 'grok-video',
                 aspectRatio,
                 duration: String(duration),
                 key: POLLINATIONS_KEY,
-                ...(referenceImage ? { image: referenceImage } : {})
             });
+
+            // Só adiciona image se for URL externa (não base64)
+            if (referenceImage && isExternalUrl) {
+                params.append('image', referenceImage);
+            }
 
             const url = `https://gen.pollinations.ai/video/${encodeURIComponent(prompt.slice(0, 500))}?${params}`;
 
@@ -100,13 +106,7 @@ const UmbraVideoGenerator: React.FC<UmbraVideoGeneratorProps> = ({ userTier }) =
         document.body.removeChild(link);
     };
 
-    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => setReferenceImage(reader.result as string);
-        reader.readAsDataURL(file);
-    };
+
 
     if (userTier === 'Free' || !userTier) {
         return (
@@ -171,38 +171,40 @@ const UmbraVideoGenerator: React.FC<UmbraVideoGeneratorProps> = ({ userTier }) =
                     <p className="text-[9px] text-gray-600 ml-2">{prompt.length}/500 caracteres</p>
                 </div>
 
-                {/* Imagem de referência */}
+                {/* Imagem de referência — URL externa */}
                 <div className="space-y-3">
                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
                         <ImageIcon className="w-3 h-3 text-brand-cyan" /> Imagem de Referência (opcional)
                     </label>
-                    {referenceImage ? (
-                        <div className="relative w-40 h-40 rounded-2xl overflow-hidden border border-white/10">
-                            <img src={referenceImage} alt="Referência" className="w-full h-full object-cover" />
+                    <input
+                        type="text"
+                        value={referenceImage}
+                        onChange={e => setReferenceImage(e.target.value)}
+                        disabled={loading}
+                        placeholder="Cole uma URL de imagem: https://exemplo.com/imagem.jpg"
+                        className="w-full bg-background-light border border-white/10 rounded-2xl p-4 text-xs font-bold focus:border-brand-cyan/50 outline-none transition-all"
+                    />
+                    {referenceImage && !referenceImage.startsWith('http') && (
+                        <p className="text-[9px] text-brand-pink ml-2 font-bold">
+                            ⚠️ Use uma URL externa (https://...)
+                        </p>
+                    )}
+                    {referenceImage && referenceImage.startsWith('http') && (
+                        <div className="flex items-center gap-3">
+                            <img 
+                                src={referenceImage} 
+                                alt="Preview" 
+                                className="w-16 h-16 rounded-xl object-cover border border-white/10"
+                                onError={e => (e.target as HTMLImageElement).style.display = 'none'}
+                            />
                             <button
-                                onClick={() => { setReferenceImage(''); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                                className="absolute top-2 right-2 p-1.5 bg-black/60 rounded-lg text-white hover:text-brand-pink transition-colors"
+                                onClick={() => setReferenceImage('')}
+                                className="text-[9px] text-brand-pink font-black uppercase tracking-widest hover:opacity-70 transition-opacity"
                             >
-                                <X className="w-4 h-4" />
+                                Remover
                             </button>
                         </div>
-                    ) : (
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={loading}
-                            className="w-full h-24 border-2 border-dashed border-white/10 rounded-2xl flex items-center justify-center gap-3 text-gray-500 hover:border-brand-cyan/30 hover:text-brand-cyan transition-all"
-                        >
-                            <ImageIcon className="w-5 h-5" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Clique para fazer upload</span>
-                        </button>
                     )}
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                    />
                 </div>
 
                 {/* Aspect Ratio e Duração */}
