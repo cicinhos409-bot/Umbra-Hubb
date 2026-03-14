@@ -106,6 +106,7 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
                     height,
                     seed: String(seed),
                     enhance: 'false',
+                    key: 'sk_wDCaIosbvn4LtusU3EoLSuoTMrvKCBQ8',
                     ...(negativePrompt ? { negative_prompt: negativePrompt } : {})
                 });
 
