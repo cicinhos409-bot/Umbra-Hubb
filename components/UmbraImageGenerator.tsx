@@ -99,25 +99,31 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
                 const width = ratioData?.size.split('x')[0] || '1024';
                 const height = ratioData?.size.split('x')[1] || '1024';
                 
-                // Stable endpoint
+                // Stable endpoint for Flux
                 imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=flux`;
                 
-                // SOFT LOAD: we wait up to 5s for pre-heating, but always proceed.
+                // Short pre-load to "warm up" the generation but proceed quickly
                 const img = new Image();
                 img.src = imageUrl;
                 
                 await new Promise((resolve) => {
-                    const timer = setTimeout(resolve, 5000); // Wait max 5s
-                    img.onload = () => { clearTimeout(timer); resolve(true); };
-                    img.onerror = () => { clearTimeout(timer); resolve(true); };
+                    const timer = setTimeout(resolve, 3000); // Only wait 3s max
+                    img.onload = resolve;
+                    img.onerror = resolve;
                 });
             } else {
+                // OpenAI DALL-E 3 mapping (Strictly 1024x1024, 1792x1024, or 1024x1792)
+                let dalleSize = '1024x1024';
+                if (aspectRatio === '16:9') dalleSize = '1792x1024';
+                else if (aspectRatio === '9:16') dalleSize = '1024x1792';
+                // Note: 4:3 is mapped to 1024x1024 for DALL-E 3 as it doesn't support 4:3 directly
+
                 const res = await fetch(`${API_BASE_URL}/api/openai-image`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         prompt: finalPrompt,
-                        size: ratioData?.id === '1:1' ? '1024x1024' : ratioData?.id === '16:9' ? '1792x1024' : '1024x1792'
+                        size: dalleSize
                     })
                 });
 
@@ -231,7 +237,7 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
                             </div>
 
                             <div className="space-y-4">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">Proporção (Aspect Ratio)</label>
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">Proporção {engine === 'dalle3' && '(Otimizado p/ DALL-E)'}</label>
                                 <div className="grid grid-cols-2 gap-2">
                                     {ratios.map(r => (
                                         <button 
@@ -357,7 +363,15 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
                         ) : (
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-0">
                                 <div className="lg:col-span-8 bg-black/40 flex items-center justify-center border-r border-white/5 relative group min-h-[500px]">
-                                    <img src={currentImage!} alt="Generated" className="max-w-full max-h-[80vh] object-contain shadow-2xl" />
+                                    {currentImage && (
+                                        <img 
+                                            src={currentImage} 
+                                            alt="Generated" 
+                                            key={currentImage} // Force re-render if URL changes
+                                            className="max-w-full max-h-[85vh] object-contain shadow-2xl" 
+                                            onLoad={() => console.log('Image loaded')}
+                                        />
+                                    )}
                                     <div className="absolute top-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity">
                                         <div className="bg-background-deep/80 backdrop-blur-xl border border-white/10 rounded-full px-6 py-2 text-[10px] font-black text-brand-cyan uppercase tracking-widest">
                                             {aspectRatio} · {engine.toUpperCase()}

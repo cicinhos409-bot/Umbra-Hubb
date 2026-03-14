@@ -254,6 +254,7 @@ def openai_image_proxy():
         return jsonify({'error': 'OpenAI API Key não configurada no servidor'}), 500
     
     try:
+        # OpenAI DALL-E 3 only accepts: 1024x1024, 1792x1024, or 1024x1792
         response = requests.post(
             'https://api.openai.com/v1/images/generations',
             headers={
@@ -265,12 +266,19 @@ def openai_image_proxy():
                 "prompt": data.get("prompt"),
                 "n": 1,
                 "size": data.get("size", "1024x1024"),
-                "quality": data.get("quality", "standard"),
-                "style": data.get("style", "vivid")
+                "quality": "standard"
             },
             timeout=120
         )
-        response.raise_for_status()
+        
+        if response.status_code != 200:
+            try:
+                error_body = response.json()
+                msg = error_body.get('error', {}).get('message', 'Erro na OpenAI')
+                return jsonify({'error': msg}), response.status_code
+            except:
+                return jsonify({'error': f'Erro na OpenAI: {response.status_code}'}), response.status_code
+        
         return jsonify(response.json())
     except Exception as e:
         return jsonify({'error': str(e)}), 500
