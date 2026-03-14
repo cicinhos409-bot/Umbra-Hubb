@@ -19,6 +19,7 @@ export const TOOLS: Tool[] = [
   { id: 'umbra-audios', name: 'Umbra Audios', description: 'Sintetização de Voz Neural via Google Cloud TTS.', tier: ToolTier.FREE, icon: '🎙️', category: ToolCategory.WEB },
   { id: 'storytelling', name: 'Umbra You Storytelling', description: 'Gerador de roteiros virais de alto impacto com IA Mistral.', tier: ToolTier.TURBO, icon: '🎬', category: ToolCategory.CHATBOTS },
   { id: 'image-studio', name: 'Umbra Image Studio', description: 'Geração de imagens de alta fidelidade com IA universal.', tier: ToolTier.PRO, icon: '🎨', category: ToolCategory.WEB },
+  { id: 'video-generator', name: 'Umbra Video Generator', description: 'Transforme texto em vídeos cinematográficos com IA Grok.', tier: ToolTier.PRO, icon: '🎬', category: ToolCategory.CHATBOTS },
 ];
 
 export const PLANS: PricingPlan[] = [
@@ -55,6 +56,7 @@ export const PLANS: PricingPlan[] = [
       'Umbra - Bloqueador YT',
       'Umbra Chat Automation',
       'Umbra Image Studio (IA Universal)',
+      'Umbra Video Generator (Grok IA)',
       'YouTube Hub (Extrair, Reverse)',
       'Umbra Prompt Vault',
       'Media Hub (Search, Scout)',
