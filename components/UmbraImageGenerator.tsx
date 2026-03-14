@@ -113,41 +113,40 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
                 const width = ratioData?.size.split('x')[0] || '1024';
                 const height = ratioData?.size.split('x')[1] || '1024';
                 
-                // ✅ Novo endpoint oficial gen.pollinations.ai
-                const params = new URLSearchParams({
-                    model: pollinationsModel,
-                    width,
-                    height,
-                    seed: String(seed),
-                    enhance: 'false',
-                    key: 'sk_wDCaIosbvn4LtusU3EoLSuoTMrvKCBQ8',
-                    ...(negativePrompt ? { negative_prompt: negativePrompt } : {})
+                // ✅ POST via API OpenAI-compatible — sem limite de tamanho de prompt
+                const res = await fetch('https://gen.pollinations.ai/v1/images/generations', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer sk_wDCaIosbvn4LtusU3EoLSuoTMrvKCBQ8`
+                    },
+                    body: JSON.stringify({
+                        prompt: finalPrompt,
+                        model: pollinationsModel,
+                        size: `${width}x${height}`,
+                        seed: seed,
+                        response_format: 'b64_json'
+                    })
                 });
 
-                // const pollinationsUrl = `https://gen.pollinations.ai/image/${encodeURIComponent(finalPrompt)}?${params}`;
-                const pollinationsUrl = `https://gen.pollinations.ai/image/a%20cat%20in%20space?${params}`;
-
-                for (let attempt = 0; attempt < 5; attempt++) {
-                    if (attempt > 0) await new Promise(r => setTimeout(r, 8000));
-                    try {
-                        const controller = new AbortController();
-                        const timeout = setTimeout(() => controller.abort(), 50000);
-                        const res = await fetch(pollinationsUrl, { 
-                            signal: controller.signal,
-                            headers: { 'Accept': 'image/*' }
-                        });
-                        clearTimeout(timeout);
-                        if (res.ok) {
-                            const candidate = await res.blob();
-                            if (candidate.size > 5000 && candidate.type.startsWith('image/')) {
-                                imageUrl = URL.createObjectURL(candidate);
-                                break;
-                            }
-                        }
-                    } catch { continue; }
+                if (!res.ok) {
+                    const errorMsg = await res.text();
+                    throw new Error(`Erro ao gerar imagem: ${errorMsg || res.statusText}`);
                 }
+
+                const data = await res.json();
+                const base64 = data.data[0].b64_json;
                 
-                if (!imageUrl) throw new Error('Não foi possível gerar a imagem. Tente novamente.');
+                // Conversão segura de base64 para Blob URL
+                const byteChars = atob(base64);
+                const byteArr = new Uint8Array(byteChars.length);
+                for (let i = 0; i < byteChars.length; i++) {
+                    byteArr[i] = byteChars.charCodeAt(i);
+                }
+                const blob = new Blob([byteArr], { type: 'image/png' });
+                imageUrl = URL.createObjectURL(blob);
+                
+                if (!imageUrl) throw new Error('Não foi possível processar a imagem gerada.');
 
             } else {
                 // OpenAI DALL-E 3 mapping
