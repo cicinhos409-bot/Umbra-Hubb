@@ -74,7 +74,21 @@ const App: React.FC = () => {
   }
 
   if (view === 'dashboard' && user) {
-    return <Dashboard userName={user.email?.split('@')[0] || 'Criador'} userTier={userTier} userEmail={user.email || ''} onLogout={handleLogout} />;
+    return (
+      <Dashboard 
+        userName={user.email?.split('@')[0] || 'Criador'} 
+        userTier={userTier} 
+        userEmail={user.email || ''} 
+        userCreatedAt={user.created_at || ''}
+        onLogout={handleLogout} 
+        onUpgradeClick={() => {
+          setView('landing');
+          setTimeout(() => {
+            document.getElementById('pricing-section')?.scrollIntoView({ behavior: 'smooth' });
+          }, 100);
+        }}
+      />
+    );
   }
 
   return (
@@ -114,7 +128,9 @@ const App: React.FC = () => {
 
         <ToolsGrid />
 
-        <Pricing userEmail={user?.email || undefined} />
+        <div id="pricing-section">
+          <Pricing userEmail={user?.email || undefined} />
+        </div>
 
         {/* Testimonials */}
         <section className="py-24 bg-background-mid/30" id="depoimentos">

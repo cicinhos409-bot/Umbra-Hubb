@@ -62,7 +62,9 @@ interface DashboardProps {
   userName: string;
   userTier: ToolTier;
   userEmail: string;
+  userCreatedAt?: string;
   onLogout: () => void;
+  onUpgradeClick?: () => void;
 }
 
 const TIER_LEVELS = {
@@ -71,7 +73,7 @@ const TIER_LEVELS = {
   [ToolTier.TURBO]: 2,
 };
 
-const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, onLogout }) => {
+const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, userCreatedAt, onLogout, onUpgradeClick }) => {
   const [activeTab, setActiveTab] = useState<string>(() => {
     return localStorage.getItem('umbra_active_tab') || 'home';
   });
@@ -155,6 +157,30 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, on
     );
   };
 
+  const getMemberSince = () => {
+    if (!userCreatedAt) return "Membro fundador";
+    const date = new Date(userCreatedAt);
+    const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+    return `${months[date.getMonth()]} ${date.getFullYear()}`;
+  };
+
+  const getNextBilling = () => {
+    if (userTier === ToolTier.FREE) return "Plano Gratuito (Sem vencimento)";
+    if (!userCreatedAt) return "--";
+    
+    const today = new Date();
+    const creation = new Date(userCreatedAt);
+    
+    // Calculates next billing as the creation day in the next upcoming month
+    let nextBilling = new Date(today.getFullYear(), today.getMonth(), creation.getDate());
+    if (today > nextBilling) {
+        nextBilling = new Date(today.getFullYear(), today.getMonth() + 1, creation.getDate());
+    }
+    
+    const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+    return `${nextBilling.getDate()} de ${months[nextBilling.getMonth()]}, ${nextBilling.getFullYear()}`;
+  };
+
   const renderProfile = () => (
     <div className="max-w-4xl mx-auto py-8 animate-in fade-in duration-500">
       <div className="flex items-center gap-6 mb-12">
@@ -189,7 +215,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, on
             <div className="space-y-6 bg-background-deep/50 p-8 rounded-3xl border border-white/5 shadow-inner">
               <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-4">Segurança da Conta</h4>
               <div className="space-y-5">
-                <div className="flex justify-between items-center"><span className="text-sm text-gray-500 font-medium">Membro desde</span><span className="text-sm font-bold">Maio 2024</span></div>
+                <div className="flex justify-between items-center"><span className="text-sm text-gray-500 font-medium">Membro desde</span><span className="text-sm font-bold">{getMemberSince()}</span></div>
                 <div className="flex justify-between items-center"><span className="text-sm text-gray-500 font-medium">Verificação</span><span className="text-sm font-bold text-brand-green">✓ Verificado</span></div>
                 <div className="flex justify-between items-center"><span className="text-sm text-gray-500 font-medium">Localização</span><span className="text-sm font-bold">Brasil</span></div>
               </div>
@@ -207,10 +233,10 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, on
               <div className="text-center md:text-left">
                 <span className="text-[10px] font-black text-brand-purple uppercase tracking-[0.3em] block mb-2">Assinatura Ativa</span>
                 <p className="text-2xl font-black text-white">Status: <span className="text-brand-green uppercase">Ativo</span></p>
-                <p className="text-sm text-gray-500 font-medium mt-1">Próxima renovação: 12 de Junho, 2024</p>
+                <p className="text-sm text-gray-500 font-medium mt-1">Próxima renovação: {getNextBilling()}</p>
               </div>
               <div className="flex gap-3">
-                <button className="px-8 py-4 bg-brand-purple text-white rounded-2xl font-black text-xs tracking-widest hover:bg-brand-purple/90 shadow-xl shadow-brand-purple/20 transition-all uppercase">Fazer Upgrade</button>
+                <button onClick={onUpgradeClick} className="px-8 py-4 bg-brand-purple text-white rounded-2xl font-black text-xs tracking-widest hover:bg-brand-purple/90 shadow-xl shadow-brand-purple/20 transition-all uppercase">Fazer Upgrade</button>
                 <button className="px-6 py-4 bg-white/5 text-gray-500 rounded-2xl font-black text-xs hover:text-red-400 transition-all uppercase">Cancelar</button>
               </div>
             </div>
