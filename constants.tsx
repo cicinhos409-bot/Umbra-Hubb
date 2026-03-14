@@ -17,6 +17,7 @@ export const TOOLS: Tool[] = [
   { id: 'turbo-hub', name: 'Turbo Hub', description: 'Otimize seu fluxo de trabalho com sincronização e controle automático.', tier: ToolTier.TURBO, icon: '⚙️', category: ToolCategory.TOOLS_2IN1 },
 
   { id: 'umbra-audios', name: 'Umbra Audios', description: 'Sintetização de Voz Neural via Google Cloud TTS.', tier: ToolTier.FREE, icon: '🎙️', category: ToolCategory.WEB },
+  { id: 'storytelling', name: 'Umbra You Storytelling', description: 'Gerador de roteiros virais de alto impacto com IA Mistral.', tier: ToolTier.TURBO, icon: '🎬', category: ToolCategory.CHATBOTS },
 ];
 
 export const PLANS: PricingPlan[] = [
@@ -68,6 +69,7 @@ export const PLANS: PricingPlan[] = [
     description: 'Para quem gerencia vários canais ou quer postar vídeos em massa diariamente.',
     features: [
       'Tudo do Pro +',
+      'Umbra You Storytelling (Mistral IA)',
       'Motor Supremo (Title, Script)',
       'Turbo Hub (Connect, Control)',
       'Umbra Áudios (30/dia • 100k)',

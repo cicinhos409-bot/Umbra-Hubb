@@ -224,5 +224,27 @@ def download():
             headers={"Content-disposition": f"attachment; filename={filename}"}
         )
 
+@app.route('/api/mistral', methods=['POST'])
+def mistral_proxy():
+    data = request.json
+    api_key = os.environ.get('MISTRAL_API_KEY')
+    if not api_key:
+        return jsonify({'error': 'Mistral API Key não configurada no servidor'}), 500
+    
+    try:
+        response = requests.post(
+            'https://api.mistral.ai/v1/chat/completions',
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {api_key}'
+            },
+            json=data,
+            timeout=60
+        )
+        response.raise_for_status()
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000)

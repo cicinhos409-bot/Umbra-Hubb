@@ -21,6 +21,7 @@ import UmbraMediaHub from './UmbraMediaHub';
 import UmbraMotorHub from './UmbraMotorHub';
 import UmbraYouTubeHub from './UmbraYouTubeHub';
 import UmbraAudiosTool from './UmbraAudiosTool';
+import UmbraYouStorytelling from './UmbraYouStorytelling';
 
 
 import AcademyTool from './AcademyTool';
@@ -511,6 +512,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, us
             {activeTab === 'turbo-hub' && <UmbraTurboHub />}
             {activeTab === 'umbra-audios' && <UmbraAudiosTool userTier={userTier} />}
             {activeTab === 'prompt-vault' && <PromptVaultTool />}
+            {activeTab === 'storytelling' && <UmbraYouStorytelling userTier={userTier} />}
 
             {/* Tool Loader / Fallback */}
             {activeTab !== 'home' && activeTab !== 'profile' && activeTab !== 'academy' && activeTab !== 'extensions' && !activeTab.includes('home') && selectedTool && (
