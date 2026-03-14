@@ -290,11 +290,15 @@ def proxy_image():
         return 'URL não fornecida', 400
     
     try:
-        response = requests.get(url, timeout=60, stream=True)
+        # Removed stream=True and added Access-Control-Allow-Origin
+        response = requests.get(url, timeout=120)
         return Response(
             response.content,
             mimetype=response.headers.get('Content-Type', 'image/jpeg'),
-            headers={"Cache-Control": "public, max-age=3600"}
+            headers={
+                "Cache-Control": "public, max-age=3600",
+                "Access-Control-Allow-Origin": "*"
+            }
         )
     except Exception as e:
         return str(e), 500

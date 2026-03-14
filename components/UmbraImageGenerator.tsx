@@ -104,8 +104,15 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
                 // Proxy pelo backend para evitar CORS
                 imageUrl = `${API_BASE_URL}/api/proxy-image?url=${encodeURIComponent(pollinationsUrl)}`;
                 
-                // No more blocking pre-load to ensure UI fluidity
-                await new Promise(resolve => setTimeout(resolve, 800));
+                // ✅ Aguarda a imagem carregar de verdade (onload real)
+                await new Promise((resolve, reject) => {
+                    const img = new Image();
+                    const timer = setTimeout(() => reject(new Error('O servidor do Pollinations não respondeu a tempo. Tente novamente.')), 90000);
+                    img.onload = () => { clearTimeout(timer); resolve(null); };
+                    img.onerror = () => { clearTimeout(timer); reject(new Error('Erro ao carregar imagem do Pollinations. Tente novamente.')); };
+                    img.src = imageUrl;
+                });
+
             } else {
                 // OpenAI DALL-E 3 mapping
                 let dalleSize = '1024x1024';
@@ -315,7 +322,16 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
                                         onClick={() => setViewingImage(img)}
                                         className="aspect-square bg-white/5 rounded-2xl overflow-hidden cursor-pointer hover:border-brand-cyan/50 border border-transparent transition-all group relative"
                                     >
-                                        <img src={img.url} alt={img.prompt} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+                                        <img 
+                                            src={img.url} 
+                                            alt={img.prompt} 
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform" 
+                                            onError={(e) => {
+                                                // Fallback to a placeholder if the URL expired
+                                                (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-image-off"%3E%3Cline x1="2" x2="22" y1="2" y2="22"/%3E%3Cpath d="M10.41 10.41a2 2 0 1 1-2.82-2.82"/%3E%3Cpath d="M8 21a2 2 0 0 0 4 0"/%3E%3Cpath d="M14.59 14.59l4.59 4.59"/%3E%3Cpath d="M21 15V5a2 2 0 0 0-2-2H9"/%3E%3Cpath d="M5 21a2 2 0 0 1-2-2V5"/%3E%3C/svg%3E';
+                                                (e.target as HTMLImageElement).className = "w-full h-full object-center p-8 opacity-20 grayscale";
+                                            }}
+                                        />
                                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                             <Maximize2 className="w-6 h-6 text-white" />
                                         </div>
