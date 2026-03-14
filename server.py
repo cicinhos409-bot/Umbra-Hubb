@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, Response, send_file
 from flask_cors import CORS
-import subprocess, json, requests, tempfile, os
+import subprocess, json, requests, tempfile, os, time
 
 app = Flask(__name__)
 CORS(app)
@@ -289,19 +289,30 @@ def proxy_image():
     if not url:
         return 'URL não fornecida', 400
     
-    try:
-        # Removed stream=True and added Access-Control-Allow-Origin
-        response = requests.get(url, timeout=120)
-        return Response(
-            response.content,
-            mimetype=response.headers.get('Content-Type', 'image/jpeg'),
-            headers={
-                "Cache-Control": "public, max-age=3600",
-                "Access-Control-Allow-Origin": "*"
-            }
-        )
-    except Exception as e:
-        return str(e), 500
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    }
+    
+    # Tenta até 3 vezes com delay crescente se necessário
+    for attempt in range(3):
+        try:
+            response = requests.get(url, timeout=55, headers=headers)
+            if response.status_code == 200 and len(response.content) > 1000:
+                return Response(
+                    response.content,
+                    mimetype=response.headers.get('Content-Type', 'image/jpeg'),
+                    headers={
+                        "Cache-Control": "public, max-age=3600",
+                        "Access-Control-Allow-Origin": "*"
+                    }
+                )
+            time.sleep(5)
+        except Exception as e:
+            if attempt == 2:
+                return jsonify({'error': str(e)}), 500
+            time.sleep(5)
+    
+    return jsonify({'error': 'Pollinations não respondeu após 3 tentativas'}), 504
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000)

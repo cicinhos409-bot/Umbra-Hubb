@@ -100,18 +100,16 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
                 const height = ratioData?.size.split('x')[1] || '1024';
                 
                 const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=flux`;
+                const proxyUrl = `${API_BASE_URL}/api/proxy-image?url=${encodeURIComponent(pollinationsUrl)}`;
+
+                // ✅ Faz fetch direto — o backend já aguarda a imagem estar pronta
+                const res = await fetch(proxyUrl);
+                if (!res.ok) {
+                    throw new Error('Erro ao gerar imagem. O servidor demorou muito ou falhou. Tente novamente.');
+                }
                 
-                // Proxy pelo backend para evitar CORS
-                imageUrl = `${API_BASE_URL}/api/proxy-image?url=${encodeURIComponent(pollinationsUrl)}`;
-                
-                // ✅ Aguarda a imagem carregar de verdade (onload real)
-                await new Promise((resolve, reject) => {
-                    const img = new Image();
-                    const timer = setTimeout(() => reject(new Error('O servidor do Pollinations não respondeu a tempo. Tente novamente.')), 90000);
-                    img.onload = () => { clearTimeout(timer); resolve(null); };
-                    img.onerror = () => { clearTimeout(timer); reject(new Error('Erro ao carregar imagem do Pollinations. Tente novamente.')); };
-                    img.src = imageUrl;
-                });
+                const blob = await res.blob();
+                imageUrl = URL.createObjectURL(blob);
 
             } else {
                 // OpenAI DALL-E 3 mapping
