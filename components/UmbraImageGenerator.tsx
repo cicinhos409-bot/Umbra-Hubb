@@ -19,7 +19,8 @@ import {
     Smartphone,
     Square,
     Send,
-    X
+    X,
+    Lock
 } from 'lucide-react';
 
 const API_BASE_URL = 'https://umbra-hubb-production.up.railway.app';
@@ -210,6 +211,34 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
             window.open(url, '_blank');
         }
     };
+
+    if (userTier === 'Free' || !userTier) {
+        return (
+            <div className="max-w-4xl mx-auto py-20 px-6 text-center animate-in fade-in zoom-in duration-700">
+                <div className="mb-12 relative flex justify-center">
+                    <div className="w-24 h-24 bg-brand-purple/10 rounded-[32px] flex items-center justify-center text-brand-purple animate-pulse">
+                        <Lock className="w-12 h-12" />
+                    </div>
+                </div>
+                <h2 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter mb-6 leading-none">
+                    Ferramenta <span className="text-brand-purple">Premium</span>
+                </h2>
+                <p className="text-gray-400 text-lg md:text-xl font-medium max-w-2xl mx-auto mb-12">
+                    O Umbra Image Studio (IA Universal) é exclusivo para assinantes do <span className="text-brand-purple font-black">PLANO PRO</span>. Desbloqueie agora para criar imagens cinematográficas de altíssima fidelidade.
+                </p>
+                <button 
+                    onClick={() => {
+                        const checkout = document.getElementById('checkout');
+                        if (checkout) checkout.scrollIntoView({ behavior: 'smooth' });
+                        else window.open('https://pay.cakto.com.br/3dko6xr_769683', '_blank');
+                    }}
+                    className="px-12 py-5 bg-brand-purple text-white rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-brand-purple/40 hover:scale-105 transition-all group"
+                >
+                    <Zap className="inline-block w-4 h-4 mr-2 fill-current" /> Desbloquear Agora
+                </button>
+            </div>
+        );
+    }
 
     return (
         <div className="max-w-6xl mx-auto space-y-12 animate-in fade-in duration-700 pb-20 font-rajdhani">
