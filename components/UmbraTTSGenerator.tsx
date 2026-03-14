@@ -14,6 +14,7 @@ const UmbraTTSGenerator: React.FC<UmbraTTSProps> = ({ userTier }) => {
     const [text, setText] = useState('');
     const [voice, setVoice] = useState('2EiwWnXFnvU5JabPnv8nP');
     const [format, setFormat] = useState('mp3');
+    const [speed, setSpeed] = useState(1.0);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [currentAudio, setCurrentAudio] = useState<string | null>(null);
@@ -53,17 +54,10 @@ const UmbraTTSGenerator: React.FC<UmbraTTSProps> = ({ userTier }) => {
         { id: 'wViXBPUzp2ZZixB1xQuM', label: 'Nicole', style: 'Sussurrado', cat: 'Principal' },
         { id: 'zQzvQBubVkDWKJ5Q9nYQ', label: 'Michael', style: 'Audiobook', cat: 'Principal' },
 
-        // 🎭 Personagens
+        // 🎭 Personagens (IDs verificados)
         { id: 'sB1b5zUrxQVAFl2PhZFp', label: 'Alita', style: 'Personagem', cat: 'Personagens' },
         { id: '9BWtsMINqrJLrRacOk9x', label: 'Nova', style: 'Épico', cat: 'Personagens' },
         { id: '4n7pZ1Fh0l6pQwErTyUi', label: 'Sky', style: 'Personagem', cat: 'Personagens' },
-        { id: '7y8UiopLKJhgFdsAqwer', label: 'Orion', style: 'Personagem', cat: 'Personagens' },
-        { id: '2b3c4d5e6f7g8h9i0jkl', label: 'Athena', style: 'Personagem', cat: 'Personagens' },
-        { id: '8kLm9nOpQrStUvWxYz12', label: 'Zara', style: 'Personagem', cat: 'Personagens' },
-        { id: '3FgH45JkLmNOpQrStUvE', label: 'Victor', style: 'Personagem', cat: 'Personagens' },
-        { id: '5TgYhUjIkOlPqRsTuVwX', label: 'Echo', style: 'Personagem', cat: 'Personagens' },
-        { id: '9QwErTyUiOpAsDfGhJkL', label: 'Helix', style: 'Personagem', cat: 'Personagens' },
-        { id: '0pLkJHgfDsAzXcVbNmQ', label: 'Atlas', style: 'Personagem', cat: 'Personagens' },
     ];
 
     const categories = ['Todas', 'Principal', 'Personagens'];
@@ -100,7 +94,9 @@ const UmbraTTSGenerator: React.FC<UmbraTTSProps> = ({ userTier }) => {
         try {
             const params = new URLSearchParams({
                 voice,
+                model: 'elevenlabs',
                 response_format: format,
+                speed: String(speed),
                 key: POLLINATIONS_KEY,
             });
 
@@ -256,34 +252,85 @@ const UmbraTTSGenerator: React.FC<UmbraTTSProps> = ({ userTier }) => {
                                         : 'bg-background-deep border-white/5 text-gray-500 hover:border-white/10'
                                 }`}
                             >
-                                <span className="text-[10px] font-black uppercase tracking-tight">{v.label}</span>
+                                <div className="flex items-center justify-between w-full">
+                                    <span className="text-[10px] font-black uppercase tracking-tight">{v.label}</span>
+                                    <span
+                                        onClick={e => {
+                                            e.stopPropagation();
+                                            const sampleText = 'Hello, this is a preview of my voice.';
+                                            const p = new URLSearchParams({ voice: v.id, model: 'elevenlabs', key: POLLINATIONS_KEY });
+                                            fetch(`https://gen.pollinations.ai/audio/${encodeURIComponent(sampleText)}?${p}`)
+                                                .then(r => r.blob())
+                                                .then(b => new Audio(URL.createObjectURL(b)).play())
+                                                .catch(() => {});
+                                        }}
+                                        className="p-1 rounded-lg bg-white/5 hover:bg-brand-cyan/20 transition-all cursor-pointer"
+                                    >
+                                        <Volume2 className="w-3 h-3" />
+                                    </span>
+                                </div>
                                 <span className="text-[8px] text-gray-600 leading-tight">{v.style}</span>
                             </button>
                         ))}
                     </div>
+
+                    {/* Voz Selecionada */}
+                    <div className="p-3 bg-brand-cyan/5 border border-brand-cyan/20 rounded-xl flex items-center gap-3">
+                        <Volume2 className="w-4 h-4 text-brand-cyan shrink-0" />
+                        <div>
+                            <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Voz Selecionada: </span>
+                            <span className="text-[10px] font-black text-white uppercase">
+                                {voices.find(v => v.id === voice)?.label} — {voices.find(v => v.id === voice)?.style}
+                            </span>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Formato */}
-                <div className="space-y-3">
-                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">
-                        Formato de Saída
-                    </label>
-                    <div className="flex gap-3">
-                        {formats.map(f => (
-                            <button
-                                key={f.id}
-                                onClick={() => setFormat(f.id)}
-                                disabled={loading}
-                                className={`flex-1 p-4 rounded-2xl border flex flex-col items-center gap-1 transition-all ${
-                                    format === f.id
-                                        ? 'bg-brand-purple/10 border-brand-purple text-white'
-                                        : 'bg-background-deep border-white/5 text-gray-500 hover:border-white/10'
-                                }`}
-                            >
-                                <span className="text-sm font-black uppercase">{f.label}</span>
-                                <span className="text-[8px] text-gray-600">{f.desc}</span>
-                            </button>
-                        ))}
+                {/* Formato e Velocidade */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-3">
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">
+                            Formato de Saída
+                        </label>
+                        <div className="flex gap-3">
+                            {formats.map(f => (
+                                <button
+                                    key={f.id}
+                                    onClick={() => setFormat(f.id)}
+                                    disabled={loading}
+                                    className={`flex-1 p-4 rounded-2xl border flex flex-col items-center gap-1 transition-all ${
+                                        format === f.id
+                                            ? 'bg-brand-purple/10 border-brand-purple text-white'
+                                            : 'bg-background-deep border-white/5 text-gray-500 hover:border-white/10'
+                                    }`}
+                                >
+                                    <span className="text-sm font-black uppercase">{f.label}</span>
+                                    <span className="text-[8px] text-gray-600">{f.desc}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex justify-between">
+                            <span>Velocidade</span>
+                            <span className="text-brand-cyan">{speed}x</span>
+                        </label>
+                        <input
+                            type="range"
+                            min="0.5"
+                            max="2.0"
+                            step="0.1"
+                            value={speed}
+                            onChange={e => setSpeed(parseFloat(e.target.value))}
+                            disabled={loading}
+                            className="w-full accent-brand-cyan"
+                        />
+                        <div className="flex justify-between text-[8px] text-gray-600">
+                            <span>0.5x Lento</span>
+                            <span>1.0x Normal</span>
+                            <span>2.0x Rápido</span>
+                        </div>
                     </div>
                 </div>
 
