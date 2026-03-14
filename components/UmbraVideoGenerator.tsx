@@ -125,7 +125,7 @@ const UmbraVideoGenerator: React.FC<UmbraVideoGeneratorProps> = ({ userTier }) =
                 <p className="text-gray-400 text-lg md:text-xl font-medium max-w-2xl mx-auto mb-12">
                     O Umbra Video Generator (IA Grok) é exclusivo para assinantes do <span className="text-brand-purple font-black">PLANO PRO</span>. Desbloqueie agora para criar vídeos cinematográficos com IA.
                 </p>
-                <button 
+                <button
                     onClick={() => {
                         const checkout = document.getElementById('checkout');
                         if (checkout) checkout.scrollIntoView({ behavior: 'smooth' });
@@ -194,9 +194,9 @@ const UmbraVideoGenerator: React.FC<UmbraVideoGeneratorProps> = ({ userTier }) =
                     )}
                     {referenceImage && referenceImage.startsWith('http') && (
                         <div className="flex items-center gap-3">
-                            <img 
-                                src={referenceImage} 
-                                alt="Preview" 
+                            <img
+                                src={referenceImage}
+                                alt="Preview"
                                 className="w-16 h-16 rounded-xl object-cover border border-white/10"
                                 onError={e => (e.target as HTMLImageElement).style.display = 'none'}
                             />
