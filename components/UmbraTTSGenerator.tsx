@@ -151,7 +151,7 @@ const UmbraTTSGenerator: React.FC<UmbraTTSProps> = ({ userTier }) => {
     };
 
     // Lock para usuários que NÃO são Turbo
-    if (userTier !== 'Turbo') {
+    if (userTier !== 'TURBO') {
         return (
             <div className="max-w-4xl mx-auto py-20 px-6 text-center animate-in fade-in zoom-in duration-700 font-rajdhani">
                 <div className="mb-12 flex justify-center">
