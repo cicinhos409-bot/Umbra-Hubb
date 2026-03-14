@@ -8,7 +8,7 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 const CAKTO_SECRET = Deno.env.get('CAKTO_WEBHOOK_SECRET')
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
     // Solo permitir POST
     if (req.method !== 'POST') {
         return new Response('Method not allowed', { status: 405 })
@@ -31,34 +31,61 @@ Deno.serve(async (req) => {
         // NOTE: Map your Cakto product IDs or names to ToolTier
         const { event, data } = payload
 
-        if (event === 'purchase.approved' || event === 'approved') {
+        if (event === 'purchase.approved' || event === 'approved' || event === 'order.approved') {
             const email = data.customer?.email || data.email
-            const productName = data.product?.name || data.product_name
+            const productName = (data.product?.name || data.product_name || '').toLowerCase()
+            const customerName = data.customer?.name || data.name || 'Cliente Umbra'
 
             let tier = 'FREE'
-            if (productName?.toLowerCase().includes('pro')) {
+            let maxDevices = 2
+            if (productName.includes('pro')) {
                 tier = 'PRO'
-            } else if (productName?.toLowerCase().includes('turbo')) {
+                maxDevices = 2
+            } else if (productName.includes('turbo')) {
                 tier = 'TURBO'
+                maxDevices = 3
             }
 
             if (email && tier !== 'FREE') {
-                const { error } = await supabase
-                    .from('profiles')
-                    .update({ tier, updated_at: new Date().toISOString() })
-                    .eq('email', email)
+                // 1. Atualizar o Tier no perfil do usuário
+                await supabase.from('profiles').update({ tier, updated_at: new Date().toISOString() }).eq('email', email)
 
-                if (error) {
-                    console.error('Error updating user tier:', error)
-                    return new Response(JSON.stringify({ error: error.message }), { status: 500 })
-                }
+                // 2. Gerar Licença com expiração de 30 dias
+                const chave = 'UMBRA-' + Math.random().toString(36).toUpperCase().slice(2, 10)
+                const dataExpiracao = new Date()
+                dataExpiracao.setDate(dataExpiracao.getDate() + 30) // 30 dias de acesso
 
-                console.log(`Updated user ${email} to tier ${tier}`)
+                const { error: licError } = await supabase
+                    .from('licencas')
+                    .insert([{
+                        chave,
+                        usuario: customerName,
+                        email,
+                        status: 'ativa',
+                        plano: tier.toLowerCase(),
+                        max_dispositivos: maxDevices,
+                        data_expiracao: dataExpiracao.toISOString(),
+                        extensao_slug: 'umbrahub-all'
+                    }])
+
+                if (!licError) console.log(`License generated: ${chave} for ${email} expiring at ${dataExpiracao.toISOString()}`)
+            }
+        }
+
+        // NOVO: Tratar cancelamento ou estorno
+        if (event === 'subscription.canceled' || event === 'refunded' || event === 'chargeback') {
+            const email = data.customer?.email || data.email
+            if (email) {
+                // Bloqueia todas as licenças ativas deste e-mail
+                await supabase.from('licencas').update({ status: 'expirada' }).eq('email', email).eq('status', 'ativa')
+                // Remove o tier PRO/TURBO do perfil
+                await supabase.from('profiles').update({ tier: 'FREE' }).eq('email', email)
+                console.log(`Access revoked for ${email} due to ${event}`)
             }
         }
 
         return new Response(JSON.stringify({ message: 'Webhook received' }), { status: 200 })
-    } catch (error) {
+    } catch (error: any) {
         console.error('Webhook error:', error)
         return new Response(JSON.stringify({ error: error.message }), { status: 400 })
     }

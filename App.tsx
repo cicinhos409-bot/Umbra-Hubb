@@ -74,7 +74,7 @@ const App: React.FC = () => {
   }
 
   if (view === 'dashboard' && user) {
-    return <Dashboard userName={user.email?.split('@')[0] || 'Criador'} userTier={userTier} onLogout={handleLogout} />;
+    return <Dashboard userName={user.email?.split('@')[0] || 'Criador'} userTier={userTier} userEmail={user.email || ''} onLogout={handleLogout} />;
   }
 
   return (

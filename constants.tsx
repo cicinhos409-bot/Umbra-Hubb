@@ -5,24 +5,18 @@ import { ToolTier, Tool, PricingPlan, Testimonial, ToolCategory } from './types'
 export const TOOLS: Tool[] = [
   { id: 'meus-canais', name: 'Meus Canais', description: 'Gerencie todos os seus canais do YouTube em um só lugar', tier: ToolTier.FREE, icon: '📺', category: ToolCategory.WEB },
 
-  { id: 'youtube-hub', name: 'YouTube Hub', description: 'Extrair transcrições, análise viral e busca de vídeos — tudo em um só lugar.', tier: ToolTier.FREE, icon: '🔬', category: ToolCategory.WEB },
-  { id: 'prompt-vault', name: 'Umbra Prompt Vault', description: 'Salve e organize seus melhores prompts.', tier: ToolTier.FREE, icon: '🔐', category: ToolCategory.WEB },
+  { id: 'youtube-hub', name: 'YouTube Hub', description: 'Extrair transcrições, análise viral e busca de vídeos — tudo em um só lugar.', tier: ToolTier.PRO, icon: '🔬', category: ToolCategory.WEB },
+  { id: 'prompt-vault', name: 'Umbra Prompt Vault', description: 'Salve e organize seus melhores prompts.', tier: ToolTier.PRO, icon: '🔐', category: ToolCategory.WEB },
 
   { id: 'srt', name: 'Ferramentas de Edição', description: 'Conversor SRT, Divisor de Texto e Contador de Palavras para Scripts.', tier: ToolTier.FREE, icon: '📝', category: ToolCategory.WEB },
   { id: 'screenshot', name: 'Tirador de Screenshots', description: 'Extraia screenshots de vídeos com detecção automática.', tier: ToolTier.FREE, icon: '📸', category: ToolCategory.WEB },
   { id: 'downloader-hub', name: 'Downloader Hub', description: 'Baixe vídeos do TikTok e Sora AI sem marcas d\'água.', tier: ToolTier.FREE, icon: '📥', category: ToolCategory.WEB },
 
-
-
-
   { id: 'media-hub', name: 'Media Hub', description: 'Busca de mídia multi-API e ferramentas visuais premium.', tier: ToolTier.PRO, icon: '🎨', category: ToolCategory.WEB },
-  { id: 'motor-hub', name: 'Motor Supremo', description: 'Prompt Veo 3, Script Reverso, Título Otimizado e Description Builder — tudo em um só lugar.', tier: ToolTier.FREE, icon: '💎', category: ToolCategory.MOTOR_SUPREMO },
+  { id: 'motor-hub', name: 'Motor Supremo', description: 'Prompt Veo 3, Script Reverso, Título Otimizado e Description Builder — tudo em um só lugar.', tier: ToolTier.TURBO, icon: '💎', category: ToolCategory.MOTOR_SUPREMO },
   { id: 'turbo-hub', name: 'Turbo Hub', description: 'Otimize seu fluxo de trabalho com sincronização e controle automático.', tier: ToolTier.TURBO, icon: '⚙️', category: ToolCategory.TOOLS_2IN1 },
 
-
-
-
-  { id: 'umbra-audios', name: 'Umbra Audios', description: 'Sintetização de Voz Neural via Google Cloud TTS.', tier: ToolTier.PRO, icon: '🎙️', category: ToolCategory.WEB },
+  { id: 'umbra-audios', name: 'Umbra Audios', description: 'Sintetização de Voz Neural via Google Cloud TTS.', tier: ToolTier.FREE, icon: '🎙️', category: ToolCategory.WEB },
 ];
 
 export const PLANS: PricingPlan[] = [
@@ -32,27 +26,28 @@ export const PLANS: PricingPlan[] = [
     period: '',
     description: 'Para iniciantes que querem acelerar a criação de vídeos para canais Dark.',
     features: [
-      'Dashboard & Perfil',
-      'Academy (Introdutório)',
-      'Meus Canais (Limitado)',
-      'Prompt Vault (1 grupo)',
-      'Conversor SRT',
-      'Tirador de Screenshots',
-      'Downloader Hub'
+      'Dashboard & Academy',
+      'Meus Canais (Essencial)',
+      'Ferramentas de Edição (SRT, Divisor)',
+      'Screenshot Tool',
+      'Downloader Hub (TikTok/Sora)',
+      'Umbra Áudios (Limite 3/total)'
     ],
     cta: 'COMEÇAR GRÁTIS',
     tier: ToolTier.FREE
   },
   {
     name: 'Pro',
-    price: 'R$ 19,90',
+    price: 'R$ 97,00',
     period: '/mês',
     popular: true,
     description: 'Use ferramentas poderosas e leve o crescimento do seu canal para o próximo nível.',
     features: [
       'Tudo do Básico +',
-      'Media Hub',
-      'Motor Supremo'
+      'YouTube Hub (Extrair, Reverse)',
+      'Umbra Prompt Vault',
+      'Media Hub (Search, Scout)',
+      'Umbra Áudios (10/dia • 100k)'
     ],
     cta: 'ASSINAR PRO',
     ctaLink: 'https://pay.cakto.com.br/3dko6xr_769683',
@@ -60,18 +55,16 @@ export const PLANS: PricingPlan[] = [
   },
   {
     name: 'Turbo',
-    price: 'R$ 49,90',
+    price: 'R$ 197,00',
     period: '/mês',
     description: 'Para quem gerencia vários canais ou quer postar vídeos em massa diariamente.',
     features: [
       'Tudo do Pro +',
-      'Turbo Hub',
-      'Motor Cinematográfico Otimizado',
-      'Meus Canais (Ilimitado)',
-      'Produção em Lote Total',
-      'Limites máximos de IA',
-      'Prioridade no Processamento',
-      'Acesso antecipado a ferramentas'
+      'Motor Supremo (Title, Script)',
+      'Turbo Hub (Connect, Control)',
+      'Umbra Áudios (30/dia • 100k)',
+      '1 Extensão Personalizada',
+      'Limites Máximos de IA'
     ],
     cta: 'ACELERAR AGORA',
     ctaLink: 'https://pay.cakto.com.br/36m5p68',

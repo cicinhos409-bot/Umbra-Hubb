@@ -85,6 +85,56 @@ def facebook():
         'images': []
     })
 
+@app.route('/api/youtube', methods=['POST'])
+def youtube():
+    url = request.json.get('url')
+    if not url:
+        return jsonify({'error': 'URL não fornecida'}), 400
+
+    result = subprocess.run(
+        ['yt-dlp', '--dump-json', '--no-playlist',
+         '--cookies', '/app/youtube_cookies.txt',
+         url],
+        capture_output=True, text=True, timeout=30
+    )
+
+    if result.returncode != 0:
+        return jsonify({'error': result.stderr}), 500
+
+    info = json.loads(result.stdout)
+    
+    vistas = sorted(
+        [f for f in info.get('formats', []) if f.get('ext') == 'mp4' and f.get('height')],
+        key=lambda x: x.get('height', 0),
+        reverse=True
+    )
+    
+    seen = set()
+    videos = []
+    for f in vistas:
+        h = f.get('height', 0)
+        if h not in seen:
+            seen.add(h)
+            videos.append({
+                'label': str(h) + 'p',
+                'url': f['url'],
+                'width': f.get('width', 0),
+                'height': h,
+                'format': 'MP4'
+            })
+
+    if not videos and info.get('url'):
+        videos = [{'label': 'Original', 'url': info['url'], 'format': 'MP4'}]
+
+    return jsonify({
+        'type': 'video',
+        'title': info.get('title', 'YouTube Video'),
+        'thumbnail': info.get('thumbnail', ''),
+        'pinId': info.get('id', ''),
+        'videos': videos,
+        'images': []
+    })
+
 @app.route('/api/download', methods=['GET'])
 def download():
     original_url = request.args.get('url')
@@ -110,6 +160,7 @@ def download():
                 '-f', fmt,
                 '--merge-output-format', 'mp4',
                 '--no-playlist',
+                '--cookies', '/app/youtube_cookies.txt',
                 original_url
             ],
             capture_output=True, text=True, timeout=120

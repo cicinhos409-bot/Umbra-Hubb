@@ -1,21 +1,21 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  Lock, 
-  Search, 
-  Plus, 
-  Download, 
-  Upload, 
-  Copy, 
-  Edit3, 
-  Trash2, 
-  X, 
-  Save, 
-  Check, 
-  Filter, 
-  Tag, 
-  Zap, 
-  Wrench, 
+import {
+  Lock,
+  Search,
+  Plus,
+  Download,
+  Upload,
+  Copy,
+  Edit3,
+  Trash2,
+  X,
+  Save,
+  Check,
+  Filter,
+  Tag,
+  Zap,
+  Wrench,
   Book,
   Code,
   FileText,
@@ -113,8 +113,8 @@ const PromptVaultTool: React.FC = () => {
   const filteredPrompts = useMemo(() => {
     return prompts.filter(p => {
       const matchesCategory = currentFilter === 'all' || p.category === currentFilter;
-      const matchesSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            p.text.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.text.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesCategory && matchesSearch;
     });
   }, [prompts, currentFilter, searchTerm]);
@@ -232,18 +232,18 @@ const PromptVaultTool: React.FC = () => {
 
       {/* CONTROLS */}
       <div className="bg-background-mid border border-white/5 rounded-[32px] p-4 flex flex-wrap items-center gap-4 shadow-xl">
-        <button 
+        <button
           onClick={() => handleOpenModal()}
           className="px-8 py-3.5 bg-brand-purple text-white font-black rounded-2xl text-[10px] uppercase tracking-widest flex items-center gap-3 hover:scale-105 transition-all shadow-xl shadow-brand-purple/20 active:scale-95"
         >
           <Plus className="w-5 h-5" /> Novo Prompt
         </button>
-        
+
         <div className="flex-1 relative group">
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600 group-focus-within:text-brand-cyan transition-colors" />
-          <input 
-            type="text" 
-            placeholder="Buscar nos prompts do cofre..." 
+          <input
+            type="text"
+            placeholder="Buscar nos prompts do cofre..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             className="w-full bg-background-deep border border-white/5 rounded-2xl py-3.5 pl-14 pr-6 text-sm font-bold text-white focus:border-brand-cyan outline-none transition-all"
@@ -264,7 +264,7 @@ const PromptVaultTool: React.FC = () => {
       {/* FILTERS */}
       <div className="flex flex-wrap justify-center gap-2">
         {CATEGORIES.map(cat => (
-          <button 
+          <button
             key={cat.id}
             onClick={() => setCurrentFilter(cat.id)}
             className={`flex items-center gap-3 px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${currentFilter === cat.id ? 'bg-brand-cyan border-brand-cyan text-background-deep shadow-lg shadow-brand-cyan/20' : 'bg-background-mid border-white/5 text-gray-500 hover:text-white'}`}
@@ -278,49 +278,49 @@ const PromptVaultTool: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredPrompts.length === 0 ? (
           <div className="col-span-full py-32 text-center opacity-20">
-             <Lock className="w-16 h-16 mx-auto mb-6" />
-             <p className="font-orbitron text-xs font-black uppercase tracking-widest">Cofre Vazio ou Sem Resultados</p>
+            <Lock className="w-16 h-16 mx-auto mb-6" />
+            <p className="font-orbitron text-xs font-black uppercase tracking-widest">Cofre Vazio ou Sem Resultados</p>
           </div>
         ) : (
           filteredPrompts.map(p => (
             <div key={p.id} className="group bg-background-mid border border-white/5 rounded-[40px] p-8 space-y-6 hover:border-brand-purple/30 transition-all shadow-xl relative overflow-hidden flex flex-col">
-               <div className="absolute top-0 right-0 w-24 h-24 bg-brand-purple/5 -mr-12 -mt-12 rounded-full blur-2xl group-hover:bg-brand-purple/10 transition-all" />
-               
-               <div className="flex justify-between items-start relative z-10">
-                  <div>
-                    <span className="px-3 py-1 bg-brand-purple/10 border border-brand-purple/20 rounded-lg text-[8px] font-black text-brand-purple uppercase tracking-widest mb-2 inline-block">
-                      {CATEGORIES.find(c => c.id === p.category)?.name || 'Outros'}
+              <div className="absolute top-0 right-0 w-24 h-24 bg-brand-purple/5 -mr-12 -mt-12 rounded-full blur-2xl group-hover:bg-brand-purple/10 transition-all" />
+
+              <div className="flex justify-between items-start relative z-10">
+                <div>
+                  <span className="px-3 py-1 bg-brand-purple/10 border border-brand-purple/20 rounded-lg text-[8px] font-black text-brand-purple uppercase tracking-widest mb-2 inline-block">
+                    {CATEGORIES.find(c => c.id === p.category)?.name || 'Outros'}
+                  </span>
+                  <h3 className="text-xl font-black tracking-tight text-white group-hover:text-brand-cyan transition-colors">{p.title}</h3>
+                </div>
+                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                  <button onClick={() => handleOpenModal(p)} className="p-2.5 bg-white/5 rounded-xl text-gray-500 hover:text-white transition-all"><Edit3 className="w-4 h-4" /></button>
+                  <button onClick={() => handleDelete(p.id)} className="p-2.5 bg-white/5 rounded-xl text-gray-500 hover:text-brand-pink transition-all"><Trash2 className="w-4 h-4" /></button>
+                </div>
+              </div>
+
+              <p className="text-sm text-gray-400 font-medium leading-relaxed line-clamp-4 flex-1">
+                {p.text}
+              </p>
+
+              {p.variables.length > 0 && (
+                <div className="flex flex-wrap gap-2 py-2">
+                  {p.variables.map(v => (
+                    <span key={v} className="px-2.5 py-1 bg-background-deep border border-white/5 rounded-lg text-[9px] font-mono text-brand-cyan/70">
+                      {`{{${v}}}`}
                     </span>
-                    <h3 className="text-xl font-black tracking-tight text-white group-hover:text-brand-cyan transition-colors">{p.title}</h3>
-                  </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                     <button onClick={() => handleOpenModal(p)} className="p-2.5 bg-white/5 rounded-xl text-gray-500 hover:text-white transition-all"><Edit3 className="w-4 h-4" /></button>
-                     <button onClick={() => handleDelete(p.id)} className="p-2.5 bg-white/5 rounded-xl text-gray-500 hover:text-brand-pink transition-all"><Trash2 className="w-4 h-4" /></button>
-                  </div>
-               </div>
+                  ))}
+                </div>
+              )}
 
-               <p className="text-sm text-gray-400 font-medium leading-relaxed line-clamp-4 flex-1">
-                 {p.text}
-               </p>
-
-               {p.variables.length > 0 && (
-                 <div className="flex flex-wrap gap-2 py-2">
-                   {p.variables.map(v => (
-                     <span key={v} className="px-2.5 py-1 bg-background-deep border border-white/5 rounded-lg text-[9px] font-mono text-brand-cyan/70">
-                       {{v}}
-                     </span>
-                   ))}
-                 </div>
-               )}
-
-               <div className="pt-4 border-t border-white/5">
-                  <button 
-                    onClick={() => handleCopy(p.text)}
-                    className="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-white/10 transition-all"
-                  >
-                    <Copy className="w-4 h-4" /> Copiar Template
-                  </button>
-               </div>
+              <div className="pt-4 border-t border-white/5">
+                <button
+                  onClick={() => handleCopy(p.text)}
+                  className="w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-white/10 transition-all"
+                >
+                  <Copy className="w-4 h-4" /> Copiar Template
+                </button>
+              </div>
             </div>
           ))
         )}
@@ -329,88 +329,88 @@ const PromptVaultTool: React.FC = () => {
       {/* MODAL */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 animate-in fade-in duration-300">
-           <div className="absolute inset-0 bg-background-deep/95 backdrop-blur-xl" onClick={() => setIsModalOpen(false)} />
-           <div className="relative bg-background-mid border border-white/10 rounded-[48px] p-10 w-full max-w-2xl shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
-              <div className="flex items-center justify-between mb-8">
-                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-brand-purple/10 rounded-2xl flex items-center justify-center text-brand-purple"><Save className="w-6 h-6" /></div>
-                    <h2 className="text-2xl font-black tracking-tight">{editingId ? 'Editar Prompt' : 'Novo Prompt'}</h2>
-                 </div>
-                 <button onClick={() => setIsModalOpen(false)} className="p-3 bg-white/5 rounded-2xl text-gray-500 hover:text-white transition-all"><X className="w-6 h-6" /></button>
+          <div className="absolute inset-0 bg-background-deep/95 backdrop-blur-xl" onClick={() => setIsModalOpen(false)} />
+          <div className="relative bg-background-mid border border-white/10 rounded-[48px] p-10 w-full max-w-2xl shadow-2xl animate-in zoom-in-95 duration-300 flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-brand-purple/10 rounded-2xl flex items-center justify-center text-brand-purple"><Save className="w-6 h-6" /></div>
+                <h2 className="text-2xl font-black tracking-tight">{editingId ? 'Editar Prompt' : 'Novo Prompt'}</h2>
+              </div>
+              <button onClick={() => setIsModalOpen(false)} className="p-3 bg-white/5 rounded-2xl text-gray-500 hover:text-white transition-all"><X className="w-6 h-6" /></button>
+            </div>
+
+            <form onSubmit={handleSave} className="space-y-8 overflow-y-auto custom-scrollbar pr-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest px-2">Título do Template</label>
+                  <input
+                    required
+                    type="text"
+                    value={formTitle}
+                    onChange={e => setFormTitle(e.target.value)}
+                    placeholder="Ex: Roteiro para Narrador IA"
+                    className="w-full bg-background-deep border border-white/10 rounded-2xl p-5 text-sm font-bold text-white focus:border-brand-purple outline-none transition-all"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest px-2">Categoria</label>
+                  <select
+                    value={formCategory}
+                    onChange={e => setFormCategory(e.target.value)}
+                    className="w-full bg-background-deep border border-white/10 rounded-2xl p-5 text-sm font-bold text-white focus:border-brand-purple outline-none appearance-none cursor-pointer"
+                  >
+                    {CATEGORIES.filter(c => c.id !== 'all').map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              <form onSubmit={handleSave} className="space-y-8 overflow-y-auto custom-scrollbar pr-2">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest px-2">Título do Template</label>
-                       <input 
-                         required
-                         type="text" 
-                         value={formTitle}
-                         onChange={e => setFormTitle(e.target.value)}
-                         placeholder="Ex: Roteiro para Narrador IA"
-                         className="w-full bg-background-deep border border-white/10 rounded-2xl p-5 text-sm font-bold text-white focus:border-brand-purple outline-none transition-all"
-                       />
-                    </div>
-                    <div className="space-y-2">
-                       <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest px-2">Categoria</label>
-                       <select 
-                         value={formCategory}
-                         onChange={e => setFormCategory(e.target.value)}
-                         className="w-full bg-background-deep border border-white/10 rounded-2xl p-5 text-sm font-bold text-white focus:border-brand-purple outline-none appearance-none cursor-pointer"
-                       >
-                         {CATEGORIES.filter(c => c.id !== 'all').map(c => (
-                           <option key={c.id} value={c.id}>{c.name}</option>
-                         ))}
-                       </select>
-                    </div>
-                 </div>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center px-2">
+                  <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Conteúdo do Prompt</label>
+                  <span className="text-[8px] font-black text-brand-cyan uppercase tracking-widest">Use {"{{variavel}}"} para criar campos dinâmicos</span>
+                </div>
+                <textarea
+                  required
+                  value={formText}
+                  onChange={e => setFormText(e.target.value)}
+                  placeholder="Cole seu prompt base aqui..."
+                  className="w-full h-64 bg-background-deep border border-white/10 rounded-[32px] p-8 text-sm font-medium leading-relaxed text-gray-400 focus:border-brand-purple outline-none resize-none shadow-inner custom-scrollbar"
+                />
+              </div>
 
-                 <div className="space-y-2">
-                    <div className="flex justify-between items-center px-2">
-                       <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Conteúdo do Prompt</label>
-                       <span className="text-[8px] font-black text-brand-cyan uppercase tracking-widest">Use {"{{variavel}}"} para criar campos dinâmicos</span>
-                    </div>
-                    <textarea 
-                      required
-                      value={formText}
-                      onChange={e => setFormText(e.target.value)}
-                      placeholder="Cole seu prompt base aqui..."
-                      className="w-full h-64 bg-background-deep border border-white/10 rounded-[32px] p-8 text-sm font-medium leading-relaxed text-gray-400 focus:border-brand-purple outline-none resize-none shadow-inner custom-scrollbar"
-                    />
-                 </div>
+              {detectedVariables.length > 0 && (
+                <div className="space-y-2 animate-in slide-in-from-top-2">
+                  <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest px-2">Variáveis Detectadas</label>
+                  <div className="flex flex-wrap gap-2 p-4 bg-background-deep/50 border border-white/5 rounded-2xl">
+                    {detectedVariables.map(v => (
+                      <span key={v} className="px-3 py-1.5 bg-brand-cyan/10 border border-brand-cyan/20 rounded-lg text-[9px] font-mono text-brand-cyan">
+                        {`{{${v}}}`}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-                 {detectedVariables.length > 0 && (
-                   <div className="space-y-2 animate-in slide-in-from-top-2">
-                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest px-2">Variáveis Detectadas</label>
-                      <div className="flex flex-wrap gap-2 p-4 bg-background-deep/50 border border-white/5 rounded-2xl">
-                         {detectedVariables.map(v => (
-                           <span key={v} className="px-3 py-1.5 bg-brand-cyan/10 border border-brand-cyan/20 rounded-lg text-[9px] font-mono text-brand-cyan">
-                             {{v}}
-                           </span>
-                         ))}
-                      </div>
-                   </div>
-                 )}
-
-                 <div className="flex gap-4 pt-4">
-                    <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-5 bg-white/5 border border-white/5 text-gray-500 font-black rounded-2xl uppercase tracking-widest text-xs hover:bg-white/10 transition-all">Cancelar</button>
-                    <button type="submit" className="flex-2 py-5 bg-brand-purple text-white font-black rounded-2xl hover:bg-brand-purple/90 transition-all uppercase tracking-[0.2em] text-xs shadow-xl shadow-brand-purple/20">
-                      {editingId ? 'Salvar Alterações' : 'Adicionar ao Cofre'}
-                    </button>
-                 </div>
-              </form>
-           </div>
+              <div className="flex gap-4 pt-4">
+                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-5 bg-white/5 border border-white/5 text-gray-500 font-black rounded-2xl uppercase tracking-widest text-xs hover:bg-white/10 transition-all">Cancelar</button>
+                <button type="submit" className="flex-2 py-5 bg-brand-purple text-white font-black rounded-2xl hover:bg-brand-purple/90 transition-all uppercase tracking-[0.2em] text-xs shadow-xl shadow-brand-purple/20">
+                  {editingId ? 'Salvar Alterações' : 'Adicionar ao Cofre'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
       {/* TOAST */}
       {toast && (
         <div className="fixed bottom-10 right-10 z-[200] animate-in slide-in-from-right-4 duration-300">
-           <div className="px-8 py-5 bg-brand-purple rounded-[24px] shadow-2xl flex items-center gap-4 border border-brand-purple/50 backdrop-blur-xl ring-4 ring-black/50">
-             <Check className="w-6 h-6 text-white" />
-             <span className="font-black text-sm uppercase tracking-tighter text-white">{toast}</span>
-           </div>
+          <div className="px-8 py-5 bg-brand-purple rounded-[24px] shadow-2xl flex items-center gap-4 border border-brand-purple/50 backdrop-blur-xl ring-4 ring-black/50">
+            <Check className="w-6 h-6 text-white" />
+            <span className="font-black text-sm uppercase tracking-tighter text-white">{toast}</span>
+          </div>
         </div>
       )}
 

@@ -1,10 +1,41 @@
+import React, { useState } from 'react';
+import { Package, Download, Chrome, Lock, Zap } from 'lucide-react';
+import { ToolTier } from '../types';
 
-import React from 'react';
-import { Package, Download, Chrome } from 'lucide-react';
+interface ExtensionsDownloadToolProps {
+  userTier: ToolTier;
+}
 
-const ExtensionsDownloadTool: React.FC = () => {
+const ExtensionsDownloadTool: React.FC<ExtensionsDownloadToolProps> = ({ userTier }) => {
+  const isLocked = userTier === ToolTier.FREE;
+
+  const DownloadButton = ({ href, fileName }: { href: string; fileName: string }) => {
+    if (isLocked) {
+      return (
+        <button
+          onClick={() => {
+            alert('🔒 ESSA EXTENSÃO É EXCLUSIVA\n\nEsta ferramenta é reservada para assinantes PRO ou TURBO.\n\nFaça upgrade no seu perfil para liberar o download agora!');
+          }}
+          className="download-btn w-full inline-flex flex-col items-center justify-center gap-1 py-4 rounded-2xl bg-white/5 text-gray-400 font-black text-[10px] uppercase tracking-[0.2em] cursor-pointer border border-white/10 hover:bg-white/10 transition-all shadow-inner"
+        >
+          <span className="text-lg">🔒 BLOQUEADO</span>
+          <span className="text-brand-purple animate-pulse">Fazer Upgrade</span>
+        </button>
+      );
+    }
+
+    return (
+      <a
+        href={href}
+        download={fileName}
+        className="download-btn w-full inline-flex items-center justify-center gap-3 py-4 rounded-2xl text-background-deep font-black text-xs uppercase tracking-widest shadow-xl shadow-brand-cyan/20 relative overflow-hidden"
+      >
+        <Download className="w-4 h-4" /> Baixar extensão
+      </a>
+    );
+  };
   return (
-    <div className="min-h-screen font-jetbrains text-white pb-24 relative overflow-hidden flex flex-col items-center">
+    <div className="min-h-screen font-jetbrains text-white pb-24 relative flex flex-col items-center">
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=JetBrains+Mono:wght@400;500&display=swap');
 
@@ -150,9 +181,7 @@ const ExtensionsDownloadTool: React.FC = () => {
               <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
                 Download em lote de vídeos gerados por IAs. Organize, selecione e baixe múltiplos resultados de forma rápida e assistida.
               </p>
-              <a href="#" className="download-btn w-full inline-flex items-center justify-center gap-3 py-4 rounded-2xl text-background-deep font-black text-xs uppercase tracking-widest shadow-xl shadow-brand-cyan/20 relative overflow-hidden">
-                <Download className="w-4 h-4" /> Baixar extensão
-              </a>
+              <DownloadButton href="/extensoes/umbra-fetch.zip" fileName="umbra-fetch.zip" />
             </article>
 
             {/* Extension 2 */}
@@ -167,9 +196,7 @@ const ExtensionsDownloadTool: React.FC = () => {
               <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
                 Disparo avançado de prompts com foco em consistência de personagens, estilos e variações controladas para geração de vídeos.
               </p>
-              <a href="#" className="download-btn w-full inline-flex items-center justify-center gap-3 py-4 rounded-2xl text-background-deep font-black text-xs uppercase tracking-widest shadow-xl shadow-brand-cyan/20 relative overflow-hidden">
-                <Download className="w-4 h-4" /> Baixar extensão
-              </a>
+              <DownloadButton href="/extensoes/umbra-dispatch-pro.zip" fileName="umbra-dispatch-pro.zip" />
             </article>
 
             {/* Extension 3 */}
@@ -179,14 +206,12 @@ const ExtensionsDownloadTool: React.FC = () => {
                   Vídeo • Download
                 </span>
                 <h3 className="font-orbitron text-2xl font-black text-white group-hover:text-brand-cyan transition-colors">Umbra Vision</h3>
-                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v1.0.0</span>
+                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v4.0.0</span>
               </div>
               <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
                 Automatize a geração e o download em massa de imagens com Meta.ai e Google Whisk. Dispare centenas de prompts no piloto automático.
               </p>
-              <a href="#" className="download-btn w-full inline-flex items-center justify-center gap-3 py-4 rounded-2xl text-background-deep font-black text-xs uppercase tracking-widest shadow-xl shadow-brand-cyan/20 relative overflow-hidden">
-                <Download className="w-4 h-4" /> Baixar extensão
-              </a>
+              <DownloadButton href="/extensoes/umbra-vision.zip" fileName="umbra-vision.zip" />
             </article>
 
             {/* Extension 4 */}
@@ -196,14 +221,12 @@ const ExtensionsDownloadTool: React.FC = () => {
                   TikTok • Download
                 </span>
                 <h3 className="font-orbitron text-2xl font-black text-white group-hover:text-brand-cyan transition-colors">Umbra TikTok Downloader</h3>
-                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v2.0.0</span>
+                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v2.0.2</span>
               </div>
               <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
                 Baixe vídeos do TikTok sem marca d'água com painel flutuante
               </p>
-              <a href="https://drive.google.com/drive/folders/1F4Bfm9Y3svf_hfOPFkxuBrytGL0YFMLV" target="_blank" rel="noopener noreferrer" className="download-btn w-full inline-flex items-center justify-center gap-3 py-4 rounded-2xl text-background-deep font-black text-xs uppercase tracking-widest shadow-xl shadow-brand-cyan/20 relative overflow-hidden">
-                <Download className="w-4 h-4" /> Baixar extensão
-              </a>
+              <DownloadButton href="/extensoes/umbra-tiktok.zip" fileName="umbra-tiktok.zip" />
             </article>
 
             {/* Extension 5 */}
@@ -218,9 +241,82 @@ const ExtensionsDownloadTool: React.FC = () => {
               <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
                 Grave vídeos da tela com painel flutuante arrastável. Powered by Tab Capture API.
               </p>
-              <a href="https://drive.google.com/drive/folders/1F4Bfm9Y3svf_hfOPFkxuBrytGL0YFMLV" target="_blank" rel="noopener noreferrer" className="download-btn w-full inline-flex items-center justify-center gap-3 py-4 rounded-2xl text-background-deep font-black text-xs uppercase tracking-widest shadow-xl shadow-brand-cyan/20 relative overflow-hidden">
-                <Download className="w-4 h-4" /> Baixar extensão
-              </a>
+              <DownloadButton href="/extensoes/umbra-screen-recorder.zip" fileName="umbra-screen-recorder.zip" />
+            </article>
+
+            {/* Extension 6 - NEW */}
+            <article className="extension-card border border-white/5 rounded-[32px] p-8 backdrop-blur-xl relative overflow-hidden group">
+              <div className="mb-6">
+                <span className="text-[10px] font-black uppercase tracking-widest text-brand-cyan bg-brand-cyan/10 border border-brand-cyan/20 px-3 py-1.5 rounded-lg mb-4 inline-block">
+                  Utility • Screenshot
+                </span>
+                <h3 className="font-orbitron text-2xl font-black text-white group-hover:text-brand-cyan transition-colors">Umbra Printei</h3>
+                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v1.0.0</span>
+              </div>
+              <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
+                Capture screenshots de qualquer página, vídeo do YouTube, TikTok, Instagram e muito mais com alta precisão.
+              </p>
+              <DownloadButton href="/extensoes/umbra-printei.zip" fileName="umbra-printei.zip" />
+            </article>
+
+            {/* Extension 7 - NEW */}
+            <article className="extension-card border border-white/5 rounded-[32px] p-8 backdrop-blur-xl relative overflow-hidden group">
+              <div className="mb-6">
+                <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink bg-brand-pink/10 border border-brand-pink/20 px-3 py-1.5 rounded-lg mb-4 inline-block">
+                  AI • Prompting
+                </span>
+                <h3 className="font-orbitron text-2xl font-black text-white group-hover:text-brand-cyan transition-colors">Umbra Piclumen Prompter</h3>
+                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v1.0.0</span>
+              </div>
+              <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
+                Auto Prompt sender for Piclumen — dark, powerful, and precise automation for your AI image workflow.
+              </p>
+              <DownloadButton href="/extensoes/umbra-piclumen-prompter.zip" fileName="umbra-piclumen-prompter.zip" />
+            </article>
+
+            {/* Extension 8 - NEW */}
+            <article className="extension-card border border-white/5 rounded-[32px] p-8 backdrop-blur-xl relative overflow-hidden group">
+              <div className="mb-6">
+                <span className="text-[10px] font-black uppercase tracking-widest text-brand-purple bg-brand-purple/10 border border-brand-purple/20 px-3 py-1.5 rounded-lg mb-4 inline-block">
+                  Web • Download
+                </span>
+                <h3 className="font-orbitron text-2xl font-black text-white group-hover:text-brand-cyan transition-colors">Umbra Image Download</h3>
+                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v2.6.0</span>
+              </div>
+              <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
+                Baixe todas as imagens de qualquer página da web instantaneamente. Ferramenta essencial para curadoria de mídia.
+              </p>
+              <DownloadButton href="/extensoes/Umbra-Image-Download.zip" fileName="Umbra-Image-Download.zip" />
+            </article>
+
+            {/* Extension 9 - NEW */}
+            <article className="extension-card border border-white/5 rounded-[32px] p-8 backdrop-blur-xl relative overflow-hidden group">
+              <div className="mb-6">
+                <span className="text-[10px] font-black uppercase tracking-widest text-amber-500 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg mb-4 inline-block">
+                  Tools • Focus
+                </span>
+                <h3 className="font-orbitron text-2xl font-black text-white group-hover:text-brand-cyan transition-colors">Umbra - Bloqueador YT</h3>
+                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v3.0.0</span>
+              </div>
+              <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
+                Oculta e censura distrações do YouTube e YouTube Studio para manter seu foco total na produção de conteúdo.
+              </p>
+              <DownloadButton href="/extensoes/umbra-bloqueador-yt.zip" fileName="umbra-bloqueador-yt.zip" />
+            </article>
+
+            {/* Extension 10 - NEW */}
+            <article className="extension-card border border-white/5 rounded-[32px] p-8 backdrop-blur-xl relative overflow-hidden group">
+              <div className="mb-6">
+                <span className="text-[10px] font-black uppercase tracking-widest text-brand-purple bg-brand-purple/10 border border-brand-purple/20 px-3 py-1.5 rounded-lg mb-4 inline-block">
+                  AI • Automation
+                </span>
+                <h3 className="font-orbitron text-2xl font-black text-white group-hover:text-brand-cyan transition-colors">Umbra Chat Automation</h3>
+                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v1.0.0</span>
+              </div>
+              <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
+                Automatize prompts do ChatGPT com cadeias de prompts e filas para interações eficientes que economizam tempo.
+              </p>
+              <DownloadButton href="/extensoes/umbra-chat-automation.zip" fileName="umbra-chat-automation.zip" />
             </article>
           </div>
         </main>

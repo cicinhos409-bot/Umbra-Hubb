@@ -310,3 +310,143 @@ async def prompt_proxy(request: Request):
             return JSONResponse(response.json(), status_code=response.status_code)
     except Exception as e:
         return JSONResponse({"status": "error", "msg": f"Proxy Error: {str(e)}"}, status_code=500)
+@app.get("/api/pinterest")
+async def pinterest_download(download: str = Query(None), filename: str = Query(None)):
+    if not download:
+        return JSONResponse({"status": "error", "error": "URL de download ausente."}, status_code=400)
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Referer": "https://www.pinterest.com/",
+    }
+    
+    # Simple proxy using httpx
+    async def stream_file():
+        async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
+            async with client.stream("GET", download) as resp:
+                if resp.status_code != 200:
+                    return
+                async for chunk in resp.aiter_bytes():
+                    yield chunk
+
+    import time
+    ext = "mp4" if ".mp4" in download else "gif" if ".gif" in download else "jpg"
+    name = filename or f"pinterest_{int(time.time())}.{ext}"
+    
+    from fastapi.responses import StreamingResponse
+    return StreamingResponse(
+        stream_file(),
+        media_type="application/octet-stream",
+        headers={"Content-Disposition": f'attachment; filename="{name}"'}
+    )
+
+@app.post("/api/pinterest")
+async def pinterest_data(request: Request):
+    try:
+        payload = await request.json()
+        url = payload.get("url")
+        if not url:
+            return JSONResponse({"status": "error", "error": "URL não fornecida."}, status_code=400)
+        
+        if not _ytdlp_installed():
+            return JSONResponse({"status": "error", "error": "yt-dlp não está instalado."}, status_code=500)
+            
+        def _run_extract():
+            import yt_dlp
+            ydl_opts = {
+                "quiet": True,
+                "no_warnings": True,
+                "skip_download": True,
+                "noplaylist": True,
+                "sleep_interval_requests": 2,
+                "extractor_retries": 3,
+                "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "http_headers": {
+                    "Accept-Language": "pt-BR,pt;q=0.9",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                }
+            }
+            
+            # Check for cookies.txt in the project root or environment variable
+            cookies_path = os.path.join(os.getcwd(), "cookies.txt")
+            if not os.path.exists(cookies_path):
+                env_cookies = os.getenv("PINTEREST_COOKIES")
+                if env_cookies:
+                    with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as tf:
+                        tf.write(env_cookies)
+                        cookies_path = tf.name
+                        print("Using cookies from environment variable")
+
+            if os.path.exists(cookies_path):
+                ydl_opts["cookiefile"] = cookies_path
+                print(f"Using cookies from: {cookies_path}")
+                
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                return ydl.extract_info(url, download=False)
+            
+            # Clean up temp cookie file if created
+            if cookies_path and cookies_path.endswith('.txt') and 'tmp' in cookies_path:
+                try: os.remove(cookies_path)
+                except: pass
+
+        info = await asyncio.to_thread(_run_extract)
+        
+        if not info:
+            return JSONResponse({"status": "error", "error": "Não foi possível extrair dados desse Pin."}, status_code=404)
+        
+        # Formata resposta compatível com o componente React
+        videos = []
+        images = []
+        
+        # Tenta pegar formatos mp4
+        formats = info.get("formats", [])
+        for f in formats:
+            if f.get("ext") == "mp4" and f.get("url"):
+                videos.append({
+                    "label": f"{f.get('height', 'HD')}p" if f.get("height") else f.get("format_id", "MP4"),
+                    "url": f.get("url"),
+                    "width": f.get("width") or 0,
+                    "height": f.get("height") or 0,
+                    "format": "MP4"
+                })
+        
+        # Se não achou vídeos mas tem URL direta
+        if not videos and info.get("url") and not info.get("url").endswith(".jpg"):
+            videos.append({
+                "label": "Original",
+                "url": info.get("url"),
+                "width": info.get("width") or 0,
+                "height": info.get("height") or 0,
+                "format": "MP4"
+            })
+            
+        # Imagens (Extrai da lista de thumbnails se for imagem)
+        if not videos:
+            images.append({
+                "label": "Original",
+                "url": info.get("url") or info.get("thumbnail"),
+                "width": info.get("width") or 0,
+                "height": info.get("height") or 0
+            })
+            
+        import time
+        return {
+            "type": "video" if videos else "image",
+            "title": info.get("title") or "Pinterest Pin",
+            "thumbnail": info.get("thumbnail") or "",
+            "pinId": info.get("id") or "",
+            "videos": sorted(videos, key=lambda x: x.get("height", 0), reverse=True),
+            "images": images,
+            "v": int(time.time()),
+            "debug": f"ytdlp_success_{len(videos)}_vids"
+        }
+        
+    except Exception as e:
+        import time
+        print(f"Pinterest Extraction Error: {str(e)}")
+        return JSONResponse({
+            "status": "error", 
+            "error": f"Erro yt-dlp: {str(e)}",
+            "v": int(time.time()),
+            "debug": "ytdlp_fail"
+        }, status_code=500)
