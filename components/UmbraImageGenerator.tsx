@@ -124,7 +124,8 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
                     ...(negativePrompt ? { negative_prompt: negativePrompt } : {})
                 });
 
-                const pollinationsUrl = `https://gen.pollinations.ai/image/${encodeURIComponent(finalPrompt)}?${params}`;
+                // const pollinationsUrl = `https://gen.pollinations.ai/image/${encodeURIComponent(finalPrompt)}?${params}`;
+                const pollinationsUrl = `https://gen.pollinations.ai/image/a%20cat%20in%20space?${params}`;
 
                 for (let attempt = 0; attempt < 5; attempt++) {
                     if (attempt > 0) await new Promise(r => setTimeout(r, 8000));
