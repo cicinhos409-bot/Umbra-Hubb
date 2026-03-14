@@ -22,7 +22,9 @@ const API_BASE_URL = 'https://umbra-hubb-production.up.railway.app';
 
 const YouTubeDownloaderTool: React.FC = () => {
     const [url, setUrl] = useState('');
+    const [cookies, setCookies] = useState('');
     const [loading, setLoading] = useState(false);
+    const [downloadingItem, setDownloadingItem] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<VideoData | null>(null);
 
@@ -51,7 +53,7 @@ const YouTubeDownloaderTool: React.FC = () => {
             const response = await fetch(`${API_BASE_URL}/api/youtube`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: url.trim() }),
+                body: JSON.stringify({ url: url.trim(), cookies: cookies }),
             });
 
             const result = await response.json();
@@ -64,8 +66,39 @@ const YouTubeDownloaderTool: React.FC = () => {
         }
     };
 
-    const getDownloadUrl = (item: MediaItem) => {
-        return `${API_BASE_URL}/api/download?url=${encodeURIComponent(url)}&filename=youtube_${item.label}_${data?.pinId}.mp4&height=${item.height}`;
+    const handleDownload = async (item: MediaItem, index: number) => {
+        setDownloadingItem(index);
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/download`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    url: url.trim(),
+                    filename: `youtube_${item.label}_${data?.pinId}.mp4`,
+                    height: item.height,
+                    cookies: cookies
+                }),
+            });
+            
+            if (!response.ok) {
+                const result = await response.json();
+                throw new Error(result.error || 'Erro no download.');
+            }
+            
+            const blob = await response.blob();
+            const downloadUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `youtube_${item.label}_${data?.pinId}.mp4`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(downloadUrl);
+        } catch (err: any) {
+            setError(err.message || 'Erro ao realizar download.');
+        } finally {
+            setDownloadingItem(null);
+        }
     };
 
     return (
@@ -104,6 +137,13 @@ const YouTubeDownloaderTool: React.FC = () => {
                             COLAR
                         </button>
                     </div>
+
+                    <textarea
+                        value={cookies}
+                        onChange={(e) => setCookies(e.target.value)}
+                        placeholder="Cole o conteúdo do cookies.txt (formato Netscape) exportado do Firefox..."
+                        className="w-full h-24 bg-black border border-white/10 rounded-2xl py-4 px-4 text-white placeholder:text-white/20 focus:outline-none focus:ring-2 focus:ring-red-600/50 focus:border-red-600/50 transition-all shadow-inner font-mono text-xs resize-y"
+                    />
 
                     <button
                         onClick={fetchVideo}
@@ -159,11 +199,11 @@ const YouTubeDownloaderTool: React.FC = () => {
                                     <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-4">Opções de Download</h4>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                         {data.videos.map((item, index) => (
-                                            <a
+                                            <button
                                                 key={index}
-                                                href={getDownloadUrl(item)}
-                                                download
-                                                className="flex items-center justify-between p-4 bg-background-dark/50 hover:bg-white/5 border border-white/5 rounded-2xl group/btn transition-all"
+                                                onClick={() => handleDownload(item, index)}
+                                                disabled={downloadingItem !== null}
+                                                className={`flex items-center justify-between p-4 bg-background-dark/50 hover:bg-white/5 border border-white/5 rounded-2xl group/btn transition-all text-left ${downloadingItem !== null ? 'opacity-50 cursor-not-allowed' : ''}`}
                                             >
                                                 <div className="flex flex-col">
                                                     <span className="text-sm font-bold text-white group-hover/btn:text-red-500 transition-colors">
@@ -174,9 +214,9 @@ const YouTubeDownloaderTool: React.FC = () => {
                                                     </span>
                                                 </div>
                                                 <div className="p-2 bg-white/5 rounded-xl text-gray-400 group-hover/btn:bg-red-600 group-hover/btn:text-white transition-all">
-                                                    <Download className="w-4 h-4" />
+                                                    {downloadingItem === index ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                                                 </div>
-                                            </a>
+                                            </button>
                                         ))}
                                     </div>
                                 </div>

@@ -87,16 +87,26 @@ def facebook():
 
 @app.route('/api/youtube', methods=['POST'])
 def youtube():
-    url = request.json.get('url')
+    data = request.json
+    url = data.get('url')
+    cookies_str = data.get('cookies', '')
     if not url:
         return jsonify({'error': 'URL não fornecida'}), 400
 
-    result = subprocess.run(
-        ['yt-dlp', '--dump-json', '--no-playlist',
-         '--cookies', '/app/youtube_cookies.txt',
-         url],
-        capture_output=True, text=True, timeout=30
-    )
+    with tempfile.TemporaryDirectory() as tmpdir:
+        cookies_file = os.path.join(tmpdir, 'cookies.txt')
+        if cookies_str:
+            with open(cookies_file, 'w', encoding='utf-8') as f:
+                f.write(cookies_str)
+        else:
+            cookies_file = '/app/youtube_cookies.txt'
+
+        result = subprocess.run(
+            ['yt-dlp', '--dump-json', '--no-playlist',
+             '--cookies', cookies_file,
+             url],
+            capture_output=True, text=True, timeout=30
+        )
 
     if result.returncode != 0:
         return jsonify({'error': result.stderr}), 500
@@ -135,17 +145,33 @@ def youtube():
         'images': []
     })
 
-@app.route('/api/download', methods=['GET'])
+@app.route('/api/download', methods=['GET', 'POST'])
 def download():
-    original_url = request.args.get('url')
-    filename = request.args.get('filename', 'video.mp4')
-    height = request.args.get('height', 'best')
+    if request.method == 'POST':
+        data = request.json
+        original_url = data.get('url')
+        filename = data.get('filename', 'video.mp4')
+        height = data.get('height', 'best')
+        cookies_str = data.get('cookies', '')
+    else:
+        original_url = request.args.get('url')
+        filename = request.args.get('filename', 'video.mp4')
+        height = request.args.get('height', 'best')
+        cookies_str = ''
+
     if not original_url:
         return 'URL não fornecida', 400
 
     import glob
 
     with tempfile.TemporaryDirectory() as tmpdir:
+        cookies_file = os.path.join(tmpdir, 'cookies.txt')
+        if cookies_str:
+            with open(cookies_file, 'w', encoding='utf-8') as f:
+                f.write(cookies_str)
+        else:
+            cookies_file = '/app/youtube_cookies.txt'
+
         output_template = os.path.join(tmpdir, 'video.%(ext)s')
 
         if height and height != 'best' and height != '0':
@@ -160,7 +186,7 @@ def download():
                 '-f', fmt,
                 '--merge-output-format', 'mp4',
                 '--no-playlist',
-                '--cookies', '/app/youtube_cookies.txt',
+                '--cookies', cookies_file,
                 original_url
             ],
             capture_output=True, text=True, timeout=120
@@ -170,11 +196,13 @@ def download():
         if not files:
             return jsonify({'error': 'Falha: ' + result.stderr}), 500
 
-        return send_file(
-            files[0],
-            as_attachment=True,
-            download_name=filename,
-            mimetype='video/mp4'
+        with open(files[0], 'rb') as f:
+            file_data = f.read()
+
+        return Response(
+            file_data,
+            mimetype='video/mp4',
+            headers={"Content-disposition": f"attachment; filename={filename}"}
         )
 
 if __name__ == '__main__':
