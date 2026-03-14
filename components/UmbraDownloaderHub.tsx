@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Download, Film } from 'lucide-react';
 import TiktokDownloaderTool from './TiktokDownloaderTool';
@@ -23,7 +22,7 @@ const UmbraDownloaderHub: React.FC = () => {
     return (
         <div className="animate-in fade-in slide-in-from-bottom-6 duration-500">
             {/* Tab Navigation */}
-            <div className="flex gap-2 mb-6 p-1.5 bg-background-mid rounded-2xl border border-white/5">
+            <div className="flex flex-wrap md:flex-nowrap gap-2 mb-6 p-1.5 bg-background-mid rounded-2xl border border-white/5">
                 {TABS.map(tab => {
                     const Icon = tab.icon;
                     const isActive = activeTab === tab.id;
@@ -31,13 +30,13 @@ const UmbraDownloaderHub: React.FC = () => {
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`flex-1 flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 ${isActive
+                            className={`flex-[1_1_100%] sm:flex-[1_1_45%] md:flex-1 flex items-center justify-center gap-2.5 px-3 py-3 md:px-5 md:py-3.5 rounded-xl text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all duration-300 ${isActive
                                     ? `bg-gradient-to-r ${tab.color} text-white shadow-lg scale-[1.02]`
                                     : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
                                 }`}
                         >
-                            <Icon className="w-4 h-4" />
-                            {tab.label}
+                            <Icon className="w-4 h-4 shrink-0" />
+                            <span className="truncate">{tab.label}</span>
                         </button>
                     );
                 })}
