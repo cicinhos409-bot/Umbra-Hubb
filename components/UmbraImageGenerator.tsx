@@ -96,13 +96,29 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
 
             if (engine === 'pollinations') {
                 const seed = Math.floor(Math.random() * 1000000);
-                imageUrl = `https://pollinations.ai/p/${encodeURIComponent(finalPrompt)}?width=${ratioData?.size.split('x')[0]}&height=${ratioData?.size.split('x')[1]}&seed=${seed}&nologo=true`;
+                const width = ratioData?.size.split('x')[0] || '1024';
+                const height = ratioData?.size.split('x')[1] || '1024';
                 
+                // Using the more stable image.pollinations.ai endpoint
+                imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=flux`;
+                
+                // Verification with a timeout to prevent infinite hang or false errors
                 const img = new Image();
                 img.src = imageUrl;
+                
                 await new Promise((resolve, reject) => {
-                    img.onload = resolve;
-                    img.onerror = () => reject(new Error('Falha ao renderizar imagem no Pollinations.'));
+                    const timer = setTimeout(() => {
+                        resolve(true); // Proceed anyway after timeout
+                    }, 10000);
+
+                    img.onload = () => {
+                        clearTimeout(timer);
+                        resolve(true);
+                    };
+                    img.onerror = () => {
+                        clearTimeout(timer);
+                        reject(new Error('O servidor do Pollinations não respondeu a tempo. Tente novamente ou use outro estilo.'));
+                    };
                 });
             } else {
                 const res = await fetch(`${API_BASE_URL}/api/openai-image`, {
