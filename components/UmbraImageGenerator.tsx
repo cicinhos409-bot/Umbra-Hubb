@@ -1,3 +1,27 @@
+
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+    Sparkles, 
+    ImageIcon, 
+    Download, 
+    RefreshCw, 
+    CheckCircle2, 
+    AlertCircle, 
+    Zap, 
+    Search,
+    ChevronRight,
+    Maximize2,
+    Trash2,
+    Grid,
+    Palette,
+    Layers,
+    Monitor,
+    Smartphone,
+    Square,
+    Send,
+    X
+} from 'lucide-react';
+
 const API_BASE_URL = 'https://umbra-hubb-production.up.railway.app';
 
 interface UmbraImageGeneratorProps {
@@ -71,11 +95,9 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
             let imageUrl = '';
 
             if (engine === 'pollinations') {
-                // Pollinations uses a specific URL format for generation
                 const seed = Math.floor(Math.random() * 1000000);
                 imageUrl = `https://pollinations.ai/p/${encodeURIComponent(finalPrompt)}?width=${ratioData?.size.split('x')[0]}&height=${ratioData?.size.split('x')[1]}&seed=${seed}&nologo=true`;
                 
-                // Pre-warm the image URL
                 const img = new Image();
                 img.src = imageUrl;
                 await new Promise((resolve, reject) => {
@@ -83,7 +105,6 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
                     img.onerror = () => reject(new Error('Falha ao renderizar imagem no Pollinations.'));
                 });
             } else {
-                // OpenAI DALL-E 3 Implementation via Proxy
                 const res = await fetch(`${API_BASE_URL}/api/openai-image`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -220,7 +241,6 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
                         </div>
                     </section>
 
-                    {/* ENGINE SELECTOR */}
                     <section className="bg-background-mid border border-white/5 rounded-[40px] p-8 md:p-10 shadow-2xl">
                         <div className="flex flex-col md:flex-row gap-4">
                             <button 
@@ -274,7 +294,6 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
                     </section>
                 </div>
 
-                {/* HISTORY SIDEBAR */}
                 <div className="lg:col-span-4 space-y-8">
                     <section className="bg-background-mid border border-white/5 rounded-[40px] p-8 shadow-2xl h-full flex flex-col">
                         <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] mb-8 flex items-center gap-2">
@@ -315,7 +334,6 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
                 </div>
             </div>
 
-            {/* RESULTS VIEW */}
             {(loading || currentImage) && (
                 <div ref={resultRef} className="animate-in fade-in slide-in-from-bottom-8 duration-700">
                     <section className="bg-background-mid border border-brand-cyan/20 rounded-[48px] overflow-hidden shadow-2xl relative">
@@ -382,7 +400,6 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
                 </div>
             )}
 
-            {/* LIGHTBOX FOR HISTORY */}
             {viewingImage && (
                 <div className="fixed inset-0 z-[300] bg-background-deep/98 backdrop-blur-3xl flex items-center justify-center p-8 animate-in fade-in duration-300">
                     <button 
