@@ -99,35 +99,20 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
                 const width = ratioData?.size.split('x')[0] || '1024';
                 const height = ratioData?.size.split('x')[1] || '1024';
                 
-                const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=flux`;
-                const proxyUrl = `${API_BASE_URL}/api/proxy-image?url=${encodeURIComponent(pollinationsUrl)}`;
-
-                // Polling: tenta a cada 8s por até 3 minutos
-                let blob: Blob | null = null;
-                const maxAttempts = 22;
+                // Chama Pollinations DIRETAMENTE — sem proxy, sem backend
+                const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=flux&nofeed=true`;
                 
-                for (let attempt = 0; attempt < maxAttempts; attempt++) {
-                    await new Promise(resolve => setTimeout(resolve, attempt === 0 ? 3000 : 8000));
-                    
-                    try {
-                        const res = await fetch(proxyUrl);
-                        
-                        if (res.status === 202) continue; // Ainda gerando, tenta de novo
-                        
-                        if (res.ok) {
-                            blob = await res.blob();
-                            if (blob.size > 1000) break; // Imagem válida recebida!
-                        }
-                    } catch {
-                        continue; // Ignora erros de rede e tenta de novo
-                    }
-                }
+                // Aguarda a imagem carregar diretamente no browser
+                await new Promise<void>((resolve, reject) => {
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    const timer = setTimeout(() => reject(new Error('Pollinations demorou muito. Tente novamente.')), 120000);
+                    img.onload = () => { clearTimeout(timer); resolve(); };
+                    img.onerror = () => { clearTimeout(timer); reject(new Error('Erro ao gerar imagem. Tente novamente.')); };
+                    img.src = pollinationsUrl;
+                });
                 
-                if (!blob || blob.size <= 1000) {
-                    throw new Error('O Pollinations demorou muito. Tente novamente.');
-                }
-                
-                imageUrl = URL.createObjectURL(blob);
+                imageUrl = pollinationsUrl;
 
             } else {
                 // OpenAI DALL-E 3 mapping
@@ -176,15 +161,18 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
 
     const downloadImage = async (url: string) => {
         try {
-            const response = await fetch(url);
-            const blob = await response.blob();
-            const blobUrl = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.download = `umbra-image-${Date.now()}.png`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            if (url.startsWith('blob:')) {
+                // Blob local — download direto
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `umbra-image-${Date.now()}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                // URL externa — abre em nova aba
+                window.open(url, '_blank');
+            }
         } catch (err) {
             window.open(url, '_blank');
         }
