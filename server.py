@@ -246,5 +246,34 @@ def mistral_proxy():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/openai-image', methods=['POST'])
+def openai_image_proxy():
+    data = request.json
+    api_key = os.environ.get('OPENAI_API_KEY')
+    if not api_key:
+        return jsonify({'error': 'OpenAI API Key não configurada no servidor'}), 500
+    
+    try:
+        response = requests.post(
+            'https://api.openai.com/v1/images/generations',
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {api_key}'
+            },
+            json={
+                "model": "dall-e-3",
+                "prompt": data.get("prompt"),
+                "n": 1,
+                "size": data.get("size", "1024x1024"),
+                "quality": data.get("quality", "standard"),
+                "style": data.get("style", "vivid")
+            },
+            timeout=120
+        )
+        response.raise_for_status()
+        return jsonify(response.json())
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=3000)
