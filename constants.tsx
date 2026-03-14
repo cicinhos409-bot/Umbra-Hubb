@@ -20,6 +20,7 @@ export const TOOLS: Tool[] = [
   { id: 'storytelling', name: 'Umbra You Storytelling', description: 'Gerador de roteiros virais de alto impacto com IA Mistral.', tier: ToolTier.TURBO, icon: '🎬', category: ToolCategory.CHATBOTS },
   { id: 'image-studio', name: 'Umbra Image Studio', description: 'Geração de imagens de alta fidelidade com IA universal.', tier: ToolTier.PRO, icon: '🎨', category: ToolCategory.WEB },
   { id: 'video-generator', name: 'Umbra Video Generator', description: 'Transforme texto em vídeos cinematográficos com IA Grok.', tier: ToolTier.PRO, icon: '🎬', category: ToolCategory.CHATBOTS },
+  { id: 'umbra-voice', name: 'UmbraVoice', description: 'Narração cinematográfica ultra-realista com ElevenLabs IA.', tier: ToolTier.TURBO, icon: '🎙️', category: ToolCategory.CHATBOTS },
 ];
 
 export const PLANS: PricingPlan[] = [
@@ -74,6 +75,7 @@ export const PLANS: PricingPlan[] = [
     features: [
       'Tudo do Pro +',
       'Umbra You Storytelling (Mistral IA)',
+      'UmbraVoice (ElevenLabs IA)',
       'Motor Supremo (Title, Script)',
       'Turbo Hub (Connect, Control)',
       'Umbra Áudios (30/dia • 100k)',
