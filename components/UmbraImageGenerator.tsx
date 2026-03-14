@@ -99,26 +99,17 @@ const UmbraImageGenerator: React.FC<UmbraImageGeneratorProps> = ({ userTier }) =
                 const width = ratioData?.size.split('x')[0] || '1024';
                 const height = ratioData?.size.split('x')[1] || '1024';
                 
-                // Using the more stable image.pollinations.ai endpoint
+                // Stable endpoint
                 imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=flux`;
                 
-                // Verification with a timeout to prevent infinite hang or false errors
+                // SOFT LOAD: we wait up to 5s for pre-heating, but always proceed.
                 const img = new Image();
                 img.src = imageUrl;
                 
-                await new Promise((resolve, reject) => {
-                    const timer = setTimeout(() => {
-                        resolve(true); // Proceed anyway after timeout
-                    }, 10000);
-
-                    img.onload = () => {
-                        clearTimeout(timer);
-                        resolve(true);
-                    };
-                    img.onerror = () => {
-                        clearTimeout(timer);
-                        reject(new Error('O servidor do Pollinations não respondeu a tempo. Tente novamente ou use outro estilo.'));
-                    };
+                await new Promise((resolve) => {
+                    const timer = setTimeout(resolve, 5000); // Wait max 5s
+                    img.onload = () => { clearTimeout(timer); resolve(true); };
+                    img.onerror = () => { clearTimeout(timer); resolve(true); };
                 });
             } else {
                 const res = await fetch(`${API_BASE_URL}/api/openai-image`, {
