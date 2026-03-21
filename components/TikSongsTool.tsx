@@ -117,17 +117,21 @@ const TikSongsTool: React.FC = () => {
     setIsPlaying(false);
     setPlayerStatus({ type: 'loading', msg: '⏳ buscando preview...' });
 
+    // Bug fix: Call load() immediately to establish user gesture context 
+    // before the 'await' below, helping prevent Autoplay blocks.
+    audioRef.current.load();
+
     const url = await getItunesPreview(song.title, song.artist);
     setIsBuffering(false);
 
     if (url) {
       audioRef.current.src = url;
-      audioRef.current.load();
       try {
         await audioRef.current.play();
         setIsPlaying(true);
         setPlayerStatus({ type: 'playing', msg: '▶ preview 30s — iTunes' });
-      } catch (e) {
+      } catch (e: any) {
+        console.error('[TikSongs] Playback failed:', e);
         setPlayerStatus({ type: 'error', msg: '❌ erro ao reproduzir' });
       }
     } else {
