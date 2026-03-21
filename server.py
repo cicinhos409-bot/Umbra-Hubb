@@ -47,7 +47,7 @@ def tiktok_analytics():
     ]:
         try:
             r = requests.get(url, headers=headers, timeout=12)
-            print(f'[POSTS] {url} → {r.status_code} | {r.text[:200]}')
+            print(f'[POSTS] {url} → {r.status_code} | {r.text[:200]}', flush=True)
             if r.status_code == 200 and r.text.strip():
                 j = r.json()
                 d = j.get('data', {})
@@ -56,9 +56,9 @@ def tiktok_analytics():
                     vids = d.get('videos') or d.get('aweme_list') or d.get('list') or d.get('data') or []
                     if vids: raw_videos = vids; break
         except Exception as e:
-            print(f'[POSTS ERROR] {e}')
+            print(f'[POSTS ERROR] {e}', flush=True)
 
-    print(f'[POSTS TOTAL] {len(raw_videos)} videos')
+    print(f'[POSTS TOTAL] {len(raw_videos)} videos', flush=True)
 
     def extract_hashtags(videos):
         tags = {}
@@ -141,7 +141,7 @@ def tiktok_analytics():
             'videoCount': num(stats.get('videoCount') or user.get('videoCount')),
         },
         'analytics': analytics,
-        'raw_source': 'tikwm_railway',
+        'raw_source': 'tikwm_railway_final',
     })
 
 def convert_cookies_to_netscape(raw_cookies: str) -> str:
