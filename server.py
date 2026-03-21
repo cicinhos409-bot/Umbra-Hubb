@@ -39,7 +39,7 @@ def tiktok_analytics():
 
     follower_count = num(stats.get('followerCount') or stats.get('fans') or user.get('followerCount'))
 
-    # Posts via tikwm direto (Railway não é bloqueado)
+    # 2. Posts — Tentar tikwm primeiro (grátis/ilimitado)
     raw_videos = []
     for url in [
         f'https://www.tikwm.com/api/user/posts?unique_id={username}&count=20',
@@ -47,8 +47,8 @@ def tiktok_analytics():
     ]:
         try:
             r = requests.get(url, headers=headers, timeout=12)
-            print(f'[POSTS] {url} → {r.status_code} | {r.text[:200]}', flush=True)
-            if r.status_code == 200 and r.text.strip():
+            print(f'[TIKWM] {url} → {r.status_code} | {r.text[:150]}', flush=True)
+            if r.status_code == 200 and r.text.strip() and 'Just a moment' not in r.text:
                 j = r.json()
                 d = j.get('data', {})
                 if isinstance(d, list) and d: raw_videos = d; break
@@ -56,9 +56,33 @@ def tiktok_analytics():
                     vids = d.get('videos') or d.get('aweme_list') or d.get('list') or d.get('data') or []
                     if vids: raw_videos = vids; break
         except Exception as e:
-            print(f'[POSTS ERROR] {e}', flush=True)
+            print(f'[TIKWM ERROR] {e}', flush=True)
 
-    print(f'[POSTS TOTAL] {len(raw_videos)} videos', flush=True)
+    # 3. Fallback para RapidAPI (se tikwm falhou)
+    if not raw_videos:
+        rapid_key = os.environ.get('RAPIDAPI_KEY')
+        if rapid_key:
+            try:
+                print(f'[RAPIDAPI] Iniciando fallback para @{username}...', flush=True)
+                r = requests.get(
+                    f'https://tiktok-scraper7.p.rapidapi.com/user/posts?unique_id={username}&count=20',
+                    headers={
+                        'x-rapidapi-host': 'tiktok-scraper7.p.rapidapi.com',
+                        'x-rapidapi-key': rapid_key,
+                    },
+                    timeout=12
+                )
+                if r.status_code == 200:
+                    j = r.json()
+                    d = j.get('data', {})
+                    if isinstance(d, list) and d: raw_videos = d
+                    elif isinstance(d, dict):
+                        raw_videos = d.get('videos') or d.get('aweme_list') or d.get('list') or d.get('data') or []
+                print(f'[RAPIDAPI] status={r.status_code} videos={len(raw_videos)}', flush=True)
+            except Exception as e:
+                print(f'[RAPIDAPI ERROR] {e}', flush=True)
+
+    print(f'[POSTS TOTAL] {len(raw_videos)} videos encontrados', flush=True)
 
     def extract_hashtags(videos):
         tags = {}
