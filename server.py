@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify, Response, send_file
 from flask_cors import CORS
-import subprocess, json, requests, tempfile, os, time
+import subprocess, json, requests, tempfile, os, time, random
 
 app = Flask(__name__)
 # Enable CORS for the Vercel frontend
@@ -8,6 +8,36 @@ CORS(app, origins=["https://umbrahubb.vercel.app", "http://localhost:5173"])
 
 import re
 from datetime import datetime
+
+RAPIDAPI_KEYS = [k for k in [os.environ.get(f'RAPIDAPI_KEY_{i}', '') for i in range(1, 16)] if k]
+
+def fetch_posts_rapidapi(username):
+    """Busca posts usando rotação de chaves RapidAPI se o TikWM falhar"""
+    keys = RAPIDAPI_KEYS.copy()
+    random.shuffle(keys)
+    for key in keys:
+        try:
+            r = requests.get(
+                f'https://tiktok-scraper7.p.rapidapi.com/user/posts?unique_id={username}&count=20',
+                headers={
+                    'x-rapidapi-host': 'tiktok-scraper7.p.rapidapi.com',
+                    'x-rapidapi-key': key,
+                },
+                timeout=12
+            )
+            print(f'[RAPIDAPI] status={r.status_code} key=...{key[-6:]}', flush=True)
+            if r.status_code == 429: # Rate limit atingido para esta key
+                continue
+            if r.status_code == 200:
+                j = r.json()
+                d = j.get('data', {})
+                if isinstance(d, list) and d: return d
+                elif isinstance(d, dict):
+                    vids = d.get('videos') or d.get('aweme_list') or d.get('list') or d.get('data') or []
+                    if vids: return vids
+        except Exception as e:
+            print(f'[RAPIDAPI ERROR] {e}', flush=True)
+    return []
 
 @app.route('/api/tiktok_analytics')
 def tiktok_analytics():
@@ -58,29 +88,10 @@ def tiktok_analytics():
         except Exception as e:
             print(f'[TIKWM ERROR] {e}', flush=True)
 
-    # 3. Fallback para RapidAPI (se tikwm falhou)
-    if not raw_videos:
-        rapid_key = os.environ.get('RAPIDAPI_KEY')
-        if rapid_key:
-            try:
-                print(f'[RAPIDAPI] Iniciando fallback para @{username}...', flush=True)
-                r = requests.get(
-                    f'https://tiktok-scraper7.p.rapidapi.com/user/posts?unique_id={username}&count=20',
-                    headers={
-                        'x-rapidapi-host': 'tiktok-scraper7.p.rapidapi.com',
-                        'x-rapidapi-key': rapid_key,
-                    },
-                    timeout=12
-                )
-                if r.status_code == 200:
-                    j = r.json()
-                    d = j.get('data', {})
-                    if isinstance(d, list) and d: raw_videos = d
-                    elif isinstance(d, dict):
-                        raw_videos = d.get('videos') or d.get('aweme_list') or d.get('list') or d.get('data') or []
-                print(f'[RAPIDAPI] status={r.status_code} videos={len(raw_videos)}', flush=True)
-            except Exception as e:
-                print(f'[RAPIDAPI ERROR] {e}', flush=True)
+    # 3. Fallback para RapidAPI com Rotação (se tikwm falhou)
+    if not raw_videos and RAPIDAPI_KEYS:
+        print(f'[RAPIDAPI] Iniciando fallback com rotação para @{username}...', flush=True)
+        raw_videos = fetch_posts_rapidapi(username)
 
     print(f'[POSTS TOTAL] {len(raw_videos)} videos encontrados', flush=True)
 

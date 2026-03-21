@@ -5,6 +5,45 @@
  * Strategy: tikwm.com (no Cloudflare) → Countik (may be blocked) → 502
  */
 
+const RAPIDAPI_KEYS = Array.from({length: 15}, (_, i) => 
+  process.env[`RAPIDAPI_KEY_${i + 1}`]
+).filter(Boolean);
+
+async function fetchPostsRapidAPI(username) {
+  const keys = [...RAPIDAPI_KEYS].sort(() => Math.random() - 0.5);
+  for (const key of keys) {
+    try {
+      const res = await fetch(
+        `https://tiktok-scraper7.p.rapidapi.com/user/posts?unique_id=${encodeURIComponent(username)}&count=20`,
+        {
+          headers: {
+            'x-rapidapi-host': 'tiktok-scraper7.p.rapidapi.com',
+            'x-rapidapi-key': key,
+          },
+          signal: AbortSignal.timeout(12000),
+        }
+      );
+      if (res.status === 429) {
+        console.warn(`[tiktok_analytics] Key ...${key.slice(-6)} rate limited (429), trying next...`);
+        continue;
+      }
+      if (res.ok) {
+        const j = await res.json();
+        const d = j?.data;
+        if (Array.isArray(d)) return d;
+        if (typeof d === 'object') {
+          const vids = d?.videos || d?.aweme_list || d?.list || d?.data || [];
+          if (vids.length) return vids;
+        }
+      }
+    } catch (e) { 
+      console.error(`[tiktok_analytics] RapidAPI error with key ...${key.slice(-6)}:`, e.message);
+      continue; 
+    }
+  }
+  return [];
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -101,47 +140,27 @@ async function tryTikwm(username) {
   const heartCount = num(stats.heartCount || stats.heart_count || stats.heart || stats.diggCount || user.heartCount || user.heart);
   const videoCount = num(stats.videoCount || stats.video_count || stats.video || user.videoCount);
 
-  // 2. Get User Posts via RapidAPI (Stabilized Fix)
+  // 2. Get User Posts via RapidAPI (Stabilized Fix with Rotation)
   let videosList = [];
-  try {
-    console.log(`[tiktok_analytics] Fetching posts for @${username} via RapidAPI...`);
-    const postsRes = await fetch(
-      `https://tiktok-scraper7.p.rapidapi.com/user/posts?unique_id=${encodeURIComponent(username)}&count=20`,
-      {
-        headers: {
-          'x-rapidapi-host': 'tiktok-scraper7.p.rapidapi.com',
-          'x-rapidapi-key': process.env.RAPIDAPI_KEY,
-        },
-        signal: AbortSignal.timeout(12000),
-      }
-    );
+  if (RAPIDAPI_KEYS.length > 0) {
+    try {
+      console.log(`[tiktok_analytics] Fetching posts for @${username} via RapidAPI Rotation...`);
+      const rawVideos = await fetchPostsRapidAPI(username);
+      console.log(`[tiktok_analytics] Found ${rawVideos.length} videos for @${username}`);
 
-    const postsJson = postsRes.ok ? await postsRes.json() : null;
-    console.log('[DEBUG rapidapi]', postsJson?.code, JSON.stringify(postsJson?.data)?.slice(0, 300));
-
-    const d = postsJson?.data;
-    let rawVideos = [];
-    if (Array.isArray(d?.videos)) rawVideos = d.videos;
-    else if (Array.isArray(d?.aweme_list)) rawVideos = d.aweme_list;
-    else if (Array.isArray(d?.data)) rawVideos = d.data;
-    else if (Array.isArray(d?.list)) rawVideos = d.list;
-    else if (Array.isArray(d?.itemList)) rawVideos = d.itemList;
-    else if (Array.isArray(d)) rawVideos = d;
-
-    console.log(`[tiktok_analytics] Found ${rawVideos.length} videos for @${username}`);
-
-    videosList = rawVideos.map(v => ({
-      id: v.video_id || v.id,
-      desc: v.title || v.desc || '',
-      plays: num(v.play_count || v.playCount || v.stats?.playCount),
-      likes: num(v.digg_count || v.diggCount || v.stats?.diggCount),
-      comments: num(v.comment_count || v.commentCount || v.stats?.commentCount),
-      shares: num(v.share_count || v.shareCount || v.stats?.shareCount),
-      create_date: v.create_time || v.createTime || 0,
-      engRate: (followerCount > 0) ? (((num(v.digg_count || v.diggCount || v.stats?.diggCount) + num(v.comment_count || v.commentCount || v.stats?.commentCount) + num(v.share_count || v.shareCount || v.stats?.shareCount)) / followerCount) * 100) : 0
-    }));
-  } catch (e) {
-    console.warn(`[tiktok_analytics] RapidAPI posts failed for @${username}:`, e.message);
+      videosList = rawVideos.map(v => ({
+        id: v.video_id || v.id,
+        desc: v.title || v.desc || '',
+        plays: num(v.play_count || v.playCount || v.stats?.playCount),
+        likes: num(v.digg_count || v.diggCount || v.stats?.diggCount),
+        comments: num(v.comment_count || v.commentCount || v.stats?.commentCount),
+        shares: num(v.share_count || v.shareCount || v.stats?.shareCount),
+        create_date: v.create_time || v.createTime || 0,
+        engRate: (followerCount > 0) ? (((num(v.digg_count || v.diggCount || v.stats?.diggCount) + num(v.comment_count || v.commentCount || v.stats?.commentCount) + num(v.share_count || v.shareCount || v.stats?.shareCount)) / followerCount) * 100) : 0
+      }));
+    } catch (e) {
+      console.warn(`[tiktok_analytics] RapidAPI rotation failed for @${username}:`, e.message);
+    }
   }
 
   // 3. Calculate Global Analytics from videos
