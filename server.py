@@ -515,6 +515,116 @@ def proxy_image():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/tiktok_video')
+def tiktok_video():
+    url = request.args.get('url', '')
+    video_id = request.args.get('video_id', '')
+
+    # Extrair video_id da URL se necessário
+    if url and not video_id:
+        match = re.search(r'/video/(\d{15,20})', url)
+        if match:
+            video_id = match.group(1)
+        else:
+            match = re.search(r'\b(\d{15,20})\b', url)
+            if match:
+                video_id = match.group(1)
+
+    if not video_id:
+        return jsonify({'error': 'URL inválida ou video_id não encontrado'}), 422
+
+    print(f'[TIKTOK_VIDEO] video_id={video_id}', flush=True)
+
+    # Tenta TikWM primeiro
+    tikwm_headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Referer': 'https://www.tikwm.com/',
+        'Accept': 'application/json',
+    }
+
+    try:
+        r = requests.get(
+            f'https://www.tikwm.com/api/?url=https://www.tiktok.com/video/{video_id}&web=1&hd=1',
+            headers=tikwm_headers,
+            timeout=12
+        )
+        print(f'[TIKTOK_VIDEO] tikwm status={r.status_code}', flush=True)
+        if r.status_code == 200:
+            j = r.json()
+            d = j.get('data', {})
+            if d and d.get('play_count') is not None or d.get('digg_count') is not None:
+                def num(v):
+                    if isinstance(v, (int, float)): return int(v)
+                    return 0
+                return jsonify({
+                    'video_id': video_id,
+                    'desc': d.get('title') or d.get('desc') or '',
+                    'create_time': d.get('create_time') or d.get('createTime') or None,
+                    'stats': {
+                        'play_count':    num(d.get('play_count')    or d.get('playCount')),
+                        'like_count':    num(d.get('digg_count')    or d.get('diggCount')),
+                        'comment_count': num(d.get('comment_count') or d.get('commentCount')),
+                        'share_count':   num(d.get('share_count')   or d.get('shareCount')),
+                    },
+                    'author': {
+                        'unique_id':    d.get('author', {}).get('unique_id')    or d.get('author', {}).get('uniqueId')    or '',
+                        'nickname':     d.get('author', {}).get('nickname')     or '',
+                        'avatar_thumb': d.get('author', {}).get('avatar_thumb') or d.get('author', {}).get('avatarThumb') or '',
+                        'verified':     bool(d.get('author', {}).get('verified')),
+                    },
+                    'fetched_at': int(time.time() * 1000),
+                    'source': 'tikwm',
+                })
+    except Exception as e:
+        print(f'[TIKTOK_VIDEO] tikwm error: {e}', flush=True)
+
+    # Fallback RapidAPI
+    keys = RAPIDAPI_KEYS.copy()
+    random.shuffle(keys)
+    for key in keys:
+        try:
+            r = requests.get(
+                f'https://tiktok-scraper7.p.rapidapi.com/video/info?url=https://www.tiktok.com/video/{video_id}',
+                headers={
+                    'x-rapidapi-host': 'tiktok-scraper7.p.rapidapi.com',
+                    'x-rapidapi-key': key,
+                },
+                timeout=12
+            )
+            print(f'[TIKTOK_VIDEO] rapidapi status={r.status_code}', flush=True)
+            if r.status_code == 200:
+                j = r.json()
+                d = j.get('data', {})
+                if d:
+                    def num(v):
+                        if isinstance(v, (int, float)): return int(v)
+                        return 0
+                    stats = d.get('stats') or d
+                    author = d.get('author') or {}
+                    return jsonify({
+                        'video_id': video_id,
+                        'desc': d.get('desc') or d.get('title') or '',
+                        'create_time': d.get('createTime') or None,
+                        'stats': {
+                            'play_count':    num(stats.get('playCount')    or stats.get('play_count')),
+                            'like_count':    num(stats.get('diggCount')    or stats.get('like_count')),
+                            'comment_count': num(stats.get('commentCount') or stats.get('comment_count')),
+                            'share_count':   num(stats.get('shareCount')   or stats.get('share_count')),
+                        },
+                        'author': {
+                            'unique_id':    author.get('uniqueId')    or author.get('unique_id')    or '',
+                            'nickname':     author.get('nickname')    or '',
+                            'avatar_thumb': author.get('avatarThumb') or author.get('avatar_thumb') or '',
+                            'verified':     bool(author.get('verified')),
+                        },
+                        'fetched_at': int(time.time() * 1000),
+                        'source': 'rapidapi',
+                    })
+        except Exception as e:
+            print(f'[TIKTOK_VIDEO] rapidapi error: {e}', flush=True)
+
+    return jsonify({'error': 'Não foi possível buscar dados do vídeo', 'video_id': video_id}), 502
+
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 3000))
     app.run(host='0.0.0.0', port=port)
