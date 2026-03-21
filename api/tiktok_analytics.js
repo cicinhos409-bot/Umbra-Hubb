@@ -110,7 +110,7 @@ async function tryTikwm(username) {
       {
         headers: {
           'x-rapidapi-host': 'tiktok-scraper7.p.rapidapi.com',
-          'x-rapidapi-key': process.env.RAPIDAPI_KEY || '3a0fadde0bmsh3bdc24f7b6b54a8p102809jsnc72915f2dfe3',
+          'x-rapidapi-key': process.env.RAPIDAPI_KEY,
         },
         signal: AbortSignal.timeout(12000),
       }

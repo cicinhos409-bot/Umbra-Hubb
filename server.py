@@ -28,38 +28,120 @@ def tiktok_analytics():
     user = user_data.get('user', user_data)
     stats = user_data.get('stats', {})
 
-    # Posts — testar 3 endpoints
+    def num(v):
+        if isinstance(v, (int, float)): return int(v)
+        if not v: return 0
+        s = str(v).upper().strip()
+        if s.endswith('K'): return int(float(s[:-1]) * 1000)
+        if s.endswith('M'): return int(float(s[:-1]) * 1000000)
+        if s.endswith('B'): return int(float(s[:-1]) * 1000000000)
+        return int(re.sub(r'[^0-9]', '', s) or 0)
+
+    follower_count = num(stats.get('followerCount') or stats.get('fans') or user.get('followerCount'))
+
+    # Posts via tikwm direto (Railway não é bloqueado)
     raw_videos = []
-    post_urls = [
+    for url in [
         f'https://www.tikwm.com/api/user/posts?unique_id={username}&count=20',
-        f'https://www.tikwm.com/api/?url=https://www.tiktok.com/@{username}&count=20',
         f'https://www.tikwm.com/api/user/posts?unique_id={username}&count=20&cursor=0&web=1',
-    ]
-    for url in post_urls:
+    ]:
         try:
             r = requests.get(url, headers=headers, timeout=12)
-            print(f'[POSTS] {url} → {r.status_code} | {r.text[:300]}')
+            print(f'[POSTS] {url} → {r.status_code} | {r.text[:200]}')
             if r.status_code == 200 and r.text.strip():
                 j = r.json()
                 d = j.get('data', {})
-                if isinstance(d, list) and d:
-                    raw_videos = d
-                    break
+                if isinstance(d, list) and d: raw_videos = d; break
                 elif isinstance(d, dict):
                     vids = d.get('videos') or d.get('aweme_list') or d.get('list') or d.get('data') or []
-                    if vids:
-                        raw_videos = vids
-                        break
+                    if vids: raw_videos = vids; break
         except Exception as e:
-            print(f'[POSTS ERROR] {url} → {e}')
+            print(f'[POSTS ERROR] {e}')
 
-    print(f'[POSTS TOTAL] {len(raw_videos)} videos encontrados')
+    print(f'[POSTS TOTAL] {len(raw_videos)} videos')
+
+    def extract_hashtags(videos):
+        tags = {}
+        for v in videos:
+            desc = v.get('title') or v.get('desc') or ''
+            for tag in re.findall(r'#[a-zA-Z0-9_\u00C0-\u00FF]+', desc):
+                clean = tag[1:].lower()
+                tags[clean] = tags.get(clean, 0) + 1
+        return sorted([{'name': k, 'count': v} for k, v in tags.items()], key=lambda x: -x['count'])[:15]
+
+    def extract_mentions(videos):
+        mentions = {}
+        for v in videos:
+            desc = v.get('title') or v.get('desc') or ''
+            for m in re.findall(r'@[a-zA-Z0-9._]+', desc):
+                clean = m[1:].lower()
+                if len(clean) > 1:
+                    mentions[clean] = mentions.get(clean, 0) + 1
+        return sorted([{'name': k, 'count': v} for k, v in mentions.items()], key=lambda x: -x['count'])[:10]
+
+    videos_list = []
+    for v in raw_videos:
+        likes = num(v.get('digg_count') or v.get('diggCount'))
+        comments = num(v.get('comment_count') or v.get('commentCount'))
+        shares = num(v.get('share_count') or v.get('shareCount'))
+        eng_rate = ((likes + comments + shares) / follower_count * 100) if follower_count > 0 else 0
+        videos_list.append({
+            'id': str(v.get('video_id') or v.get('id') or ''),
+            'desc': v.get('title') or v.get('desc') or '',
+            'plays': num(v.get('play_count') or v.get('playCount')),
+            'likes': likes, 'comments': comments, 'shares': shares,
+            'create_date': v.get('create_time') or v.get('createTime') or 0,
+            'engRate': round(eng_rate, 4),
+        })
+
+    analytics = None
+    if videos_list:
+        total_likes = sum(v['likes'] for v in videos_list)
+        total_comments = sum(v['comments'] for v in videos_list)
+        total_shares = sum(v['shares'] for v in videos_list)
+        total_plays = sum(v['plays'] for v in videos_list)
+        n = len(videos_list)
+        avg_eng = ((total_likes + total_comments + total_shares) / (n * follower_count) * 100) if follower_count > 0 else 0
+        eng_mult = max(0.1, avg_eng / 5)
+        analytics = {
+            'engagementRates': {
+                'total_rate': avg_eng,
+                'likes_rate': (total_likes / (n * follower_count) * 100) if follower_count > 0 else 0,
+                'comments_rate': (total_comments / (n * follower_count) * 100) if follower_count > 0 else 0,
+                'shares_rate': (total_shares / (n * follower_count) * 100) if follower_count > 0 else 0,
+            },
+            'performance': {
+                'avgViews': round(total_plays / n),
+                'avgLikes': round(total_likes / n),
+                'avgComments': round(total_comments / n),
+                'avgShares': round(total_shares / n),
+            },
+            'dataset': [v['engRate'] for v in videos_list[:10]],
+            'videos': videos_list,
+            'hashtags': extract_hashtags(videos_list),
+            'mentions': extract_mentions(videos_list),
+            'earnings': {
+                'min': round(follower_count * 0.002 * eng_mult * 0.7),
+                'max': round(follower_count * 0.002 * eng_mult * 1.3),
+            }
+        }
 
     return jsonify({
-        'author': {'uniqueId': user.get('uniqueId', username), 'nickname': user.get('nickname', username)},
-        'stats': stats,
-        'videos_count': len(raw_videos),
-        'raw_source': 'debug_v2'
+        'author': {
+            'uniqueId': user.get('uniqueId', username),
+            'nickname': user.get('nickname', username),
+            'avatarThumb': user.get('avatarThumb') or user.get('avatar_thumb') or '',
+            'signature': user.get('signature') or '',
+            'verified': bool(user.get('verified')),
+        },
+        'stats': {
+            'followerCount': follower_count,
+            'followingCount': num(stats.get('followingCount') or user.get('followingCount')),
+            'heartCount': num(stats.get('heartCount') or stats.get('heart') or user.get('heartCount')),
+            'videoCount': num(stats.get('videoCount') or user.get('videoCount')),
+        },
+        'analytics': analytics,
+        'raw_source': 'tikwm_railway',
     })
 
 def convert_cookies_to_netscape(raw_cookies: str) -> str:
