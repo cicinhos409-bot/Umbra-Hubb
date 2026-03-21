@@ -252,7 +252,8 @@ const TikTokAnalyticsTool: React.FC = () => {
           });
           setServerStatus(res2.ok ? 'online' : 'offline');
         }
-      } catch {
+      } catch (e) {
+        console.error('[TikTokAnalyticsTool] Server check failed:', e);
         setServerStatus('offline');
       }
     };

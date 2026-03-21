@@ -10,6 +10,10 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+@app.route('/api/health')
+def health_check():
+    return jsonify({"status": "ok", "timestamp": time.time(), "railway": True})
+
 import re
 from datetime import datetime
 
