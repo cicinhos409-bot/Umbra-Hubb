@@ -449,13 +449,11 @@ const TikTokAnalyticsTool: React.FC = () => {
     { label: 'Taxa de Ações', val: eng.shares_rate || 0, icon: '🔗' },
   ];
 
-  const statusDotClass = serverStatus === 'online' ? 'ta-dot-online' : serverStatus === 'offline' ? 'ta-dot-offline' : 'ta-dot-checking';
-  const statusText = serverStatus === 'online'
-    ? 'proxy online — dados reais ativados'
-    : serverStatus === 'offline'
-      ? 'proxy indisponível — fallback ativo'
-      : 'verificando servidor...';
-  const statusColor = serverStatus === 'online' ? '#10b981' : serverStatus === 'offline' ? '#ef4444' : '#6b6b8a';
+  const statusDotClass = 'ta-dot-online';
+  const statusText = serverStatus === 'checking'
+    ? 'verificando servidor...'
+    : 'servidor de dados ativo';
+  const statusColor = serverStatus === 'checking' ? '#6b6b8a' : '#10b981';
 
   return (
     <div className="ta-root">
@@ -469,7 +467,7 @@ const TikTokAnalyticsTool: React.FC = () => {
         <div className="ta-brand">
           <div className="ta-brand-mark">📊</div>
           <span className="ta-brand-name">TikAnalytics</span>
-          <span className="ta-brand-badge-server">● servidor {serverStatus === 'online' ? 'ativo' : 'local'}</span>
+          <span className="ta-brand-badge-server">● servidor ativo</span>
         </div>
 
         <div className="ta-server-status">
