@@ -38,8 +38,14 @@ def tiktok_analytics():
         f'https://www.tikwm.com/api/user/posts?unique_id={username}&count=20',
         headers=headers, timeout=12
     )
-    print(f'[POSTS] status={posts_res.status_code} body={posts_res.text[:500]}')
-    posts_json = posts_res.json()
+    
+    try:
+        posts_text = posts_res.text
+        print(f'[POSTS] status={posts_res.status_code} body={posts_text[:300]}')
+        posts_json = posts_res.json() if posts_text.strip() else {}
+    except Exception as e:
+        print(f'[POSTS ERROR] {e}')
+        posts_json = {}
     
     d = posts_json.get('data', [])
     raw_videos = []
@@ -47,7 +53,7 @@ def tiktok_analytics():
     elif isinstance(d, dict):
         raw_videos = d.get('videos') or d.get('aweme_list') or d.get('list') or d.get('data') or []
     
-    print(f'[POSTS] found {len(raw_videos)} videos')
+    print(f'[POSTS] found {len(raw_videos)} videos, code={posts_json.get("code")}')
 
     return jsonify({
         'author': {'uniqueId': user.get('uniqueId', username), 'nickname': user.get('nickname', username)},
