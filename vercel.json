@@ -13,6 +13,10 @@
             "destination": "/api/evolink.js"
         },
         {
+            "source": "/api/tiktok_video",
+            "destination": "/api/tiktok_video.js"
+        },
+        {
             "source": "/api/tiktok_analytics",
             "destination": "/api/tiktok_analytics.js"
         },

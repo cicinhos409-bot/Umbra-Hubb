@@ -22,6 +22,8 @@ export const TOOLS: Tool[] = [
   { id: 'video-generator', name: 'Umbra Video Generator', description: 'Transforme texto em vídeos cinematográficos com IA Grok.', tier: ToolTier.PRO, icon: '🎬', category: ToolCategory.CHATBOTS },
   { id: 'dark-umbra', name: 'Dark Umbra', description: 'Gere vídeos cinematográficos com 18+ modelos de IA via EvoLink (Seedance, Kling, Wan, Veo, Sora, Hailuo, Grok).', tier: ToolTier.TURBO, icon: '🌑', category: ToolCategory.CHATBOTS },
 
+  { id: 'tiktok-video-counter', name: 'TikTok Video Contador', description: 'Contador de visualizações, curtidas, comentários e compartilhamentos em tempo real.', tier: ToolTier.FREE, icon: '📈', category: ToolCategory.UMBRA_TRENDS },
+  { id: 'calculadora-ganhos-tiktok', name: 'Calculadora de Ganhos TikTok', description: 'Estime quanto qualquer criador ganha por post patrocinado no TikTok.', tier: ToolTier.FREE, icon: '💰', category: ToolCategory.UMBRA_TRENDS },
   { id: 'tiktok-analytics', name: 'TikTok Analytics', description: 'Analise perfis públicos do TikTok — seguidores, engajamento, hashtags, ganhos estimados e posts recentes.', tier: ToolTier.PRO, icon: '📊', category: ToolCategory.UMBRA_TRENDS },
   { id: 'tiksongs', name: 'Umbra TikSongs', description: 'Descubra as músicas mais virais do TikTok em tempo real com player integrado.', tier: ToolTier.PRO, icon: '🎵', category: ToolCategory.UMBRA_TRENDS },
 ];
