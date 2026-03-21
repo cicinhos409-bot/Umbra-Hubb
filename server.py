@@ -33,27 +33,33 @@ def tiktok_analytics():
     user = user_data.get('user', user_data)
     stats = user_data.get('stats', {})
 
-    # 2. Posts — sem try/except pra ver o erro real
-    posts_res = requests.get(
+    # 2. Posts — Tentar 3 endpoints diferentes em sequência
+    post_urls = [
         f'https://www.tikwm.com/api/user/posts?unique_id={username}&count=20',
-        headers=headers, timeout=12
-    )
-    
-    try:
-        posts_text = posts_res.text
-        print(f'[POSTS] status={posts_res.status_code} body={posts_text[:300]}')
-        posts_json = posts_res.json() if posts_text.strip() else {}
-    except Exception as e:
-        print(f'[POSTS ERROR] {e}')
-        posts_json = {}
-    
-    d = posts_json.get('data', [])
+        f'https://www.tikwm.com/api/?url=https://www.tiktok.com/@{username}&count=20',
+        f'https://www.tikwm.com/api/user/posts?unique_id={username}&count=20&cursor=0&web=1',
+    ]
+
     raw_videos = []
-    if isinstance(d, list): raw_videos = d
-    elif isinstance(d, dict):
-        raw_videos = d.get('videos') or d.get('aweme_list') or d.get('list') or d.get('data') or []
-    
-    print(f'[POSTS] found {len(raw_videos)} videos, code={posts_json.get("code")}')
+    for url in post_urls:
+        try:
+            r = requests.get(url, headers=headers, timeout=12)
+            print(f'[POSTS] url={url} status={r.status_code} body={r.text[:200]}')
+            if r.status_code == 200 and r.text.strip():
+                j = r.json()
+                d = j.get('data', {})
+                if isinstance(d, list) and len(d) > 0:
+                    raw_videos = d
+                    break
+                elif isinstance(d, dict):
+                    vids = d.get('videos') or d.get('aweme_list') or d.get('list') or d.get('data') or []
+                    if vids:
+                        raw_videos = vids
+                        break
+        except Exception as e:
+            print(f'[POSTS ERROR] {url} → {e}')
+
+    print(f'[POSTS] total found: {len(raw_videos)}, code={j.get("code") if "j" in locals() else "N/A"}')
 
     return jsonify({
         'author': {'uniqueId': user.get('uniqueId', username), 'nickname': user.get('nickname', username)},
