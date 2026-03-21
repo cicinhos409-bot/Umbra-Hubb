@@ -117,10 +117,6 @@ const TikSongsTool: React.FC = () => {
     setIsPlaying(false);
     setPlayerStatus({ type: 'loading', msg: '⏳ buscando preview...' });
 
-    // Bug fix: Call load() immediately to establish user gesture context 
-    // before the 'await' below, helping prevent Autoplay blocks.
-    audioRef.current.load();
-
     const url = await getItunesPreview(song.title, song.artist);
     setIsBuffering(false);
 
@@ -194,9 +190,11 @@ const TikSongsTool: React.FC = () => {
       <style>{CSS_CODE}</style>
       <audio 
         ref={audioRef} 
+        crossOrigin="anonymous"
         onTimeUpdate={handleTimeUpdate} 
         onEnded={handleEnded}
-        onError={() => {
+        onError={(e) => {
+          console.error('[TikSongs] Audio element error:', e);
           setPlayerStatus({ type: 'error', msg: '❌ erro de áudio' });
           setIsPlaying(false);
         }}
