@@ -3,8 +3,12 @@ from flask_cors import CORS
 import subprocess, json, requests, tempfile, os, time, random
 
 app = Flask(__name__)
-# Enable CORS for the Vercel frontend
-CORS(app, origins=["https://umbrahubb.vercel.app", "http://localhost:5173"])
+# Enable CORS for the Vercel frontend (Relaxed for debugging)
+CORS(app, resources={r"/api/*": {"origins": "*"}})
+
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 import re
 from datetime import datetime
@@ -41,6 +45,7 @@ def fetch_posts_rapidapi(username):
 
 @app.route('/api/tiktok_analytics')
 def tiktok_analytics():
+    logger.info(f"Request received for user: {request.args.get('u')}")
     username = request.args.get('u', '').replace('@', '').strip()
     if not username:
         return jsonify({'error': 'Parâmetro ?u= necessário'}), 400
