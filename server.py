@@ -3,8 +3,8 @@ from flask_cors import CORS
 import subprocess, json, requests, tempfile, os, time, random
 
 app = Flask(__name__)
-# Enable CORS for the Vercel frontend (Relaxed for debugging)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+# Enable CORS for the Vercel frontend (Simplified for debugging)
+CORS(app)
 
 import logging
 logging.basicConfig(level=logging.INFO)
