@@ -1,14 +1,33 @@
-from flask import Flask, request, jsonify, Response, send_file
-from flask_cors import CORS
-import subprocess, json, requests, tempfile, os, time, random
+print("[SERVER] Starting startup sequence...", flush=True)
+import os, time, sys, random, re, json, subprocess, tempfile
+print("[SERVER] Core imports loaded.", flush=True)
 
-app = Flask(__name__)
-# Enable CORS for the Vercel frontend (Simplified for debugging)
-CORS(app)
+try:
+    from flask import Flask, request, jsonify, Response, send_file
+    print("[SERVER] Flask imported.", flush=True)
+except ImportError as e:
+    print(f"[SERVER CRITICAL] Flask import failed: {e}", flush=True)
+    sys.exit(1)
+
+try:
+    from flask_cors import CORS
+    print("[SERVER] Flask-CORS imported.", flush=True)
+except ImportError:
+    print("[SERVER WARNING] Flask-CORS not found, continuing without it.", flush=True)
+    CORS = None
+
+import requests
+print("[SERVER] Requests imported.", flush=True)
 
 import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+app = Flask(__name__)
+
+if CORS:
+    CORS(app)
+    print("[SERVER] CORS enabled.", flush=True)
 
 @app.route('/api/health')
 def health_check():
@@ -16,6 +35,7 @@ def health_check():
 
 @app.route('/')
 def home():
+    print("[SERVER] Root health check requested.", flush=True)
     return "Umbra Hub API is Online", 200
 
 import re
