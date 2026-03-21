@@ -78,6 +78,7 @@ def tiktok_analytics():
         # 2. Get Posts (Alternative API)
         posts_url = f"https://www.tikwm.com/api/?url=https://www.tiktok.com/@{username}&count=20"
         posts_res = requests.get(posts_url, headers=headers, timeout=15)
+        print(f"[DEBUG posts] url={posts_url} status={posts_res.status_code} body={posts_res.text[:300]}")
         posts_json = posts_res.json()
         
         raw_videos = []
