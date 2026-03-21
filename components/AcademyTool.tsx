@@ -39,8 +39,8 @@ const ACADEMY_DATA: Module[] = [
                 id: 'l1-1',
                 title: 'Aula 1 — Qual é a Melhor Maneira De Usar a Umbra Hub?',
                 description: 'Aprenda a navegar pela plataforma e extrair o máximo das ferramentas.',
-                duration: '10:15',
-                videoId: 'ID_VIDEO_1' // Placeholder as per user HTML
+                duration: '19:12',
+                videoId: '15mIryiVzgz-5QTMPQcpZQXr7BX69C2Kg'
             }
         ]
     },
@@ -195,64 +195,67 @@ const AcademyTool: React.FC = () => {
 
             {/* VIDEO MODAL */}
             {selectedVideo && (
-                <div className="fixed inset-0 z-[300] bg-background-deep/98 backdrop-blur-3xl flex items-center justify-center p-4 md:p-12 animate-in fade-in duration-300">
+                <div className="fixed inset-0 z-[300] bg-background-deep/98 backdrop-blur-3xl flex items-center justify-center p-2 sm:p-4 md:p-12 animate-in fade-in duration-300">
                     <div className="absolute inset-0" onClick={() => setSelectedVideo(null)} />
 
-                    <div className="relative w-full max-w-5xl bg-background-mid border border-brand-purple/20 rounded-[40px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+                    <div className="relative w-full max-w-5xl max-h-[95vh] overflow-y-auto bg-background-mid border border-brand-purple/20 rounded-2xl sm:rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
                         {/* Modal Header */}
-                        <div className="p-6 md:p-8 flex items-center justify-between border-b border-white/5 bg-white/5">
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 bg-brand-purple/20 text-brand-purple rounded-xl flex items-center justify-center">
-                                    <Play className="w-5 h-5 fill-current" />
+                        <div className="p-4 sm:p-6 md:p-8 flex items-center justify-between border-b border-white/5 bg-white/5">
+                            <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-brand-purple/20 text-brand-purple rounded-xl flex items-center justify-center shrink-0">
+                                    <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
                                 </div>
-                                <div>
-                                    <h3 className="text-lg font-black text-white tracking-tight">{selectedVideo.title}</h3>
-                                    <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Umbra Hub Academy • Treinamento Oficial</p>
+                                <div className="min-w-0 flex-1">
+                                    <h3 className="text-sm sm:text-lg font-black text-white tracking-tight truncate">{selectedVideo.title}</h3>
+                                    <p className="text-[9px] sm:text-[10px] font-black text-gray-600 uppercase tracking-widest">Umbra Hub Academy • Treinamento Oficial</p>
                                 </div>
                             </div>
                             <button
                                 onClick={() => setSelectedVideo(null)}
-                                className="p-3 bg-white/5 rounded-2xl text-gray-500 hover:text-white hover:bg-white/10 transition-all"
+                                className="p-2 sm:p-3 bg-white/5 rounded-xl sm:rounded-2xl text-gray-500 hover:text-white hover:bg-white/10 transition-all shrink-0 ml-2"
                             >
-                                <X className="w-6 h-6" />
+                                <X className="w-5 h-5 sm:w-6 sm:h-6" />
                             </button>
                         </div>
 
                         {/* Video Player */}
                         <div className="aspect-video bg-black relative">
                             {selectedVideo.id.startsWith('ID_VIDEO') ? (
-                                <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center space-y-4">
-                                    <div className="w-20 h-20 bg-brand-pink/10 text-brand-pink rounded-[32px] flex items-center justify-center mb-4">
-                                        <X className="w-10 h-10" />
+                                <div className="absolute inset-0 flex flex-col items-center justify-center p-6 sm:p-12 text-center space-y-4">
+                                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-brand-pink/10 text-brand-pink rounded-2xl sm:rounded-[32px] flex items-center justify-center mb-4">
+                                        <X className="w-8 h-8 sm:w-10 sm:h-10" />
                                     </div>
-                                    <h4 className="text-2xl font-black text-white">Aula em Manutenção</h4>
-                                    <p className="text-gray-500 max-w-sm mx-auto font-medium">Esta aula está sendo atualizada com novos conteúdos virais e estará disponível em breve.</p>
+                                    <h4 className="text-xl sm:text-2xl font-black text-white">Aula em Manutenção</h4>
+                                    <p className="text-gray-500 max-w-sm mx-auto font-medium text-sm">Esta aula está sendo atualizada com novos conteúdos virais e estará disponível em breve.</p>
                                 </div>
                             ) : (
                                 <iframe
-                                    className="w-full h-full"
+                                    className="w-full h-full absolute inset-0"
                                     src={`https://drive.google.com/file/d/${selectedVideo.id}/preview`}
                                     title={selectedVideo.title}
                                     frameBorder="0"
-                                    allow="autoplay; fullscreen"
+                                    allow="autoplay; fullscreen; encrypted-media"
+                                    allowFullScreen
+                                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                                    style={{ border: 0 }}
                                 />
                             )}
                         </div>
 
                         {/* Modal Footer */}
-                        <div className="p-8 bg-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
-                            <div className="flex items-center gap-4">
+                        <div className="p-4 sm:p-6 md:p-8 bg-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
+                            <div className="flex items-center gap-3 sm:gap-4">
                                 <div className="flex -space-x-3">
                                     {[1, 2, 3].map(i => (
-                                        <div key={i} className="w-8 h-8 rounded-full border-2 border-background-mid bg-background-deep overflow-hidden">
+                                        <div key={i} className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-background-mid bg-background-deep overflow-hidden">
                                             <img src={`https://i.pravatar.cc/100?u=user${i}`} alt="User" />
                                         </div>
                                     ))}
                                 </div>
-                                <p className="text-xs text-gray-500 font-bold">Mais de <span className="text-white">500 alunos</span> assistiram esta aula hoje</p>
+                                <p className="text-[11px] sm:text-xs text-gray-500 font-bold">Mais de <span className="text-white">500 alunos</span> assistiram esta aula hoje</p>
                             </div>
                             <button
-                                className="px-8 py-4 bg-brand-purple text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-brand-purple/20 hover:scale-[1.02] transition-all flex items-center gap-3"
+                                className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 bg-brand-purple text-white rounded-xl sm:rounded-2xl font-black text-[11px] sm:text-xs uppercase tracking-[0.2em] shadow-xl shadow-brand-purple/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-3"
                             >
                                 <CheckCircle2 className="w-4 h-4" /> Marcar como Concluída
                             </button>

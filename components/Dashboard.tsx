@@ -24,6 +24,9 @@ import UmbraAudiosTool from './UmbraAudiosTool';
 import UmbraYouStorytelling from './UmbraYouStorytelling';
 import UmbraImageGenerator from './UmbraImageGenerator';
 import UmbraVideoGenerator from './UmbraVideoGenerator';
+import DarkUmbraTool from './DarkUmbraTool';
+import TikTokAnalyticsTool from './TikTokAnalyticsTool';
+import TikSongsTool from './TikSongsTool';
 
 
 import AcademyTool from './AcademyTool';
@@ -92,6 +95,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, us
     [ToolCategory.TOOLS_2IN1]: true,
     [ToolCategory.WEB]: true,
     [ToolCategory.CHATBOTS]: true,
+    [ToolCategory.UMBRA_TRENDS]: true,
   });
 
   const toggleCategory = (cat: string) => {
@@ -314,6 +318,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, us
             >
               <Key className="w-5 h-5" /> Minhas Licenças
             </button>
+            {renderToolsList(ToolCategory.UMBRA_TRENDS, 'UmbraHub Trends')}
             {renderToolsList(ToolCategory.CHATBOTS, 'ChatBots')}
             {renderToolsList(ToolCategory.WEB, 'Arsenal Web')}
             {renderToolsList(ToolCategory.MOTOR_SUPREMO, 'Motor Supremo')}
@@ -517,10 +522,13 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, us
             {activeTab === 'storytelling' && <UmbraYouStorytelling userTier={userTier} />}
             {activeTab === 'image-studio' && <UmbraImageGenerator userTier={userTier} />}
             {activeTab === 'video-generator' && <UmbraVideoGenerator userTier={userTier} />}
+            {activeTab === 'dark-umbra' && <DarkUmbraTool userTier={userTier} />}
+            {activeTab === 'tiktok-analytics' && <TikTokAnalyticsTool />}
+            {activeTab === 'tiksongs' && <TikSongsTool />}
 
             {/* Tool Loader / Fallback */}
-            {activeTab !== 'home' && activeTab !== 'profile' && activeTab !== 'academy' && activeTab !== 'extensions' && !activeTab.includes('home') && selectedTool && (
-              !['meus-canais', 'srt', 'screenshot', 'downloader-hub', 'motor-hub', 'prompt-vault', 'media-hub', 'youtube-hub', 'turbo-hub', 'umbra-audios', 'umbra-edit', 'image-studio', 'storytelling', 'video-generator'].includes(activeTab) && (
+            {activeTab !== 'home' && activeTab !== 'profile' && activeTab !== 'academy' && activeTab !== 'extensions' && activeTab !== 'licenses' && !activeTab.includes('home') && selectedTool && (
+              !['meus-canais', 'srt', 'screenshot', 'downloader-hub', 'motor-hub', 'prompt-vault', 'media-hub', 'youtube-hub', 'turbo-hub', 'umbra-audios', 'umbra-edit', 'image-studio', 'storytelling', 'video-generator', 'dark-umbra', 'tiktok-analytics', 'tiksongs'].includes(activeTab) && (
                 <div className="animate-in fade-in slide-in-from-bottom-8 duration-500">
                   <div className="mb-8 p-12 bg-background-mid border border-white/5 rounded-[56px] shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-brand-purple/5 to-transparent pointer-events-none" />

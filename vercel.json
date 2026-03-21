@@ -9,6 +9,16 @@
             "destination": "/api/sora_down.js"
         },
         {
+            "source": "/api/evolink",
+            "destination": "/api/evolink.js"
+        },
+        {
+            "source": "/api/tiktok_analytics",
+            "destination": "/api/tiktok_analytics.js"
+        },
+        { "source": "/api/songs", "destination": "/api/songs.js" },
+        { "source": "/api/cron-songs", "destination": "/api/cron-songs.js" },
+        {
             "source": "/api/(.*)",
             "destination": "/api/index.py"
         }

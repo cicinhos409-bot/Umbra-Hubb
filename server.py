@@ -3,7 +3,162 @@ from flask_cors import CORS
 import subprocess, json, requests, tempfile, os, time
 
 app = Flask(__name__)
-CORS(app)
+# Enable CORS for the Vercel frontend
+CORS(app, origins=["https://umbrahubb.vercel.app", "http://localhost:5173"])
+
+import re
+from datetime import datetime
+
+def parse_num(v):
+    if isinstance(v, (int, float)): return v
+    if not v: return 0
+    s = str(v).upper().strip()
+    try:
+        if s.endswith('K'): return int(float(s[:-1]) * 1000)
+        if s.endswith('M'): return int(float(s[:-1]) * 1000000)
+        if s.endswith('B'): return int(float(s[:-1]) * 1000000000)
+        return int(re.sub(r'[^0-9]', '', s))
+    except: return 0
+
+def extract_hashtags(videos):
+    tags_map = {}
+    for v in videos:
+        matches = re.findall(r'#[a-zA-Z0-9_\u00C0-\u00FF]+', v.get('desc', ''))
+        for tag in matches:
+            clean = tag.replace('#', '').lower()
+            tags_map[clean] = tags_map.get(clean, 0) + 1
+    sorted_tags = sorted(tags_map.items(), key=lambda x: x[1], reverse=True)
+    return [{"name": name, "count": count} for name, count in sorted_tags[:15]]
+
+def extract_mentions(videos):
+    mentions_map = {}
+    for v in videos:
+        matches = re.findall(r'@[a-zA-Z0-9._]+', v.get('desc', ''))
+        for m in matches:
+            clean = m.replace('@', '').lower()
+            if len(clean) > 1:
+                mentions_map[clean] = mentions_map.get(clean, 0) + 1
+    sorted_mentions = sorted(mentions_map.items(), key=lambda x: x[1], reverse=True)
+    return [{"name": name, "count": count} for name, count in sorted_mentions[:10]]
+
+def calculate_earnings(followers, eng_rate):
+    base_rate = 0.002
+    eng_multiplier = max(0.1, eng_rate / 5.0)
+    low = followers * base_rate * eng_multiplier * 0.7
+    high = followers * base_rate * eng_multiplier * 1.3
+    return {"min": int(low), "max": int(high)}
+
+@app.route('/api/tiktok_analytics', methods=['GET'])
+def tiktok_analytics():
+    username = request.args.get('u', '').replace('@', '')
+    if not username:
+        return jsonify({"error": "Username is required"}), 400
+    
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Referer': 'https://www.tikwm.com/'
+    }
+
+    try:
+        # 1. Get User Info
+        user_res = requests.get(f"https://www.tikwm.com/api/user/info?unique_id={username}", headers=headers, timeout=12)
+        user_json = user_res.json()
+        if user_json.get('code') != 0 or not user_json.get('data'):
+            return jsonify({"error": "User not found or API error"}), 404
+        
+        user_data = user_json.get('data', {})
+        user = user_data.get('user', {})
+        stats = user_data.get('stats', {})
+        
+        follower_count = parse_num(stats.get('followerCount', stats.get('follower_count', stats.get('fans', user.get('followerCount', 0)))))
+        following_count = parse_num(stats.get('followingCount', stats.get('following_count', stats.get('following', user.get('followingCount', 0)))))
+        heart_count = parse_num(stats.get('heartCount', stats.get('heart_count', stats.get('heart', stats.get('diggCount', user.get('heartCount', 0))))))
+        video_count = parse_num(stats.get('videoCount', stats.get('video_count', stats.get('video', user.get('videoCount', 0)))))
+
+        # 2. Get Posts (Alternative API)
+        posts_url = f"https://www.tikwm.com/api/?url=https://www.tiktok.com/@{username}&count=20"
+        posts_res = requests.get(posts_url, headers=headers, timeout=15)
+        posts_json = posts_res.json()
+        
+        raw_videos = []
+        d = posts_json.get('data')
+        if isinstance(d, list): raw_videos = d
+        elif d and isinstance(d.get('videos'), list): raw_videos = d['videos']
+        elif d and isinstance(d.get('data'), list): raw_videos = d['data']
+        elif d and isinstance(d.get('list'), list): raw_videos = d['list']
+        elif d and isinstance(d.get('aweme_list'), list): raw_videos = d['aweme_list']
+        elif d and isinstance(d.get('itemList'), list): raw_videos = d['itemList']
+        
+        videos_list = []
+        for v in raw_videos:
+            v_stats = v.get('stats', {})
+            plays = parse_num(v.get('play_count', v.get('playCount', v_stats.get('playCount', 0))))
+            likes = parse_num(v.get('digg_count', v.get('diggCount', v_stats.get('diggCount', 0))))
+            comments = parse_num(v.get('comment_count', v.get('commentCount', v_stats.get('commentCount', 0))))
+            shares = parse_num(v.get('share_count', v.get('shareCount', v_stats.get('shareCount', 0))))
+            
+            e_rate = (((likes + comments + shares) / follower_count) * 100) if follower_count > 0 else 0
+            
+            videos_list.append({
+                "id": str(v.get('video_id', v.get('id'))),
+                "desc": v.get('title', v.get('desc', '')),
+                "plays": plays,
+                "likes": likes,
+                "comments": comments,
+                "shares": shares,
+                "create_date": v.get('create_time', v.get('createTime', 0)),
+                "engRate": round(e_rate, 3)
+            })
+            
+        analytics = None
+        if videos_list:
+            total_plays = sum(v['plays'] for v in videos_list)
+            num_v = len(videos_list)
+            total_likes = sum(v['likes'] for v in videos_list)
+            total_comments = sum(v['comments'] for v in videos_list)
+            total_shares = sum(v['shares'] for v in videos_list)
+            avg_eng = (((total_likes + total_comments + total_shares) / (num_v * follower_count)) * 100) if follower_count > 0 else 0
+            
+            analytics = {
+                "engagementRates": {
+                    "total_rate": round(avg_eng, 2),
+                    "likes_rate": round(((total_likes / num_v) / follower_count * 100) if follower_count > 0 else 0, 2),
+                    "comments_rate": round(((total_comments / num_v) / follower_count * 100) if follower_count > 0 else 0, 2),
+                    "shares_rate": round(((total_shares / num_v) / follower_count * 100) if follower_count > 0 else 0, 2),
+                },
+                "performance": {
+                    "avgViews": int(total_plays / num_v),
+                    "avgLikes": int(total_likes / num_v),
+                    "avgComments": int(total_comments / num_v),
+                    "avgShares": int(total_shares / num_v),
+                },
+                "dataset": [v['engRate'] for v in videos_list[:10]],
+                "videos": videos_list,
+                "hashtags": extract_hashtags(videos_list),
+                "mentions": extract_mentions(videos_list),
+                "earnings": calculate_earnings(follower_count, avg_eng)
+            }
+            
+        return jsonify({
+            "author": {
+                "uniqueId": user.get('uniqueId', user.get('unique_id', username)),
+                "nickname": user.get('nickname', user.get('uniqueId', username)),
+                "avatarThumb": user.get('avatarThumb', user.get('avatar_thumb', user.get('avatarMedium', ''))),
+                "signature": user.get('signature', user.get('bio', '')),
+                "verified": bool(user.get('verified', user.get('is_verified', False)))
+            },
+            "stats": {
+                "followerCount": follower_count,
+                "followingCount": following_count,
+                "heartCount": heart_count,
+                "videoCount": video_count
+            },
+            "analytics": analytics,
+            "raw_source": "tikwm_railway"
+        })
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 def convert_cookies_to_netscape(raw_cookies: str) -> str:
     """Converte cookies no formato header HTTP para Netscape"""

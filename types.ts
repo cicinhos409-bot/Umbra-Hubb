@@ -10,7 +10,8 @@ export enum ToolCategory {
   MOTOR_SUPREMO = 'MOTOR SUPREMO',
   TOOLS_2IN1 = '2 EM 1',
   SPECIAL = 'SPECIAL',
-  CHATBOTS = 'CHATBOTS'
+  CHATBOTS = 'CHATBOTS',
+  UMBRA_TRENDS = 'UMBRA TRENDS'
 }
 
 export interface Tool {

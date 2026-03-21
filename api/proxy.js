@@ -25,8 +25,10 @@ export default async function handler(req, res) {
             res.setHeader('Content-Length', contentLength);
         }
 
-        // Use attachment disposition to force download with a generic name
-        res.setHeader('Content-Disposition', `attachment; filename="umbra_media_${Date.now()}"`);
+        // Only use attachment disposition if not an image to allow rendering in <img> tags
+        if (!contentType.startsWith('image/')) {
+            res.setHeader('Content-Disposition', `attachment; filename="umbra_media_${Date.now()}"`);
+        }
 
         const buffer = await response.arrayBuffer();
         return res.status(200).send(Buffer.from(buffer));
