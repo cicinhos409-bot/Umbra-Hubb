@@ -21,34 +21,28 @@ def tiktok_analytics():
         'Accept': 'application/json',
     }
 
-    # 1. User info
-    info_res = requests.get(
-        f'https://www.tikwm.com/api/user/info?unique_id={username}',
-        headers=headers, timeout=10
-    )
+    # User info
+    info_res = requests.get(f'https://www.tikwm.com/api/user/info?unique_id={username}', headers=headers, timeout=10)
     info_json = info_res.json()
-    print(f'[INFO] code={info_json.get("code")} keys={list((info_json.get("data") or {}).keys())}')
-
     user_data = info_json.get('data', {})
     user = user_data.get('user', user_data)
     stats = user_data.get('stats', {})
 
-    # 2. Posts — Tentar 3 endpoints diferentes em sequência
+    # Posts — testar 3 endpoints
+    raw_videos = []
     post_urls = [
         f'https://www.tikwm.com/api/user/posts?unique_id={username}&count=20',
         f'https://www.tikwm.com/api/?url=https://www.tiktok.com/@{username}&count=20',
         f'https://www.tikwm.com/api/user/posts?unique_id={username}&count=20&cursor=0&web=1',
     ]
-
-    raw_videos = []
     for url in post_urls:
         try:
             r = requests.get(url, headers=headers, timeout=12)
-            print(f'[POSTS] url={url} status={r.status_code} body={r.text[:200]}')
+            print(f'[POSTS] {url} → {r.status_code} | {r.text[:300]}')
             if r.status_code == 200 and r.text.strip():
                 j = r.json()
                 d = j.get('data', {})
-                if isinstance(d, list) and len(d) > 0:
+                if isinstance(d, list) and d:
                     raw_videos = d
                     break
                 elif isinstance(d, dict):
@@ -59,13 +53,13 @@ def tiktok_analytics():
         except Exception as e:
             print(f'[POSTS ERROR] {url} → {e}')
 
-    print(f'[POSTS] total found: {len(raw_videos)}, code={j.get("code") if "j" in locals() else "N/A"}')
+    print(f'[POSTS TOTAL] {len(raw_videos)} videos encontrados')
 
     return jsonify({
         'author': {'uniqueId': user.get('uniqueId', username), 'nickname': user.get('nickname', username)},
         'stats': stats,
         'videos_count': len(raw_videos),
-        'raw_source': 'debug'
+        'raw_source': 'debug_v2'
     })
 
 def convert_cookies_to_netscape(raw_cookies: str) -> str:
