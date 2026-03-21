@@ -240,7 +240,7 @@ const TikTokAnalyticsTool: React.FC = () => {
     const checkServer = async () => {
       try {
         const res = await fetch(`${RAILWAY_API_URL}/api/tiktok_analytics?u=tiktok`, {
-          signal: AbortSignal.timeout(8000),
+          signal: AbortSignal.timeout(20000),
         });
         if (res.ok) {
           const data = await res.json();
@@ -357,7 +357,7 @@ const TikTokAnalyticsTool: React.FC = () => {
     // 1) Try Railway proxy server (Primary - non-blocked)
     try {
       const res = await fetch(`${RAILWAY_API_URL}/api/tiktok_analytics?u=${encodeURIComponent(username)}`, {
-        signal: AbortSignal.timeout(15000),
+        signal: AbortSignal.timeout(25000),
       });
       if (res.ok) {
         const json = await res.json();

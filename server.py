@@ -14,6 +14,10 @@ logger = logging.getLogger(__name__)
 def health_check():
     return jsonify({"status": "ok", "timestamp": time.time(), "railway": True})
 
+@app.route('/')
+def home():
+    return "Umbra Hub API is Online", 200
+
 import re
 from datetime import datetime
 
