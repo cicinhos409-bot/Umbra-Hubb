@@ -2,7 +2,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import './index.css';
 import './services/deviceIdBridge'; // Inicializa o ID global
 
 const rootElement = document.getElementById('root');
