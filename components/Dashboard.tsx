@@ -22,9 +22,7 @@ import UmbraMotorHub from './UmbraMotorHub';
 import UmbraYouTubeHub from './UmbraYouTubeHub';
 import UmbraAudiosTool from './UmbraAudiosTool';
 import UmbraYouStorytelling from './UmbraYouStorytelling';
-import UmbraImageGenerator from './UmbraImageGenerator';
-import UmbraVideoGenerator from './UmbraVideoGenerator';
-import DarkUmbraTool from './DarkUmbraTool';
+import UmbraMultimodalAI from './UmbraMultimodalAI';
 import TikTokAnalyticsTool from './TikTokAnalyticsTool';
 import TikTokMoneyCalculator from './TikTokMoneyCalculator';
 import TikTokVideoCounter from './TikTokVideoCounter';
@@ -63,7 +61,8 @@ import {
   MessageCircle,
   Package,
   FileText,
-  Key
+  Key,
+  BarChart3
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -91,7 +90,13 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, us
     localStorage.setItem('umbra_active_tab', activeTab);
   }, [activeTab]);
 
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+
+  React.useEffect(() => {
+    const handleToggle = () => setIsSidebarOpen(true);
+    window.addEventListener('toggleSidebar', handleToggle);
+    return () => window.removeEventListener('toggleSidebar', handleToggle);
+  }, []);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
     [ToolCategory.MOTOR_SUPREMO]: true,
     [ToolCategory.TOOLS_2IN1]: true,
@@ -327,7 +332,15 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, us
             {renderToolsList(ToolCategory.TOOLS_2IN1, 'Automação 2 em 1')}
           </div>
 
-          <div className="mt-10 px-3">
+          <div className="mt-10 px-3 flex flex-col gap-3">
+            <a
+              href="https://umbra-railway-production-f7c5.up.railway.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl bg-brand-purple/10 text-brand-purple border border-brand-purple/20 hover:bg-brand-purple/20 transition-all font-black text-sm uppercase tracking-widest shadow-lg shadow-brand-purple/5 group"
+            >
+              <BarChart3 className="w-5 h-5 group-hover:scale-110 transition-transform" /> Umbra YouTube Analytics
+            </a>
             <a
               href="https://chat.whatsapp.com/LHE7HDJUtxMIEqncAs1PvT"
               target="_blank"
@@ -522,9 +535,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, us
             {activeTab === 'umbra-audios' && <UmbraAudiosTool userTier={userTier} />}
             {activeTab === 'prompt-vault' && <PromptVaultTool />}
             {activeTab === 'storytelling' && <UmbraYouStorytelling userTier={userTier} />}
-            {activeTab === 'image-studio' && <UmbraImageGenerator userTier={userTier} />}
-            {activeTab === 'video-generator' && <UmbraVideoGenerator userTier={userTier} />}
-            {activeTab === 'dark-umbra' && <DarkUmbraTool userTier={userTier} />}
+            {activeTab === 'multimodal-ai' && <UmbraMultimodalAI userTier={userTier} />}
             {activeTab === 'tiktok-analytics' && <TikTokAnalyticsTool />}
             {activeTab === 'calculadora-ganhos-tiktok' && <TikTokMoneyCalculator />}
             {activeTab === 'tiktok-video-counter' && <TikTokVideoCounter />}
@@ -532,7 +543,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, us
 
             {/* Tool Loader / Fallback */}
             {activeTab !== 'home' && activeTab !== 'profile' && activeTab !== 'academy' && activeTab !== 'extensions' && activeTab !== 'licenses' && !activeTab.includes('home') && selectedTool && (
-              !['meus-canais', 'srt', 'screenshot', 'downloader-hub', 'motor-hub', 'prompt-vault', 'media-hub', 'youtube-hub', 'turbo-hub', 'umbra-audios', 'umbra-edit', 'image-studio', 'storytelling', 'video-generator', 'dark-umbra', 'tiktok-analytics', 'tiksongs', 'calculadora-ganhos-tiktok', 'tiktok-video-counter'].includes(activeTab) && (
+              !['meus-canais', 'srt', 'screenshot', 'downloader-hub', 'motor-hub', 'prompt-vault', 'media-hub', 'youtube-hub', 'turbo-hub', 'umbra-audios', 'umbra-edit', 'storytelling', 'multimodal-ai', 'tiktok-analytics', 'tiksongs', 'calculadora-ganhos-tiktok', 'tiktok-video-counter'].includes(activeTab) && (
                 <div className="animate-in fade-in slide-in-from-bottom-8 duration-500">
                   <div className="mb-8 p-12 bg-background-mid border border-white/5 rounded-[56px] shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-brand-purple/5 to-transparent pointer-events-none" />

@@ -40,15 +40,13 @@ const UmbraVideoGenerator: React.FC<UmbraVideoGeneratorProps> = ({ userTier }) =
         setProgress('Enviando para o servidor...');
 
         try {
-            // Determina width/height baseado na proporção
-            const width = aspectRatio === '16:9' ? '1280' : '720';
-            const height = aspectRatio === '16:9' ? '720' : '1280';
+            // grok-video accepts: aspectRatio (not width/height), duration 6-15s
+            const validDuration = Math.max(6, Math.min(15, duration));
 
             const params = new URLSearchParams({
                 model: 'grok-video',
-                width,
-                height,
-                duration: String(duration),
+                aspectRatio: aspectRatio,
+                duration: String(validDuration),
                 key: POLLINATIONS_KEY,
             });
 

@@ -169,34 +169,19 @@ const ExtensionsDownloadTool: React.FC<ExtensionsDownloadToolProps> = ({ userTie
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Extension 1 */}
+            {/* Extension 1 - Renamed from Dispatch Pro */}
             <article className="extension-card border border-white/5 rounded-[32px] p-8 backdrop-blur-xl relative overflow-hidden group">
               <div className="mb-6">
                 <span className="text-[10px] font-black uppercase tracking-widest text-brand-green bg-brand-green/10 border border-brand-green/20 px-3 py-1.5 rounded-lg mb-4 inline-block">
-                  Vídeo • Download
+                  Vídeo • Automação
                 </span>
-                <h3 className="font-orbitron text-2xl font-black text-white group-hover:text-brand-cyan transition-colors">Umbra Fetch</h3>
-                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v1.0.0</span>
+                <h3 className="font-orbitron text-2xl font-black text-white group-hover:text-brand-cyan transition-colors">Umbra Flow</h3>
+                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v1.2.0</span>
               </div>
               <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
-                Download em lote de vídeos gerados por IAs. Organize, selecione e baixe múltiplos resultados de forma rápida e assistida.
+                Consistência total e automação avançada de prompts. Gere séries de imagens e vídeos com controle absoluto de personagens e estilos.
               </p>
-              <DownloadButton href="/extensoes/umbra-fetch.zip" fileName="umbra-fetch.zip" />
-            </article>
-
-            {/* Extension 2 */}
-            <article className="extension-card border border-white/5 rounded-[32px] p-8 backdrop-blur-xl relative overflow-hidden group">
-              <div className="mb-6">
-                <span className="text-[10px] font-black uppercase tracking-widest text-brand-green bg-brand-green/10 border border-brand-green/20 px-3 py-1.5 rounded-lg mb-4 inline-block">
-                  Vídeo • Download
-                </span>
-                <h3 className="font-orbitron text-2xl font-black text-white group-hover:text-brand-cyan transition-colors">Umbra Dispatch Pro</h3>
-                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v1.0.0</span>
-              </div>
-              <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
-                Disparo avançado de prompts com foco em consistência de personagens, estilos e variações controladas para geração de vídeos.
-              </p>
-              <DownloadButton href="/extensoes/umbra-dispatch-pro.zip" fileName="umbra-dispatch-pro.zip" />
+              <DownloadButton href="/extensoes/umbra-flow.zip" fileName="umbra-flow.zip" />
             </article>
 
             {/* Extension 3 */}
@@ -296,12 +281,12 @@ const ExtensionsDownloadTool: React.FC<ExtensionsDownloadToolProps> = ({ userTie
                   Tools • Focus
                 </span>
                 <h3 className="font-orbitron text-2xl font-black text-white group-hover:text-brand-cyan transition-colors">Umbra - Bloqueador YT</h3>
-                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v3.0.0</span>
+                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v5.1.0</span>
               </div>
               <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
                 Oculta e censura distrações do YouTube e YouTube Studio para manter seu foco total na produção de conteúdo.
               </p>
-              <DownloadButton href="/extensoes/umbra-bloqueador-yt.zip" fileName="umbra-bloqueador-yt.zip" />
+              <DownloadButton href="/extensoes/Umbra - Bloqueador YouTube Studio.zip" fileName="Umbra - Bloqueador YouTube Studio.zip" />
             </article>
 
             {/* Extension 10 - NEW */}
@@ -317,6 +302,21 @@ const ExtensionsDownloadTool: React.FC<ExtensionsDownloadToolProps> = ({ userTie
                 Automatize prompts do ChatGPT com cadeias de prompts e filas para interações eficientes que economizam tempo.
               </p>
               <DownloadButton href="/extensoes/umbra-chat-automation.zip" fileName="umbra-chat-automation.zip" />
+            </article>
+
+            {/* Extension 11 - NEW */}
+            <article className="extension-card border border-white/5 rounded-[32px] p-8 backdrop-blur-xl relative overflow-hidden group">
+              <div className="mb-6">
+                <span className="text-[10px] font-black uppercase tracking-widest text-brand-purple bg-brand-purple/10 border border-brand-purple/20 px-3 py-1.5 rounded-lg mb-4 inline-block">
+                  AI • Automation
+                </span>
+                <h3 className="font-orbitron text-2xl font-black text-white group-hover:text-brand-cyan transition-colors">Umbra Claude Automation</h3>
+                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v1.0.0</span>
+              </div>
+              <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
+                Automatize prompts do Claude com cadeias de prompts e filas para interações eficientes que economizam tempo.
+              </p>
+              <DownloadButton href="/extensoes/umbra-claude-extension.zip" fileName="umbra-claude-extension.zip" />
             </article>
           </div>
         </main>

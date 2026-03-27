@@ -195,10 +195,10 @@ const AcademyTool: React.FC = () => {
 
             {/* VIDEO MODAL */}
             {selectedVideo && (
-                <div className="fixed inset-0 z-[300] bg-background-deep/98 backdrop-blur-3xl flex items-center justify-center p-2 sm:p-4 md:p-12 animate-in fade-in duration-300">
+                <div className="fixed inset-0 z-[300] bg-background-deep/98 backdrop-blur-3xl flex items-center justify-center p-4 sm:p-6 md:p-12 animate-in fade-in duration-300 overflow-y-auto">
                     <div className="absolute inset-0" onClick={() => setSelectedVideo(null)} />
 
-                    <div className="relative w-full max-w-5xl max-h-[95vh] overflow-y-auto bg-background-mid border border-brand-purple/20 rounded-2xl sm:rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+                    <div className="relative w-full max-w-5xl bg-background-mid border border-brand-purple/20 rounded-2xl sm:rounded-[32px] md:rounded-[40px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300 my-10">
                         {/* Modal Header */}
                         <div className="p-4 sm:p-6 md:p-8 flex items-center justify-between border-b border-white/5 bg-white/5">
                             <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
@@ -229,16 +229,41 @@ const AcademyTool: React.FC = () => {
                                     <p className="text-gray-500 max-w-sm mx-auto font-medium text-sm">Esta aula está sendo atualizada com novos conteúdos virais e estará disponível em breve.</p>
                                 </div>
                             ) : (
-                                <iframe
-                                    className="w-full h-full absolute inset-0"
-                                    src={`https://drive.google.com/file/d/${selectedVideo.id}/preview`}
-                                    title={selectedVideo.title}
-                                    frameBorder="0"
-                                    allow="autoplay; fullscreen; encrypted-media"
-                                    allowFullScreen
-                                    sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
-                                    style={{ border: 0 }}
-                                />
+                                <div className="absolute inset-0 flex flex-col gap-4">
+                                    <iframe
+                                        className="w-full h-full"
+                                        src={`https://drive.google.com/file/d/${selectedVideo.id}/preview`}
+                                        title={selectedVideo.title}
+                                        frameBorder="0"
+                                        allow="autoplay; fullscreen; encrypted-media"
+                                        allowFullScreen
+                                        style={{ border: 0 }}
+                                    />
+                                    {/* Fallback overlay (shows behind iframe or if iframe is blocked) */}
+                                    <div className="absolute inset-0 -z-10 flex flex-col items-center justify-center p-8 text-center bg-background-deep">
+                                        <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center mb-4 text-gray-600">
+                                            <div className="w-6 h-6 border-2 border-gray-600 border-t-transparent rounded-full animate-spin" />
+                                        </div>
+                                        <h4 className="text-lg font-black text-white mb-2">Carregando Aula...</h4>
+                                        <p className="text-xs text-gray-500 max-w-xs">Se o vídeo não aparecer em instantes, o arquivo pode estar em processamento ou com acesso restrito.</p>
+                                        <div className="flex gap-4 mt-6">
+                                            <button 
+                                                onClick={() => { const s = selectedVideo; setSelectedVideo(null); setTimeout(() => setSelectedVideo(s), 50); }}
+                                                className="px-6 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                                            >
+                                                Recarregar
+                                            </button>
+                                            <a 
+                                                href={`https://drive.google.com/file/d/${selectedVideo.id}/view`} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="px-6 py-2 bg-brand-purple/20 hover:bg-brand-purple/30 text-brand-purple rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                                            >
+                                                Abrir no Google Drive
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
                             )}
                         </div>
 
@@ -246,9 +271,9 @@ const AcademyTool: React.FC = () => {
                         <div className="p-4 sm:p-6 md:p-8 bg-white/5 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6">
                             <div className="flex items-center gap-3 sm:gap-4">
                                 <div className="flex -space-x-3">
-                                    {[1, 2, 3].map(i => (
-                                        <div key={i} className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-background-mid bg-background-deep overflow-hidden">
-                                            <img src={`https://i.pravatar.cc/100?u=user${i}`} alt="User" />
+                                    {['alex', 'mariana', 'ricardo'].map(name => (
+                                        <div key={name} className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-background-mid bg-background-deep overflow-hidden">
+                                            <img src={`/avatars/${name}.png`} alt="User" />
                                         </div>
                                     ))}
                                 </div>

@@ -18,35 +18,37 @@ Deno.serve(async (req: Request) => {
         const payload = await req.json()
         console.log('Received payload:', payload)
 
-        // Verificar o segredo do webhook
-        if (CAKTO_SECRET && payload.secret !== CAKTO_SECRET) {
-            console.error('Invalid webhook secret')
-            return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
-        }
-
-        // Cakto webhook events typically include 'event' and 'data'
-        // Specifically looking for "Compra aprovada" (Approved Purchase)
-        // We expect the payload to have user email and product info
-
-        // NOTE: Map your Cakto product IDs or names to ToolTier
-        const { event, data } = payload
-
-        if (event === 'purchase.approved' || event === 'approved' || event === 'order.approved') {
-            const email = data.customer?.email || data.email
-            const productName = (data.product?.name || data.product_name || '').toLowerCase()
-            const customerName = data.customer?.name || data.name || 'Cliente Umbra'
-
-            let tier = 'FREE'
-            let maxDevices = 2
-            if (productName.includes('pro')) {
-                tier = 'PRO'
-                maxDevices = 2
-            } else if (productName.includes('turbo')) {
-                tier = 'TURBO'
-                maxDevices = 3
+            // Verificar o segredo do webhook
+            if (CAKTO_SECRET && payload.secret !== CAKTO_SECRET) {
+                console.error(`Invalid webhook secret. Expected: ${CAKTO_SECRET.slice(0, 4)}... Received: ${payload.secret?.slice(0, 4)}...`)
+                return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
             }
 
-            if (email && tier !== 'FREE') {
+            // Cakto webhook events typically include 'event' and 'data'
+            // Specifically looking for "Compra aprovada" (Approved Purchase)
+            // We expect the payload to have user email and product info
+
+            // NOTE: Map your Cakto product IDs or names to ToolTier
+            const { event, data } = payload
+
+            if (event === 'purchase.approved' || event === 'approved' || event === 'order.approved') {
+                const email = data.customer?.email || data.email
+                const productName = (data.product?.name || data.product_name || '').toLowerCase()
+                const customerName = data.customer?.name || data.name || 'Cliente Umbra'
+
+                let tier = 'FREE'
+                let maxDevices = 2
+                
+                // Mapeamento Flexível de Produtos
+                if (productName.includes('pro') || productName.includes('umbra hub')) {
+                    tier = 'PRO'
+                    maxDevices = 2
+                } else if (productName.includes('turbo')) {
+                    tier = 'TURBO'
+                    maxDevices = 3
+                }
+
+                if (email && tier !== 'FREE') {
                 // 1. Atualizar o Tier no perfil do usuário
                 await supabase.from('profiles').update({ tier, updated_at: new Date().toISOString() }).eq('email', email)
 

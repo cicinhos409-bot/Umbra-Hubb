@@ -211,6 +211,13 @@ Deno.serve(async (req: Request) => {
                     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
             }
 
+            // NOVA: Verificação de Data de Expiração no Heartbeat
+            if (licenca.data_expiracao && new Date(licenca.data_expiracao) < new Date()) {
+                console.log(`[SDK] License expired by date in heartbeat: ${licenca.data_expiracao}`)
+                return new Response(JSON.stringify({ valido: false, motivo: 'Sua licença expirou. Renove seu plano para continuar.' }),
+                    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+            }
+
             // Tenta obter IP e User-Agent para manter o rastro atualizado
             const userIP = req.headers.get('cf-connecting-ip') || 
                            req.headers.get('x-real-ip') || 

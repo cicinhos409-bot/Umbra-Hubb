@@ -18,9 +18,7 @@ export const TOOLS: Tool[] = [
 
   { id: 'umbra-audios', name: 'Umbra Audios', description: 'Sintetização de Voz Neural via Google Cloud TTS.', tier: ToolTier.FREE, icon: '🎙️', category: ToolCategory.WEB },
   { id: 'storytelling', name: 'Umbra You Storytelling', description: 'Gerador de roteiros virais de alto impacto com IA Mistral.', tier: ToolTier.TURBO, icon: '🎬', category: ToolCategory.CHATBOTS },
-  { id: 'image-studio', name: 'Umbra Image Studio', description: 'Geração de imagens de alta fidelidade com IA universal.', tier: ToolTier.PRO, icon: '🎨', category: ToolCategory.WEB },
-  { id: 'video-generator', name: 'Umbra Video Generator', description: 'Transforme texto em vídeos cinematográficos com IA Grok.', tier: ToolTier.PRO, icon: '🎬', category: ToolCategory.CHATBOTS },
-  { id: 'dark-umbra', name: 'Dark Umbra', description: 'Gere vídeos cinematográficos com 18+ modelos de IA via EvoLink (Seedance, Kling, Wan, Veo, Sora, Hailuo, Grok).', tier: ToolTier.TURBO, icon: '🌑', category: ToolCategory.CHATBOTS },
+  { id: 'multimodal-ai', name: 'Umbra Multimodal AI', description: 'Plataforma all-in-one de IA: gere imagens e vídeos com 27+ modelos (Flux, Imagen, Grok, Sora, Kling, Wan, MiniMax).', tier: ToolTier.PRO, icon: '🧠', category: ToolCategory.CHATBOTS },
 
   { id: 'tiktok-video-counter', name: 'TikTok Video Contador', description: 'Contador de visualizações, curtidas, comentários e compartilhamentos em tempo real.', tier: ToolTier.FREE, icon: '📈', category: ToolCategory.UMBRA_TRENDS },
   { id: 'calculadora-ganhos-tiktok', name: 'Calculadora de Ganhos TikTok', description: 'Estime quanto qualquer criador ganha por post patrocinado no TikTok.', tier: ToolTier.FREE, icon: '💰', category: ToolCategory.UMBRA_TRENDS },
@@ -66,6 +64,7 @@ export const PLANS: PricingPlan[] = [
       'Umbra Image Download',
       'Umbra - Bloqueador YT',
       'Umbra Chat Automation',
+      'Umbra Claude Automation',
       'Umbra Image Studio (IA Universal)',
       'Umbra Video Generator (Grok IA)',
       'YouTube Hub (Extrair, Reverse)',
@@ -103,21 +102,21 @@ export const TESTIMONIALS: Testimonial[] = [
     name: 'Alex Silva',
     role: 'Criador de Canais de Curiosidades',
     content: 'O Umbra Hub mudou meu fluxo de trabalho. O que levava 4 horas agora faço em 20 minutos.',
-    avatar: 'https://i.pravatar.cc/150?u=alex',
+    avatar: '/avatars/alex.png',
     rating: 5
   },
   {
     name: 'Mariana Costa',
     role: 'Nicho de Horror & Mistério',
     content: 'As vozes neurais e o Umbra Script são surreais. Meus canais cresceram 300% em 2 meses.',
-    avatar: 'https://i.pravatar.cc/150?u=mariana',
+    avatar: '/avatars/mariana.png',
     rating: 5
   },
   {
     name: 'Ricardo Oliveira',
     role: 'Estrategista de Canais Dark',
     content: 'Melhor investimento para quem quer escala. As ferramentas de automação são as mais completas.',
-    avatar: 'https://i.pravatar.cc/150?u=ricardo',
+    avatar: '/avatars/ricardo.png',
     rating: 5
   }
 ];

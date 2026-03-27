@@ -13,6 +13,22 @@ import { ToolTier } from './types';
 import type { User } from '@supabase/supabase-js';
 
 const App: React.FC = () => {
+  // Limpeza de Service Workers antigos (para resolver o erro de conexão recusada do Drive)
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        for (const registration of registrations) {
+          if (registration.active?.scriptURL.includes('coi-serviceworker')) {
+            console.log('Detectado Coi-ServiceWorker antigo, removendo...');
+            registration.unregister().then(() => {
+              window.location.reload();
+            });
+          }
+        }
+      });
+    }
+  }, []);
+
   const [view, setView] = useState<'landing' | 'login' | 'dashboard'>('landing');
   const [user, setUser] = useState<User | null>(null);
   const [userTier, setUserTier] = useState<ToolTier>(ToolTier.FREE);
