@@ -6,6 +6,7 @@ import ToolsGrid from './components/ToolsGrid';
 import Pricing from './components/Pricing';
 import Dashboard from './components/Dashboard';
 import Login from './components/Login';
+import FAQ from './components/FAQ';
 import { TESTIMONIALS } from './constants';
 import { Star } from 'lucide-react';
 import { onAuthStateChange, signOut, getUserProfile } from './services/authService';
@@ -177,24 +178,7 @@ const App: React.FC = () => {
           </div>
         </section>
 
-        {/* Final CTA */}
-        <section className="py-32 relative overflow-hidden">
-          <div className="absolute inset-0 bg-grid opacity-10" />
-          <div className="max-w-4xl mx-auto px-4 text-center relative z-10">
-            <div className="bg-gradient-to-br from-brand-purple to-brand-pink p-16 md:p-24 rounded-[64px] shadow-2xl shadow-brand-purple/20 border border-white/10">
-              <h2 className="text-4xl md:text-6xl font-black text-white mb-8 uppercase tracking-tighter leading-none">Comece hoje.<br />Seu canal cresce amanhã.</h2>
-              <p className="text-white/80 text-xl mb-12 max-w-xl mx-auto font-medium">Junte-se a centenas de criadores que já automatizaram sua produção com IA e estão faturando alto com canais dark.</p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button onClick={goToLogin} className="bg-white text-background-deep font-black px-12 py-5 rounded-[24px] hover:bg-gray-100 transition-all scale-100 active:scale-95 shadow-2xl text-xs tracking-[0.2em] uppercase">
-                  QUERO ACESSO AGORA
-                </button>
-                <button onClick={goToLogin} className="bg-black/20 backdrop-blur-md border border-white/30 text-white font-black px-12 py-5 rounded-[24px] hover:bg-black/30 transition-all text-xs tracking-[0.2em] uppercase">
-                  Ver Demonstração
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
+        <FAQ />
       </main>
 
       <footer className="py-20 border-t border-white/5 bg-background-deep">
