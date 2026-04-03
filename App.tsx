@@ -6,6 +6,7 @@ import ToolsGrid from './components/ToolsGrid';
 import Pricing from './components/Pricing';
 import Dashboard from './components/Dashboard';
 import Login from './components/Login';
+import UmbraStories from './components/UmbraStories';
 import FAQ from './components/FAQ';
 import { TESTIMONIALS } from './constants';
 import { Star } from 'lucide-react';
@@ -142,6 +143,8 @@ const App: React.FC = () => {
             </div>
           </div>
         </section>
+
+        <UmbraStories />
 
         <ToolsGrid />
 
