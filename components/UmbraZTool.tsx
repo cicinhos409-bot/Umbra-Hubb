@@ -1,13 +1,13 @@
-
 import React, {
   useState, useEffect, useRef, useCallback, useMemo, memo,
 } from 'react';
 import { ToolTier } from '../types';
 import { supabase } from '../services/supabaseClient';
+import { getCurrentUser, onAuthStateChange, getUserProfile } from '../services/authService';
 import {
   Hash, Volume2, Send, Smile, Paperclip, Mic, MicOff, Headphones,
   Search, ChevronDown, X, Plus, Users, Lock, Menu, Check, AlertCircle,
-  Image as ImageIcon, Film, PhoneOff, Video, VideoOff, MonitorUp,
+  Image as ImageIcon, Film, PhoneOff, Video, VideoOff, MonitorUp, Monitor,
 } from 'lucide-react';
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
@@ -33,7 +33,6 @@ interface Message {
 interface Member {
   id: string; name: string; rank: string; xp: number;
   avatar: string; status: 'online' | 'away' | 'offline'; plan: ToolTier;
-  // Extended profile data
   bio?: string;
   memberSince?: string;
   friendsCount?: number;
@@ -166,15 +165,6 @@ function mapRow(row: Record<string,unknown>): Message {
 }
 
 const MAX_MEDIA_BYTES = 4 * 1024 * 1024; // 4 MB hard limit
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((res, rej) => {
-    if (file.size > MAX_MEDIA_BYTES) { rej(new Error('FILE_TOO_LARGE')); return; }
-    const reader = new FileReader();
-    reader.onload = () => res(reader.result as string);
-    reader.onerror = rej;
-    reader.readAsDataURL(file);
-  });
-}
 
 /* ─── MessageBubble — extracted as React.memo to avoid full-list re-renders */
 const MessageBubble = memo(({ msg, prevMsg, onReaction, onRetry, onOpenEmoji, onLightbox, onOpenProfile }: MsgBubbleProps) => {
@@ -280,7 +270,11 @@ MessageBubble.displayName = 'MessageBubble';
 interface Props { userTier: ToolTier; userName?: string; }
 
 export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
-  const [activeRoom,   setActiveRoom]   = useState<Room>(ROOMS[0]);
+  const [session,      setSession]      = useState<any>(null);
+  const [profile,      setProfile]      = useState<any>(null);
+  const [authLoading,  setAuthLoading]  = useState(true);
+
+  const [activeRoom,   setActiveRoom]   = useState(ROOMS[0]);
   const [messages,     setMessages]     = useState<Message[]>([]);
   const [inputValue,   setInputValue]   = useState('');
   const [searchQuery,  setSearchQuery]  = useState('');
@@ -295,18 +289,20 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
   const [isSending,    setIsSending]    = useState(false);
   const [isAtBottom,   setIsAtBottom]   = useState(true);
   const [toastAch,     setToastAch]     = useState<AchievementDef|null>(null);
-  const [imagePreview, setImagePreview] = useState<{url:string; type:'image'|'video'; file:File}|null>(null);
+  const [imagePreview, setImagePreview] = useState<{url:string; type:'image'|'video'; file:File; path?:string}|null>(null);
   const [mediaError,   setMediaError]   = useState<string|null>(null);
-  const [lightboxUrl,  setLightboxUrl]  = useState<string|null>(null);  // ← lightbox
-  const [viewingProfile, setViewingProfile] = useState<Member|null>(null); // ← active profile
+  const [uploadedPath, setUploadedPath] = useState<string|null>(null);
+  const [lastSentAt,   setLastSentAt]   = useState(0);
+  const [lightboxUrl,  setLightboxUrl]  = useState<string|null>(null);
+  const [viewingProfile, setViewingProfile] = useState<Member|null>(null);
+  const [profileCache, setProfileCache] = useState<Record<string, {data:any, ts:number}>>({});
   const [isEditingBio,   setIsEditingBio]   = useState(false);
   const [editingBioText, setEditingBioText] = useState('');
 
-  // Voice room
   const [voiceJoined,  setVoiceJoined]  = useState(false);
   const [voiceMuted,   setVoiceMuted]   = useState(false);
   const [voiceVideo,   setVoiceVideo]   = useState(false);
-  const [speaking,     setSpeaking]     = useState<string[]>(['u2']); // simulated
+  const [speaking,     setSpeaking]     = useState<string[]>(['u2']);
 
   const [userXP, setUserXP] = useState<number>(() => {
     const s = localStorage.getItem(XP_KEY); return s ? parseInt(s,10) : 0;
@@ -321,7 +317,29 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
   const channelRef    = useRef<ReturnType<typeof supabase.channel>|null>(null);
   const fileInputRef  = useRef<HTMLInputElement>(null);
 
-  // Close lightbox on Escape
+  useEffect(() => {
+    const initAuth = async () => {
+      const user = await getCurrentUser();
+      if (user) {
+        setSession(user);
+        const p = await getUserProfile(user.id);
+        if (p) setProfile(p);
+      }
+      setAuthLoading(false);
+    };
+    initAuth();
+    const { data: { subscription } } = onAuthStateChange((user) => {
+      setSession(user);
+      if (!user) { setProfile(null); setAuthLoading(false); }
+      else initAuth();
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const userId = session?.id || 'guest';
+  const myName = profile?.name || userName;
+  const myTier = profile?.tier || userTier;
+
   useEffect(() => {
     if (!lightboxUrl) return;
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setLightboxUrl(null); };
@@ -329,7 +347,6 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
     return () => window.removeEventListener('keydown', handler);
   }, [lightboxUrl]);
 
-  // Simulated speaking cycle for voice room
   useEffect(() => {
     if (!voiceJoined) return;
     const members = ['u1','u2','u5'];
@@ -344,18 +361,14 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
   const userRank = getRank(userXP);
   const nextRank = getNextRank(userXP);
   const xpPct    = getXPPct(userXP);
-  const userId   = useMemo(() => `user_${userName.replace(/\s+/g,'_').toLowerCase()}`, [userName]);
 
-  /* ── Save XP to localStorage ── */
   useEffect(() => { localStorage.setItem(XP_KEY, String(userXP)); }, [userXP]);
 
-  /* ── Memoised access check (fix: was recreated every render) ── */
   const canAccess = useCallback(
-    (r: Room) => TIER_LEVELS[userTier] >= TIER_LEVELS[r.plan],
-    [userTier],
+    (r: Room) => TIER_LEVELS[myTier] >= TIER_LEVELS[r.plan],
+    [myTier],
   );
 
-  /* ── Unlock achievement — also grants XP bonus ── */
   const unlockAch = useCallback((ach: AchievementDef) => {
     setUnlockedAchs(prev => {
       if (prev.has(ach.id)) return prev;
@@ -363,17 +376,14 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
       localStorage.setItem(ACH_KEY, JSON.stringify([...next]));
       setToastAch(ach);
       setTimeout(() => setToastAch(null), 4500);
-
-      // Grant XP bonus directly (not via giveXP to avoid potential loops)
       if (ach.xp > 0) {
         setUserXP(p => p + ach.xp);
-        supabase.rpc('increment_user_xp',{ p_user_id: userId, p_amount: ach.xp }).then(()=>{});
+        supabase.rpc('increment_user_xp',{ p_amount: ach.xp }).then(()=>{});
       }
       return next;
     });
-  }, [userId]);
+  }, []);
 
-  /* ── Give XP + detect rank-up ── */
   const giveXP = useCallback((amount: number, firstMsg=false) => {
     setUserXP(prev => {
       const newXP = prev + amount;
@@ -381,25 +391,23 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
       const newR  = getRank(newXP);
       if (newR.name !== oldR.name) {
         const a = ACHIEVEMENTS.find(x => x.id===`rank-${newR.name.toLowerCase()}`);
-        if (a) setTimeout(() => unlockAch(a), 0); // defer to avoid setState-in-setState
+        if (a) setTimeout(() => unlockAch(a), 0);
       }
       if (firstMsg) {
         const a = ACHIEVEMENTS.find(x => x.id==='first-message');
         if (a) setTimeout(() => unlockAch(a), 0);
       }
-      supabase.rpc('increment_user_xp',{ p_user_id: userId, p_amount: amount }).then(()=>{});
+      supabase.rpc('increment_user_xp',{ p_amount: amount }).then(()=>{});
       return newXP;
     });
-  }, [unlockAch, userId]);
+  }, [unlockAch]);
 
-  /* ── Pro achievement ── */
   useEffect(() => {
-    if (userTier !== ToolTier.FREE) {
+    if (myTier !== ToolTier.FREE) {
       const a = ACHIEVEMENTS.find(x=>x.id==='pro-member'); if (a) unlockAch(a);
     }
-  }, [userTier, unlockAch]);
+  }, [myTier, unlockAch]);
 
-  /* ── Smart scroll: only auto-scroll when already at bottom ── */
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
     setIsAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight < 60);
@@ -409,16 +417,16 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
     if (isAtBottom) endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isAtBottom]);
 
-  /* ── Load messages + Realtime ── */
   useEffect(() => {
-    // Fix: clear immediately on room switch — no stale frame
     setMessages([]);
     setIsLoading(true);
-
     if (channelRef.current) { supabase.removeChannel(channelRef.current); channelRef.current=null; }
-
+    if (uploadedPath) {
+      supabase.storage.from('umbra-z-media').remove([uploadedPath]).then(()=>{});
+      setUploadedPath(null);
+      setImagePreview(null);
+    }
     const roomId = activeRoom.id;
-
     supabase
       .from('umbra_z_messages')
       .select('*')
@@ -431,12 +439,10 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
           : (SEED[roomId] ?? []));
         setIsLoading(false);
       });
-
     const ch = supabase.channel(`umbra-z:${roomId}`)
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'umbra_z_messages',filter:`room_id=eq.${roomId}`},
         payload => {
           if (!payload.new) return;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const incoming = mapRow(payload.new as any);
           setMessages(prev => {
             const tempIdx = prev.findIndex(m =>
@@ -451,29 +457,47 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
       .on('postgres_changes',{event:'UPDATE',schema:'public',table:'umbra_z_messages',filter:`room_id=eq.${roomId}`},
         payload => {
           if (!payload.new) return;
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const updated = mapRow(payload.new as any);
           setMessages(prev => prev.map(m => m.id===updated.id ? updated : m));
         })
       .subscribe();
-
     channelRef.current = ch;
     return () => { supabase.removeChannel(ch); channelRef.current=null; };
   }, [activeRoom.id]);
 
-  /* ── File / paste handler ── */
+  const uploadMedia = async (file: File): Promise<{url:string, path:string}> => {
+    const ext = file.name.split('.').pop() || 'png';
+    const path = `${userId}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('umbra-z-media').upload(path, file);
+    if (error) throw error;
+    const { data } = supabase.storage.from('umbra-z-media').getPublicUrl(path);
+    return { url: data.publicUrl, path };
+  };
+
   const handleFile = useCallback(async (file: File) => {
     setMediaError(null);
     const isImg   = file.type.startsWith('image/');
     const isVideo = file.type.startsWith('video/');
     if (!isImg && !isVideo) { setMediaError('Somente imagens e vídeos são suportados.'); return; }
     try {
-      const url = await fileToDataUrl(file);
-      setImagePreview({ url, type: isImg ? 'image' : 'video', file });
+      const localUrl = URL.createObjectURL(file);
+      setImagePreview({ url: localUrl, type: isImg ? 'image' : 'video', file });
     } catch {
-      setMediaError('Arquivo muito grande. Limite: 4 MB.');
+      setMediaError('Falha ao processar arquivo.');
     }
   }, []);
+
+  const cancelMedia = useCallback(async () => {
+    if (uploadedPath) {
+      await supabase.storage.from('umbra-z-media').remove([uploadedPath]);
+    }
+    if (imagePreview?.url.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview.url);
+    }
+    setUploadedPath(null);
+    setImagePreview(null);
+    setMediaError(null);
+  }, [uploadedPath, imagePreview]);
 
   const handlePaste = useCallback((e: React.ClipboardEvent) => {
     const items = Array.from(e.clipboardData.items) as DataTransferItem[];
@@ -481,46 +505,59 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
     if (media) { const f = media.getAsFile(); if (f) handleFile(f); }
   }, [handleFile]);
 
-  /* ── Send: optimistic → confirm/rollback ── */
   const sendMessage = async () => {
-    if (!inputValue.trim() && !imagePreview || isSending) return;
+    if ((!inputValue.trim() && !imagePreview) || isSending || !session) return;
+    const now = Date.now();
+    if (now - lastSentAt < 1000) return;
+    setLastSentAt(now);
     setIsSending(true);
     const isFirst  = !unlockedAchs.has('first-message');
-    const tempId   = `temp-${Date.now()}`;
+    const tempId   = `temp-${now}`;
     const content  = inputValue.trim();
-    const mediaUrl = imagePreview?.url;
-    const mediaType= imagePreview?.type;
-
+    let mediaUrl = '';
+    let mediaType = imagePreview?.type || null;
+    let newPath = '';
+    if (imagePreview?.file) {
+      try {
+        const res = await uploadMedia(imagePreview.file);
+        mediaUrl = res.url;
+        newPath = res.path;
+        setUploadedPath(newPath);
+      } catch (e: any) {
+        setMediaError('Falha no upload: ' + (e.message || 'Erro desconhecido'));
+        setIsSending(false);
+        return;
+      }
+    }
     const optimistic: Message = {
       id:tempId, content, roomId:activeRoom.id, authorId:userId,
-      authorName:userName, authorRank:userRank.name, authorXP:userXP,
+      authorName:myName, authorRank:userRank.name, authorXP:userXP,
       authorAvatar:'🫵', reactions:{}, isSending:true, createdAt:new Date(),
-      mediaUrl, mediaType,
+      mediaUrl: mediaUrl || imagePreview?.url, mediaType,
     };
     setMessages(prev => [...prev, optimistic]);
     setInputValue('');
     setImagePreview(null);
-
     const { data, error } = await supabase
       .from('umbra_z_messages')
       .insert({
         content, room_id:activeRoom.id, author_id:userId,
-        author_name:userName, author_rank:userRank.name,
+        author_name:myName, author_rank:userRank.name,
         author_xp:userXP, author_avatar:'🫵', reactions:{},
-        media_url: mediaUrl ?? null, media_type: mediaType ?? null,
+        media_url: mediaUrl || null, media_type: mediaType,
       })
       .select().single();
-
     if (!error && data) {
       setMessages(prev => prev.map(m => m.id===tempId ? mapRow(data) : m));
       giveXP(5, isFirst);
+      setUploadedPath(null);
     } else {
+      if (newPath) supabase.storage.from('umbra-z-media').remove([newPath]).then(()=>{});
       setMessages(prev => prev.map(m => m.id===tempId ? {...m, isSending:false, failed:true} : m));
     }
     setIsSending(false);
   };
 
-  /* ── Retry failed message ── */
   const retryMessage = useCallback(async (msg: Message) => {
     setMessages(prev => prev.map(m => m.id===msg.id ? {...m,failed:false,isSending:true} : m));
     const { data, error } = await supabase
@@ -529,28 +566,34 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
         content:msg.content, room_id:msg.roomId, author_id:msg.authorId,
         author_name:msg.authorName, author_rank:msg.authorRank,
         author_xp:msg.authorXP, author_avatar:msg.authorAvatar, reactions:{},
+        media_url: msg.mediaUrl, media_type: msg.mediaType,
       }).select().single();
     if (!error && data) setMessages(prev => prev.map(m => m.id===msg.id ? mapRow(data) : m));
     else setMessages(prev => prev.map(m => m.id===msg.id ? {...m,isSending:false,failed:true} : m));
   }, []);
 
-  /* ── Atomic reaction via RPC ── */
   const addReaction = useCallback(async (msgId: string, emoji: string) => {
+    if (!session) return;
     setMessages(prev => prev.map(m => {
       if (m.id!==msgId) return m;
-      return {...m, reactions:{...m.reactions,[emoji]:(m.reactions[emoji]??0)+1}};
+      const count = m.reactions[emoji] || 0;
+      return {...m, reactions:{...m.reactions,[emoji]: count + 1}};
     }));
-    await supabase.rpc('add_reaction',{ p_msg_id: msgId, p_emoji: emoji });
-  }, []);
+    await supabase.rpc('toggle_reaction',{ p_msg_id: msgId, p_emoji: emoji });
+  }, [session]);
 
   const openEmoji = useCallback(() => setShowEmoji(p=>!p), []);
   const openLightbox = useCallback((url: string) => setLightboxUrl(url), []);
 
   const openProfile = useCallback(async (uid: string, name: string, avatar: string, rank: string, xp: number) => {
-    // Try fetch profile from DB
+    const cached = profileCache[uid];
+    if (cached && Date.now() - cached.ts < 60000) {
+      setViewingProfile(cached.data);
+      setIsEditingBio(false);
+      return;
+    }
     const { data } = await supabase.from('umbra_z_profiles').select('*').eq('user_id', uid).single();
-    
-    setViewingProfile({
+    const prof: any = {
       id: uid, name, avatar, rank, xp,
       status: ONLINE_MEMBERS.find(m=>m.id===uid)?.status || 'offline',
       plan: ToolTier.PRO,
@@ -562,9 +605,11 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
       likesReceived: data?.likes_received || 28,
       weeklyXP: data?.weekly_xp || 450,
       maxStreak: data?.max_streak || 7,
-    });
+    };
+    setProfileCache(prev => ({ ...prev, [uid]: { data: prof, ts: Date.now() } }));
+    setViewingProfile(prof);
     setIsEditingBio(false);
-  }, []);
+  }, [profileCache]);
 
   const updateBio = async () => {
     if (!viewingProfile || viewingProfile.id !== userId) return;
@@ -573,12 +618,21 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
       bio: editingBioText
     });
     if (!error) {
-      setViewingProfile(v => v ? {...v, bio: editingBioText} : null);
+      const updated = {...viewingProfile, bio: editingBioText};
+      setViewingProfile(updated);
+      setProfileCache(prev => ({ ...prev, [userId]: { data: updated, ts: Date.now() } }));
       setIsEditingBio(false);
     }
   };
 
-  /* ── Filtered + grouped rooms ── */
+  const selectRoom = useCallback((room: Room) => {
+    if (!canAccess(room)) return;
+    setMessages([]);
+    setIsLoading(true);
+    setActiveRoom(room);
+    setSidebarOpen(false);
+  }, [canAccess]);
+
   const filteredRooms = useMemo(() =>
     searchQuery.trim()
       ? ROOMS.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -591,11 +645,9 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
     }, {}),
   [filteredRooms]);
 
-  /* ── Sidebar (memoised — canAccess is now stable via useCallback) ── */
   const SidebarContent = useMemo(() => (
     <aside style={{width:240,background:'#111118',borderRight:'1px solid rgba(255,255,255,.05)',flexShrink:0}}
       className="flex flex-col h-full">
-
       <div className="p-4 flex items-center justify-between border-b" style={{borderColor:'rgba(255,255,255,.05)'}}>
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-white text-sm shadow-lg"
@@ -608,20 +660,14 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
         <button className="md:hidden p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-white/5 transition-all"
           onClick={() => setSidebarOpen(false)}><X className="w-4 h-4"/></button>
       </div>
-
       <div className="px-3 py-2">
         <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{background:'rgba(255,255,255,.05)'}}>
           <Search className="w-3.5 h-3.5 text-gray-600 shrink-0"/>
           <input value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}
             className="bg-transparent text-xs text-gray-400 outline-none w-full placeholder-gray-600 font-medium"
             placeholder="Buscar canal..."/>
-          {searchQuery && (
-            <button onClick={() => setSearchQuery('')} className="text-gray-600 hover:text-gray-400 shrink-0 transition-colors">
-              <X className="w-3 h-3"/></button>
-          )}
         </div>
       </div>
-
       <div className="flex-1 overflow-y-auto px-2 py-2">
         {Object.entries(groupedRooms).map(([cat,rooms]) => (
           <div key={cat} className="mb-3">
@@ -631,20 +677,12 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
                 style={{color:CAT_COLORS[cat]||'#6b7280'}}>{cat}</span>
               <ChevronDown className={`w-3 h-3 text-gray-600 transition-transform ${expandedCats[cat]?'':'rotate-[-90deg]'}`}/>
             </button>
-
             {expandedCats[cat] && rooms.map(room => {
               const ok     = canAccess(room);
               const active = activeRoom.id===room.id;
               return (
                 <button key={room.id}
-                  onClick={() => {
-                    if (!ok) return;
-                    // Clear immediately before loading (fix: no stale frame)
-                    setMessages([]);
-                    setIsLoading(true);
-                    setActiveRoom(room);
-                    setSidebarOpen(false);
-                  }}
+                  onClick={() => selectRoom(room)}
                   className={`w-full flex items-center gap-2 px-2 py-2 rounded-xl transition-all mb-0.5 text-xs
                     ${active?'text-white':ok?'text-gray-500 hover:text-gray-300 hover:bg-white/5':'text-gray-700 cursor-not-allowed opacity-40'}`}
                   style={active?{background:'linear-gradient(135deg,rgba(124,58,237,.2),rgba(236,72,153,.1))',borderLeft:'2px solid #7c3aed'}:{}}>
@@ -652,22 +690,12 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
                   {room.type==='voice'?<Volume2 className="w-3.5 h-3.5 shrink-0"/>:<Hash className="w-3.5 h-3.5 shrink-0"/>}
                   <span className="flex-1 text-left font-bold truncate">{room.name}</span>
                   {!ok && <Lock className="w-3 h-3 text-gray-700 shrink-0"/>}
-                  {room.unread!=null && ok && (
-                    <span className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[9px] font-black"
-                      style={{background:'#7c3aed'}}>{room.unread}</span>)}
-                  {room.online!=null && ok && (
-                    <span className="text-[9px] font-black text-green-500 flex items-center gap-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"/>{room.online}</span>)}
                 </button>
               );
             })}
-            {searchQuery && rooms.length===0 && (
-              <p className="px-2 py-2 text-[10px] text-gray-600 font-medium">Nenhum resultado.</p>
-            )}
           </div>
         ))}
       </div>
-
       <div className="p-3 border-t" style={{borderColor:'rgba(255,255,255,.05)',background:'rgba(0,0,0,.3)'}}>
         <div className="flex items-center gap-2">
           <div className="relative shrink-0">
@@ -677,36 +705,14 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
               style={{background:'#22c55e',borderColor:'#111118'}}/>
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-xs font-black text-white truncate">{userName}</div>
+            <div className="text-xs font-black text-white truncate">{myName}</div>
             <div className="text-[9px] font-black" style={{color:userRank.color}}>{userRank.icon} {userRank.name} · {userXP} XP</div>
-          </div>
-          <div className="flex gap-1">
-            <button onClick={() => setIsMuted(p=>!p)}
-              className={`p-1.5 rounded-lg transition-all ${isMuted?'text-red-500 bg-red-500/10':'text-gray-500 hover:text-white hover:bg-white/5'}`}>
-              {isMuted?<MicOff className="w-3.5 h-3.5"/>:<Mic className="w-3.5 h-3.5"/>}
-            </button>
-            <button onClick={() => setIsDeafened(p=>!p)}
-              className={`p-1.5 rounded-lg transition-all ${isDeafened?'text-red-500 bg-red-500/10':'text-gray-500 hover:text-white hover:bg-white/5'}`}>
-              <Headphones className="w-3.5 h-3.5"/>
-            </button>
-          </div>
-        </div>
-        <div className="mt-2">
-          <div className="flex justify-between items-center mb-1">
-            <span className="text-[8px] text-gray-600 font-black uppercase tracking-widest">XP</span>
-            {nextRank && <span className="text-[8px] font-black" style={{color:nextRank.color}}>→ {nextRank.name} ({nextRank.min-userXP})</span>}
-          </div>
-          <div className="h-1 rounded-full overflow-hidden" style={{background:'rgba(255,255,255,.05)'}}>
-            <div className="h-full rounded-full transition-all duration-700"
-              style={{width:`${xpPct}%`,background:`linear-gradient(90deg,${userRank.color},${nextRank?.color||userRank.color})`}}/>
           </div>
         </div>
       </div>
     </aside>
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  ), [activeRoom.id, expandedCats, userXP, sidebarOpen, isMuted, isDeafened, searchQuery, groupedRooms, nextRank, userRank, xpPct, userName, canAccess]);
+  ), [activeRoom.id, expandedCats, userXP, sidebarOpen, searchQuery, groupedRooms, myName, userRank, canAccess, selectRoom]);
 
-  /* ── Right panel (memoised) ── */
   const RightPanel = useMemo(() => !showMembers ? null : (
     <aside style={{width:220,background:'#111118',borderLeft:'1px solid rgba(255,255,255,.05)',flexShrink:0}}
       className="hidden lg:flex flex-col h-full">
@@ -720,7 +726,6 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
           </button>
         ))}
       </div>
-
       {tab==='members' && (
         <div className="flex-1 overflow-y-auto p-3">
           {(['online','away','offline'] as const).map(status => {
@@ -736,7 +741,7 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
                     className="flex items-center gap-2 p-2 rounded-xl hover:bg-white/5 transition-all cursor-pointer mb-1 group">
                     <div className="relative shrink-0">
                       <div className="w-7 h-7 rounded-xl flex items-center justify-center text-sm"
-                        style={{background:`${rankColor(m.rank)}20`,border:`1px solid ${rankColor(m.rank)}30`}}>{m.avatar}</div>
+                        style={{background:`${rankColor(m.rank)}22`,border:`1px solid ${rankColor(m.rank)}30`}}>{m.avatar}</div>
                       <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border"
                         style={{background:statusDot(m.status),borderColor:'#111118'}}/>
                     </div>
@@ -744,11 +749,6 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
                       <div className="text-xs font-bold text-gray-300 group-hover:text-white transition-colors truncate">{m.name}</div>
                       <div className="text-[9px] font-black" style={{color:rankColor(m.rank)}}>{RANKS.find(r=>r.name===m.rank)?.icon || '🌱'} {m.rank}</div>
                     </div>
-                    {m.plan!==ToolTier.FREE && (
-                      <span className="text-[8px] font-black px-1 py-0.5 rounded"
-                        style={{background:m.plan===ToolTier.TURBO?'rgba(236,72,153,.15)':'rgba(124,58,237,.15)',
-                          color:m.plan===ToolTier.TURBO?'#ec4899':'#a855f7'}}>{m.plan}</span>
-                    )}
                   </div>
                 ))}
               </div>
@@ -756,7 +756,6 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
           })}
         </div>
       )}
-
       {tab==='achievements' && (
         <div className="flex-1 overflow-y-auto p-3">
           <div className="p-3 rounded-2xl mb-4"
@@ -771,192 +770,88 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
             <div className="h-1.5 rounded-full overflow-hidden mb-1" style={{background:'rgba(255,255,255,.05)'}}>
               <div className="h-full rounded-full" style={{width:`${xpPct}%`,background:`linear-gradient(90deg,${userRank.color},${nextRank?.color||userRank.color})`}}/>
             </div>
-            {nextRank && <div className="text-[9px] text-gray-600 font-black">{nextRank.min-userXP} XP para {nextRank.icon} {nextRank.name}</div>}
           </div>
-
-          <div className="text-[9px] font-black uppercase tracking-[.15em] text-gray-600 mb-2 px-1">Patentes</div>
-          {RANKS.map(rank => {
-            const earned = userXP>=rank.min;
-            return (
-              <div key={rank.name} className={`flex items-center gap-2 p-2 rounded-xl mb-1 ${!earned?'opacity-35':''}`}
-                style={{background:earned?`${rank.color}12`:'rgba(255,255,255,.02)',border:`1px solid ${earned?rank.color+'25':'rgba(255,255,255,.03)'}`}}>
-                <span className="text-lg">{rank.icon}</span>
-                <div className="flex-1">
-                  <div className="text-xs font-black" style={{color:earned?rank.color:'#4b5563'}}>{rank.name}</div>
-                  <div className="text-[9px] text-gray-600 font-medium">{rank.min.toLocaleString()} XP</div>
-                </div>
-                {earned && <Check className="w-3.5 h-3.5" style={{color:rank.color}}/>}
-              </div>
-            );
-          })}
-
-          <div className="text-[9px] font-black uppercase tracking-[.15em] text-gray-600 mt-4 mb-2 px-1">Conquistas</div>
-          {ACHIEVEMENTS.map(ach => {
-            const earned = unlockedAchs.has(ach.id);
-            return (
-              <div key={ach.id} className={`flex items-center gap-2 p-2 rounded-xl mb-1 ${!earned?'opacity-35':''}`}
-                style={{background:earned?'rgba(124,58,237,.08)':'rgba(255,255,255,.02)',border:`1px solid ${earned?'rgba(124,58,237,.2)':'rgba(255,255,255,.03)'}`}}>
-                <span className="text-lg">{ach.icon}</span>
-                <div className="flex-1 min-w-0">
-                  <div className={`text-xs font-black truncate ${earned?'text-white':'text-gray-600'}`}>{ach.name}</div>
-                  <div className="text-[9px] text-gray-600 truncate">{ach.description}</div>
-                </div>
-                {ach.xp>0 && <span className="text-[9px] font-black shrink-0" style={{color:'#7c3aed'}}>+{ach.xp}</span>}
-              </div>
-            );
-          })}
         </div>
       )}
     </aside>
-  ), [showMembers, tab, userXP, userRank, nextRank, xpPct, unlockedAchs]);
+  ), [showMembers, tab, userXP, userRank, nextRank, xpPct, openProfile]);
 
-  /* ─── Render ─────────────────────────────────────────────────────────── */
   return (
     <div className="flex h-full rounded-[32px] overflow-hidden border border-white/5 shadow-2xl relative"
       style={{minHeight:'80vh',background:'#0d0d14'}}>
-
       {sidebarOpen && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-30 md:hidden"
           onClick={() => setSidebarOpen(false)}/>
       )}
-
       <div className={`fixed inset-y-0 left-0 z-40 md:relative md:z-auto transition-transform duration-300
         ${sidebarOpen?'translate-x-0':'-translate-x-full md:translate-x-0'}`} style={{width:240}}>
         {SidebarContent}
       </div>
-
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
-
-        {/* Channel header */}
         <div className="h-14 border-b flex items-center justify-between px-4 shrink-0"
           style={{borderColor:'rgba(255,255,255,.05)',background:'rgba(0,0,0,.25)',backdropFilter:'blur(20px)'}}>
           <div className="flex items-center gap-2">
             <button className="md:hidden p-2 rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition-all mr-1"
               onClick={() => setSidebarOpen(true)}><Menu className="w-5 h-5"/></button>
             <span className="text-lg">{activeRoom.emoji}</span>
-            {activeRoom.type==='voice'?<Volume2 className="w-4 h-4 text-gray-400"/>:<Hash className="w-4 h-4 text-gray-400"/>}
             <span className="font-black text-white text-sm">{activeRoom.name}</span>
-            {activeRoom.plan!==ToolTier.FREE && (
-              <span className="hidden sm:inline text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider"
-                style={{background:activeRoom.plan===ToolTier.TURBO?'rgba(236,72,153,.15)':'rgba(124,58,237,.15)',
-                  color:activeRoom.plan===ToolTier.TURBO?'#ec4899':'#a855f7',
-                  border:`1px solid ${activeRoom.plan===ToolTier.TURBO?'rgba(236,72,153,.3)':'rgba(124,58,237,.3)'}`}}>
-                {activeRoom.plan}
-              </span>
-            )}
           </div>
-          <button onClick={() => setShowMembers(p=>!p)}
-            className={`hidden lg:flex p-2 rounded-xl transition-all ${showMembers?'text-white bg-white/10':'text-gray-500 hover:text-white hover:bg-white/5'}`}>
-            <Users className="w-4 h-4"/>
-          </button>
         </div>
-
         {activeRoom.type==='voice' ? (
           !voiceJoined ? (
-            /* ── Voice lobby ── */
             <div className="flex-1 flex items-center justify-center p-8">
               <div className="text-center max-w-sm">
-                <div className="relative w-28 h-28 mx-auto mb-6">
-                  <div className="w-28 h-28 rounded-[32px] flex items-center justify-center text-5xl"
-                    style={{background:'linear-gradient(135deg,rgba(124,58,237,.25),rgba(236,72,153,.15))',border:'1px solid rgba(124,58,237,.4)'}}>
-                    🎙️
-                  </div>
-                  {activeRoom.online && (
-                    <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-black text-white"
-                      style={{background:'#22c55e'}}>●{activeRoom.online}</span>
-                  )}
-                </div>
+                <div className="w-28 h-28 rounded-[32px] flex items-center justify-center text-5xl mx-auto mb-6"
+                  style={{background:'linear-gradient(135deg,rgba(124,58,237,.25),rgba(236,72,153,.15))',border:'1px solid rgba(124,58,237,.4)'}}>🎙️</div>
                 <h3 className="text-2xl font-black text-white mb-1">{activeRoom.name}</h3>
-                <p className="text-gray-500 text-sm font-medium mb-1">Sala de Voz · Plano <span className="font-black text-white">{activeRoom.plan}</span></p>
-                {/* Online members avatars */}
-                <div className="flex justify-center gap-2 my-5">
-                  {ONLINE_MEMBERS.filter(m=>m.status==='online').slice(0,4).map(m=>(
-                    <div key={m.id} className="relative">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
-                        style={{background:`${rankColor(m.rank)}22`,border:`1px solid ${rankColor(m.rank)}40`}}>{m.avatar}</div>
-                      <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
-                        style={{background:statusDot(m.status),borderColor:'#0d0d14'}}/>
-                    </div>
-                  ))}
-                </div>
                 <button onClick={() => setVoiceJoined(true)}
-                  className="px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest text-white transition-all hover:scale-105 active:scale-95"
-                  style={{background:'linear-gradient(135deg,#7c3aed,#ec4899)',boxShadow:'0 8px 32px rgba(124,58,237,.45)'}}>
-                  🎙️ Entrar na Sala
-                </button>
+                  className="mt-6 px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest text-white transition-all hover:scale-105 active:scale-95"
+                  style={{background:'linear-gradient(135deg,#7c3aed,#ec4899)'}}>🎙️ Entrar na Sala</button>
               </div>
             </div>
           ) : (
-            /* ── Voice call active ── */
             <div className="flex-1 flex flex-col" style={{background:'#09090f'}}>
-              {/* Members grid */}
               <div className="flex-1 flex items-center justify-center p-6">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-lg w-full">
-                  {/* Self tile */}
                   <div className="flex flex-col items-center gap-2 p-4 rounded-3xl relative"
                     style={{background:'linear-gradient(135deg,rgba(124,58,237,.2),rgba(236,72,153,.1))',border:'2px solid rgba(124,58,237,.5)'}}>
                     <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
                       style={{background:'rgba(124,58,237,.3)'}}>🫵</div>
-                    <span className="text-xs font-black text-white truncate max-w-full">{userName}</span>
-                    <span className="text-[9px] font-black" style={{color:userRank.color}}>{userRank.icon} {userRank.name}</span>
-                    {voiceMuted && (
-                      <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
-                        <MicOff className="w-3 h-3 text-white"/>
-                      </div>
-                    )}
-                    <div className="absolute inset-0 rounded-3xl pointer-events-none"
-                      style={{border:'2px solid rgba(124,58,237,.8)',boxShadow:'0 0 16px rgba(124,58,237,.3)'}}
-                    />
+                    <span className="text-xs font-black text-white truncate max-w-full">{myName}</span>
                   </div>
-                  {/* Other members */}
-                  {ONLINE_MEMBERS.filter(m=>m.status==='online').slice(0,5).map(m=>(
-                    <div key={m.id} className="flex flex-col items-center gap-2 p-4 rounded-3xl relative transition-all"
-                      style={{background:speaking.includes(m.id)?'rgba(34,197,94,.08)':'rgba(255,255,255,.03)',
-                        border:speaking.includes(m.id)?'2px solid rgba(34,197,94,.6)':'1px solid rgba(255,255,255,.07)',
-                        boxShadow:speaking.includes(m.id)?'0 0 20px rgba(34,197,94,.2)':'none'}}>
-                      <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
-                        style={{background:`${rankColor(m.rank)}18`}}>{m.avatar}</div>
-                      <span className="text-xs font-black text-white truncate max-w-full">{m.name}</span>
-                      <span className="text-[9px] font-black" style={{color:rankColor(m.rank)}}>{m.rank}</span>
-                      {speaking.includes(m.id) && (
-                        <div className="flex gap-0.5 items-end h-4 absolute top-2 right-2">
-                          {[1,2,3].map(b=>(
-                            <div key={b} className="w-1 rounded-full animate-pulse" style={{background:'#22c55e',height:`${(b*30)+20}%`}}/>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
                 </div>
               </div>
-              {/* Controls bar */}
-              <div className="pb-6 flex justify-center">
-                <div className="flex items-center gap-3 px-6 py-4 rounded-2xl"
-                  style={{background:'rgba(255,255,255,.05)',border:'1px solid rgba(255,255,255,.08)',backdropFilter:'blur(20px)'}}>
-                  <button onClick={() => setVoiceMuted(p=>!p)}
-                    className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all hover:scale-110 ${voiceMuted?'bg-red-500 text-white':'bg-white/10 text-gray-300 hover:bg-white/15'}`}>
-                    {voiceMuted?<MicOff className="w-5 h-5"/>:<Mic className="w-5 h-5"/>}
+              <div className="flex flex-col items-center gap-1.5 mt-8 border-t border-white/5 pt-8 pb-6">
+                <div className="flex items-center gap-3">
+                  <button onClick={() => setVoiceMuted(!voiceMuted)}
+                    className={`w-12 h-12 rounded-[1.25rem] flex items-center justify-center transition-all hover:scale-110 active:scale-95
+                      ${voiceMuted ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-white/5 text-white hover:bg-white/10'}`}>
+                    {voiceMuted ? <MicOff className="w-5 h-5"/> : <Mic className="w-5 h-5"/>}
                   </button>
-                  <button onClick={() => setVoiceVideo(p=>!p)}
-                    className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all hover:scale-110 ${voiceVideo?'bg-purple-500 text-white':'bg-white/10 text-gray-300 hover:bg-white/15'}`}>
-                    {voiceVideo?<Video className="w-5 h-5"/>:<VideoOff className="w-5 h-5"/>}
+                  <button onClick={() => setVoiceVideo(!voiceVideo)}
+                    className={`w-12 h-12 rounded-[1.25rem] flex items-center justify-center transition-all hover:scale-110 active:scale-95
+                      ${voiceVideo ? 'bg-purple-600 shadow-xl shadow-purple-600/20 text-white' : 'bg-white/5 text-white hover:bg-white/10'}`}>
+                    <Video className="w-5 h-5"/>
                   </button>
-                  <button className="w-12 h-12 rounded-2xl flex items-center justify-center bg-white/10 text-gray-300 hover:bg-white/15 transition-all hover:scale-110">
-                    <MonitorUp className="w-5 h-5"/>
+                  <button className="w-12 h-12 rounded-[1.25rem] bg-white/5 text-white flex items-center justify-center transition-all hover:bg-white/10 hover:scale-110 active:scale-95">
+                    <Monitor className="w-5 h-5"/>
                   </button>
                   <button onClick={() => setVoiceJoined(false)}
-                    className="w-12 h-12 rounded-2xl flex items-center justify-center bg-red-500 text-white transition-all hover:scale-110 hover:bg-red-600">
+                    className="w-12 h-12 rounded-[1.25rem] bg-red-500 shadow-xl shadow-red-500/20 text-white flex items-center justify-center transition-all hover:bg-red-600 hover:scale-110 active:scale-95">
                     <PhoneOff className="w-5 h-5"/>
                   </button>
                 </div>
+                <p className="text-[9px] text-yellow-500/70 font-black uppercase tracking-widest mt-3 flex items-center gap-1.5 bg-yellow-500/5 px-3 py-1 rounded-full border border-yellow-500/10">
+                  <span className="w-1 h-1 rounded-full bg-yellow-500 animate-pulse"/>
+                  Chamadas em beta — Áudio em breve
+                </p>
               </div>
             </div>
           )
         ) : (
-          <>
-            {/* Messages — smart scroll via onScroll handler */}
+          <div className="flex-1 flex flex-col relative overflow-hidden">
             <div ref={scrollRef} onScroll={handleScroll}
-              className="flex-1 overflow-y-auto p-2" style={{background:'#0d0d14'}}>
+              className="flex-1 overflow-y-auto px-4 py-6 custom-scrollbar scroll-smooth space-y-1">
               {isLoading ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
@@ -964,16 +859,7 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
                     <p className="text-gray-600 text-xs font-bold">Carregando mensagens...</p>
                   </div>
                 </div>
-              ) : messages.length===0 ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <div className="text-5xl mb-4">{activeRoom.emoji}</div>
-                    <h3 className="text-white font-black text-xl mb-2">Início de #{activeRoom.name}</h3>
-                    <p className="text-gray-600 text-sm font-medium">Seja o primeiro a escrever!</p>
-                  </div>
-                </div>
-              ) : (
-                messages.map((m,i) => (
+              ) : messages.map((m,i) => (
                   <MessageBubble key={m.id}
                     msg={m} prevMsg={messages[i-1]}
                     onReaction={addReaction}
@@ -983,64 +869,41 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
                     onOpenProfile={openProfile}
                   />
                 ))
-              )}
+              }
               <div ref={endRef}/>
             </div>
 
             {/* New messages indicator when not at bottom */}
             {!isAtBottom && (
               <button onClick={() => { endRef.current?.scrollIntoView({behavior:'smooth'}); setIsAtBottom(true); }}
-                className="absolute bottom-24 right-6 px-3 py-1.5 rounded-full text-xs font-black text-white shadow-lg transition-all hover:scale-105"
-                style={{background:'linear-gradient(135deg,#7c3aed,#ec4899)'}}>
+                className="absolute bottom-[100px] left-1/2 -translate-x-1/2 px-4 py-2 rounded-full text-[10px] font-black text-white shadow-2xl transition-all hover:scale-105 active:scale-95 z-10"
+                style={{background:'linear-gradient(135deg,#7c3aed,#ec4899)', border:'1px solid rgba(255,255,255,0.1)'}}>
                 ↓ Novas mensagens
               </button>
             )}
 
-            {/* Hidden file input */}
             <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden"
               onChange={e => { const f=e.target.files?.[0]; if(f) handleFile(f); e.target.value=''; }}/>
-
-            {/* Input */}
             <div className="p-4 shrink-0" style={{background:'rgba(0,0,0,.3)',borderTop:'1px solid rgba(255,255,255,.05)'}}>
-              {showEmoji && (
-                <div className="mb-3 p-3 rounded-2xl flex flex-wrap gap-2 shadow-xl"
-                  style={{background:'#111118',border:'1px solid rgba(255,255,255,.07)'}}>
-                  {EMOJIS.map(e => (
-                    <button key={e} onClick={() => { setInputValue(p=>p+e); setShowEmoji(false); }}
-                      className="text-xl hover:scale-125 transition-transform">{e}</button>
-                  ))}
-                </div>
-              )}
-
-              {/* Image/video preview */}
               {imagePreview && (
-                <div className="mb-3 p-3 rounded-2xl flex items-center gap-3"
-                  style={{background:'rgba(124,58,237,.1)',border:'1px solid rgba(124,58,237,.3)'}}>
-                  {imagePreview.type==='image'
-                    ? <img src={imagePreview.url} className="h-16 w-16 rounded-xl object-cover border border-white/10" alt="preview"/>
-                    : <div className="h-16 w-16 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                        <Film className="w-6 h-6 text-purple-400"/>
-                      </div>}
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-black text-white">{imagePreview.file.name}</div>
-                    <div className="text-[10px] text-gray-500">{(imagePreview.file.size/1024).toFixed(0)} KB · {imagePreview.type==='image'?'Imagem':'Vídeo'}</div>
+                <div className="p-3 bg-black/40 border-b border-white/5 flex items-center gap-3 animate-in slide-in-from-bottom-2">
+                  <div className="relative group/prev">
+                    {imagePreview.type==='image' ? (
+                      <img src={imagePreview.url} className="w-12 h-12 rounded-xl object-cover border border-white/10"/>
+                    ) : (
+                      <div className="w-12 h-12 rounded-xl bg-purple-900/30 flex items-center justify-center border border-white/10">📹</div>
+                    )}
+                    <button onClick={cancelMedia} 
+                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover/prev:opacity-100 transition-opacity">
+                      <X className="w-3 h-3"/>
+                    </button>
                   </div>
-                  <button onClick={() => setImagePreview(null)}
-                    className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-white/10 transition-all">
-                    <X className="w-4 h-4"/>
-                  </button>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Preview de mídia</div>
+                    <div className="text-[9px] text-gray-600 truncate">{imagePreview.file.name} ({(imagePreview.file.size/1024/1024).toFixed(1)}MB)</div>
+                  </div>
                 </div>
               )}
-
-              {/* Error banner */}
-              {mediaError && (
-                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-red-400"
-                  style={{background:'rgba(239,68,68,.08)',border:'1px solid rgba(239,68,68,.2)'}}>
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0"/>{mediaError}
-                  <button onClick={() => setMediaError(null)} className="ml-auto"><X className="w-3 h-3"/></button>
-                </div>
-              )}
-
               <div className="flex items-center gap-3 px-4 py-3 rounded-2xl"
                 style={{background:'rgba(255,255,255,.04)',border:`1px solid ${imagePreview?'rgba(124,58,237,.4)':'rgba(255,255,255,.07)'}`}}>
                 <button onClick={() => setShowEmoji(p=>!p)} className="text-gray-500 hover:text-yellow-400 transition-colors shrink-0">
@@ -1054,7 +917,6 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
                   placeholder={imagePreview ? 'Adicione uma legenda (opcional)...' : `Mensagem em #${activeRoom.name}`}
                   className="flex-1 bg-transparent text-sm text-white outline-none placeholder-gray-600 font-medium"
                 />
-                {/* Paperclip — now functional */}
                 <button onClick={() => fileInputRef.current?.click()}
                   className={`text-gray-500 hover:text-purple-400 transition-colors shrink-0 ${imagePreview?'text-purple-400':''}`}>
                   {imagePreview ? <ImageIcon className="w-4 h-4"/> : <Paperclip className="w-4 h-4"/>}
@@ -1071,7 +933,7 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
                 <span className="text-[9px] font-black" style={{color:userRank.color}}>{userRank.icon} {userRank.name} · {userXP} XP</span>
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
 
@@ -1270,9 +1132,22 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
               {/* Achievements & Detailed Stats */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-4 rounded-3xl bg-white/[.03] border border-white/[.05]">
-                  <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Conquistas (0)</div>
-                  <div className="py-4 text-center">
-                    <p className="text-[10px] text-gray-700 font-bold italic">Nenhuma conquista ainda.</p>
+                  <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Conquistas ({unlockedAchs.size})</div>
+                  <div className="py-2 space-y-1">
+                    {unlockedAchs.size > 0 ? (
+                      [...unlockedAchs].map(aid => {
+                        const a = ACHIEVEMENTS.find(x=>x.id===aid);
+                        if (!a) return null;
+                        return (
+                          <div key={aid} className="flex items-center gap-2 p-1.5 rounded-lg bg-white/5 border border-white/5">
+                            <span className="text-sm">{a.icon}</span>
+                            <span className="text-[10px] font-bold text-gray-300">{a.name}</span>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <p className="text-[10px] text-gray-700 font-bold italic text-center py-2">Nenhuma conquista ainda.</p>
+                    )}
                   </div>
                 </div>
 
@@ -1298,6 +1173,30 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
           </div>
         </div>
       )}
+
+      {/* ── Auth Loading Overlay ── */}
+      {authLoading && (
+        <div className="fixed inset-0 z-[200] bg-[#0d0d14] flex flex-col items-center justify-center">
+          <div className="w-12 h-12 rounded-2xl border-4 border-purple-600 border-t-transparent animate-spin mb-4"/>
+          <div className="text-white font-black text-xs uppercase tracking-[0.2em]">Autenticando Umbra Z...</div>
+        </div>
+      )}
+
+      {/* ── No Session Overlay ── */}
+      {!authLoading && !session && (
+        <div className="fixed inset-0 z-[190] bg-black/60 backdrop-blur-md flex items-center justify-center p-6">
+          <div className="bg-[#111118] border border-white/10 p-8 rounded-[2.5rem] shadow-2xl max-w-sm text-center">
+            <div className="w-16 h-16 rounded-[2rem] bg-purple-600/20 text-purple-600 flex items-center justify-center text-3xl mx-auto mb-6">🔒</div>
+            <h3 className="text-xl font-black text-white mb-2">Acesso Restrito</h3>
+            <p className="text-sm text-gray-500 mb-8 leading-relaxed">Você precisa estar logado no Umbra Hub para acessar a comunidade Umbra Z.</p>
+            <button onClick={() => window.location.href='/login'} 
+              className="w-full py-4 rounded-2xl bg-purple-600 text-white font-black uppercase text-xs tracking-widest hover:bg-purple-700 transition-all shadow-lg shadow-purple-600/20">
+              Fazer Login agora
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
