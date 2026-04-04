@@ -33,6 +33,15 @@ interface Message {
 interface Member {
   id: string; name: string; rank: string; xp: number;
   avatar: string; status: 'online' | 'away' | 'offline'; plan: ToolTier;
+  // Extended profile data
+  bio?: string;
+  memberSince?: string;
+  friendsCount?: number;
+  totalMessages?: number;
+  streak?: number;
+  likesReceived?: number;
+  weeklyXP?: number;
+  maxStreak?: number;
 }
 
 interface AchievementDef {
@@ -46,16 +55,19 @@ interface MsgBubbleProps {
   onRetry: (msg: Message) => void;
   onOpenEmoji: () => void;
   onLightbox: (url: string) => void;
+  onOpenProfile: (userId: string, name: string, avatar: string, rank: string, xp: number) => void;
 }
 
 /* ─── Static data ───────────────────────────────────────────────────────── */
 const RANKS = [
-  { name: 'Iniciante',  min: 0,     color: '#6b7280', icon: '🌱' },
-  { name: 'Aprendiz',   min: 100,   color: '#3b82f6', icon: '📘' },
-  { name: 'Criador',    min: 500,   color: '#8b5cf6', icon: '🎬' },
-  { name: 'Pro',        min: 1500,  color: '#a855f7', icon: '⚡' },
-  { name: 'Elite',      min: 4000,  color: '#ec4899', icon: '💎' },
-  { name: 'Lenda',      min: 10000, color: '#f59e0b', icon: '👑' },
+  { name: 'Novato',      min: 0,     color: '#6b7280', icon: '🌱' },
+  { name: 'Aprendiz',    min: 100,   color: '#3b82f6', icon: '📘' },
+  { name: 'Criador',     min: 500,   color: '#a855f7', icon: '✏️' },
+  { name: 'Estrategista', min: 1500,  color: '#ec4899', icon: '🎯' },
+  { name: 'Produtor',    min: 3500,  color: '#06b6d4', icon: '🎬' },
+  { name: 'Expert',      min: 7500,  color: '#f59e0b', icon: '💎' },
+  { name: 'Mestre',      min: 15000, color: '#10b981', icon: '👑' },
+  { name: 'Lenda',       min: 30000, color: '#ef4444', icon: '🔥' },
 ];
 
 const ROOMS: Room[] = [
@@ -165,7 +177,7 @@ function fileToDataUrl(file: File): Promise<string> {
 }
 
 /* ─── MessageBubble — extracted as React.memo to avoid full-list re-renders */
-const MessageBubble = memo(({ msg, prevMsg, onReaction, onRetry, onOpenEmoji, onLightbox }: MsgBubbleProps) => {
+const MessageBubble = memo(({ msg, prevMsg, onReaction, onRetry, onOpenEmoji, onLightbox, onOpenProfile }: MsgBubbleProps) => {
   const grouped = prevMsg?.authorId===msg.authorId && !msg.isSystem
     && (msg.createdAt.getTime() - (prevMsg?.createdAt?.getTime()??0)) < 300000;
   const color = msg.isSystem ? '#06b6d4' : rankColor(msg.authorRank);
@@ -175,7 +187,8 @@ const MessageBubble = memo(({ msg, prevMsg, onReaction, onRetry, onOpenEmoji, on
       className={`group flex gap-3 px-3 py-1.5 rounded-2xl transition-all ${!grouped?'mt-3':'mt-0.5'} ${msg.failed?'':'hover:bg-white/[.03]'}`}
       style={msg.failed?{background:'rgba(239,68,68,.05)',border:'1px solid rgba(239,68,68,.15)'}:{}}>
       {!grouped ? (
-        <div className="w-9 h-9 rounded-2xl flex items-center justify-center text-lg shrink-0 mt-0.5"
+        <div onClick={() => !msg.isSystem && onOpenProfile(msg.authorId, msg.authorName, msg.authorAvatar, msg.authorRank, msg.authorXP)}
+          className={`w-9 h-9 rounded-2xl flex items-center justify-center text-lg shrink-0 mt-0.5 cursor-pointer hover:scale-105 active:scale-95 transition-all`}
           style={{background:msg.isSystem?'linear-gradient(135deg,#7c3aed,#06b6d4)':`${color}22`,border:`1px solid ${color}28`}}>
           {msg.authorAvatar}
         </div>
@@ -188,11 +201,12 @@ const MessageBubble = memo(({ msg, prevMsg, onReaction, onRetry, onOpenEmoji, on
       <div className="flex-1 min-w-0">
         {!grouped && (
           <div className="flex items-center flex-wrap gap-2 mb-0.5">
-            <span className="text-sm font-black" style={{color}}>{msg.authorName}</span>
+            <span onClick={() => !msg.isSystem && onOpenProfile(msg.authorId, msg.authorName, msg.authorAvatar, msg.authorRank, msg.authorXP)}
+              className="text-sm font-black cursor-pointer hover:underline" style={{color}}>{msg.authorName}</span>
             {!msg.isSystem && (
               <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-wider"
                 style={{background:`${color}20`,color}}>
-                {RANKS.find(r=>r.name===msg.authorRank)?.icon} {msg.authorRank}
+                {RANKS.find(r=>r.name===msg.authorRank)?.icon || '🌱'} {msg.authorRank}
               </span>
             )}
             <span className="text-[10px] text-gray-700">{fmtTime(msg.createdAt)}</span>
@@ -284,6 +298,10 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
   const [imagePreview, setImagePreview] = useState<{url:string; type:'image'|'video'; file:File}|null>(null);
   const [mediaError,   setMediaError]   = useState<string|null>(null);
   const [lightboxUrl,  setLightboxUrl]  = useState<string|null>(null);  // ← lightbox
+  const [viewingProfile, setViewingProfile] = useState<Member|null>(null); // ← active profile
+  const [isEditingBio,   setIsEditingBio]   = useState(false);
+  const [editingBioText, setEditingBioText] = useState('');
+
   // Voice room
   const [voiceJoined,  setVoiceJoined]  = useState(false);
   const [voiceMuted,   setVoiceMuted]   = useState(false);
@@ -528,6 +546,38 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
   const openEmoji = useCallback(() => setShowEmoji(p=>!p), []);
   const openLightbox = useCallback((url: string) => setLightboxUrl(url), []);
 
+  const openProfile = useCallback(async (uid: string, name: string, avatar: string, rank: string, xp: number) => {
+    // Try fetch profile from DB
+    const { data } = await supabase.from('umbra_z_profiles').select('*').eq('user_id', uid).single();
+    
+    setViewingProfile({
+      id: uid, name, avatar, rank, xp,
+      status: ONLINE_MEMBERS.find(m=>m.id===uid)?.status || 'offline',
+      plan: ToolTier.PRO,
+      bio: data?.bio || 'Um cara que é apaixonado por network e canais dark.',
+      memberSince: data?.member_since || '2026-04-01',
+      friendsCount: data?.friends_count || 12,
+      totalMessages: data?.total_messages || 154,
+      streak: data?.streak || 3,
+      likesReceived: data?.likes_received || 28,
+      weeklyXP: data?.weekly_xp || 450,
+      maxStreak: data?.max_streak || 7,
+    });
+    setIsEditingBio(false);
+  }, []);
+
+  const updateBio = async () => {
+    if (!viewingProfile || viewingProfile.id !== userId) return;
+    const { error } = await supabase.from('umbra_z_profiles').upsert({
+      user_id: userId,
+      bio: editingBioText
+    });
+    if (!error) {
+      setViewingProfile(v => v ? {...v, bio: editingBioText} : null);
+      setIsEditingBio(false);
+    }
+  };
+
   /* ── Filtered + grouped rooms ── */
   const filteredRooms = useMemo(() =>
     searchQuery.trim()
@@ -682,7 +732,8 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
                   {status==='online'?'🟢 Online':status==='away'?'🟡 Ausente':'⚫ Offline'} — {list.length}
                 </div>
                 {list.map(m => (
-                  <div key={m.id} className="flex items-center gap-2 p-2 rounded-xl hover:bg-white/5 transition-all cursor-pointer mb-1 group">
+                  <div key={m.id} onClick={() => openProfile(m.id, m.name, m.avatar, m.rank, m.xp)}
+                    className="flex items-center gap-2 p-2 rounded-xl hover:bg-white/5 transition-all cursor-pointer mb-1 group">
                     <div className="relative shrink-0">
                       <div className="w-7 h-7 rounded-xl flex items-center justify-center text-sm"
                         style={{background:`${rankColor(m.rank)}20`,border:`1px solid ${rankColor(m.rank)}30`}}>{m.avatar}</div>
@@ -691,7 +742,7 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-xs font-bold text-gray-300 group-hover:text-white transition-colors truncate">{m.name}</div>
-                      <div className="text-[9px] font-black" style={{color:rankColor(m.rank)}}>{RANKS.find(r=>r.name===m.rank)?.icon} {m.rank}</div>
+                      <div className="text-[9px] font-black" style={{color:rankColor(m.rank)}}>{RANKS.find(r=>r.name===m.rank)?.icon || '🌱'} {m.rank}</div>
                     </div>
                     {m.plan!==ToolTier.FREE && (
                       <span className="text-[8px] font-black px-1 py-0.5 rounded"
@@ -929,6 +980,7 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
                     onRetry={retryMessage}
                     onOpenEmoji={openEmoji}
                     onLightbox={openLightbox}
+                    onOpenProfile={openProfile}
                   />
                 ))
               )}
@@ -1083,6 +1135,166 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
           {/* Hint */}
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-xs text-gray-600 font-bold">
             Pressione Esc ou clique fora para fechar
+          </div>
+        </div>
+      )}
+
+      {/* ── Profile Modal ── */}
+      {viewingProfile && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+          onClick={() => setViewingProfile(null)}>
+          <div className="w-full max-w-lg rounded-[2.5rem] overflow-hidden flex flex-col max-h-[90vh] shadow-2xl border border-white/5 animate-in zoom-in-95 duration-200"
+            style={{background:'#0d0d14'}} onClick={e=>e.stopPropagation()}>
+            
+            {/* Header / Banner */}
+            <div className="h-28 shrink-0 relative" style={{background: rankColor(viewingProfile.rank)}}>
+              <button onClick={() => setViewingProfile(null)} 
+                className="absolute top-4 right-4 p-2 rounded-full bg-black/40 hover:bg-black/60 transition-colors">
+                <X className="w-4 h-4 text-white"/>
+              </button>
+            </div>
+
+            <div className="px-6 pb-6 -mt-14 relative flex-1 overflow-y-auto custom-scrollbar">
+              {/* Avatar large */}
+              <div className="flex justify-between items-end mb-4">
+                <div className="relative">
+                  <div className="w-24 h-24 rounded-[2rem] flex items-center justify-center text-5xl border-[6px]"
+                    style={{background: '#1a1a23', borderColor: '#0d0d14'}}>{viewingProfile.avatar}</div>
+                  <div className="absolute bottom-1 right-1 w-6 h-6 rounded-full border-4"
+                    style={{background: statusDot(viewingProfile.status), borderColor: '#0d0d14'}}/>
+                </div>
+                <div className="flex gap-2 mb-2">
+                  <button className="px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white transition-all hover:scale-105"
+                    style={{background:'linear-gradient(135deg,#7c3aed,#ec4899)'}}>💬 Enviar mensagem</button>
+                  <button className="px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest text-[#7c3aed] border border-[#7c3aed]/30 bg-[#7c3aed]/10 transition-all hover:scale-105">
+                    Adicionar Amigo
+                  </button>
+                </div>
+              </div>
+
+              {/* Identity */}
+              <div className="p-4 rounded-3xl bg-white/[.03] border border-white/[.05] mb-4">
+                <h2 className="text-xl font-black text-white">@{viewingProfile.name.toLowerCase()}</h2>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-[10px] font-black" style={{color: rankColor(viewingProfile.rank)}}>
+                    {RANKS.find(r=>r.name===viewingProfile.rank)?.icon} {viewingProfile.rank}
+                  </span>
+                  <span className="text-[10px] text-gray-600 font-bold tracking-widest uppercase">Membro desde {new Date(viewingProfile.memberSince!).toLocaleDateString('pt-BR')}</span>
+                </div>
+
+                <div className="mt-4">
+                  {isEditingBio ? (
+                    <div className="flex flex-col gap-2">
+                      <textarea value={editingBioText} onChange={e=>setEditingBioText(e.target.value)}
+                        className="w-full bg-black/40 rounded-xl p-3 text-xs text-gray-300 outline-none border border-white/10" rows={3}/>
+                      <div className="flex gap-2 justify-end">
+                        <button onClick={()=>setIsEditingBio(false)} className="text-[10px] font-black text-gray-500">Cancelar</button>
+                        <button onClick={updateBio} className="text-[10px] font-black text-purple-400">Salvar</button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-400 leading-relaxed group relative">
+                      {viewingProfile.bio}
+                      {viewingProfile.id === userId && (
+                        <button onClick={() => { setIsEditingBio(true); setEditingBioText(viewingProfile.bio!); }}
+                          className="ml-2 text-[9px] text-purple-400 font-bold hover:underline opacity-0 group-hover:opacity-100 transition-opacity">Editar</button>
+                      )}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Stats Row */}
+              <div className="grid grid-cols-4 gap-2 mb-4">
+                {[
+                  { label: 'XP Conquistado', val: viewingProfile.xp },
+                  { label: 'Mensagens', val: viewingProfile.totalMessages },
+                  { label: 'Streak', val: `${viewingProfile.streak}d` },
+                  { label: 'Curtidas', val: viewingProfile.likesReceived },
+                ].map(s => (
+                  <div key={s.label} className="p-3 rounded-2xl bg-white/[.02] border border-white/[.04] text-center">
+                    <div className="text-[11px] font-black text-white">{s.val}</div>
+                    <div className="text-[8px] font-black text-gray-600 uppercase mt-0.5">{s.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Progress */}
+              <div className="p-4 rounded-3xl bg-white/[.03] border border-white/[.05] mb-4">
+                <div className="flex justify-between items-center mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">📘</span>
+                    <span className="text-[10px] font-black text-white uppercase tracking-widest">Progresso de Patente</span>
+                  </div>
+                  <div className="text-[10px] font-black text-gray-500">{viewingProfile.xp} / {getNextRank(viewingProfile.xp)?.min || '---'} XP</div>
+                </div>
+                
+                <div className="flex justify-between items-center mb-2 px-1">
+                  <span className="text-[10px] font-black" style={{color: rankColor(viewingProfile.rank)}}>{viewingProfile.rank}</span>
+                  {getNextRank(viewingProfile.xp) && (
+                    <span className="text-[10px] font-black text-gray-700 tracking-wider">
+                      (faltam {(getNextRank(viewingProfile.xp)?.min || 0) - viewingProfile.xp} XP)
+                    </span>
+                  )}
+                  <span className="text-[10px] font-black text-gray-600">{getNextRank(viewingProfile.xp)?.name || 'Max.'}</span>
+                </div>
+                <div className="h-2 rounded-full overflow-hidden bg-black/40">
+                  <div className="h-full rounded-full transition-all duration-1000" 
+                    style={{width:`${getXPPct(viewingProfile.xp)}%`, background: `linear-gradient(90deg, ${rankColor(viewingProfile.rank)}, ${getNextRank(viewingProfile.xp)?.color || rankColor(viewingProfile.rank)})`}}/>
+                </div>
+              </div>
+
+              {/* Patents List */}
+              <div className="p-4 rounded-3xl bg-white/[.03] border border-white/[.05] mb-4">
+                <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">Patentes</div>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-3">
+                  {RANKS.map(r => {
+                    const ok = viewingProfile.xp >= r.min;
+                    return (
+                      <div key={r.name} className={`flex items-center gap-3 ${ok?'':'opacity-30'}`}>
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm"
+                          style={{background: ok ? `${r.color}22` : 'rgba(255,255,255,.05)', border: `1px solid ${ok?r.color+'30':'rgba(255,255,255,.05)'}`}}>
+                          {r.icon}
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-[11px] font-black text-white">{r.name}</div>
+                          <div className="text-[8px] text-gray-600 font-bold">XP Mínimo: {r.min}</div>
+                        </div>
+                        {ok && <Check className="w-3.5 h-3.5" style={{color:r.color}}/>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Achievements & Detailed Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 rounded-3xl bg-white/[.03] border border-white/[.05]">
+                  <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Conquistas (0)</div>
+                  <div className="py-4 text-center">
+                    <p className="text-[10px] text-gray-700 font-bold italic">Nenhuma conquista ainda.</p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-3xl bg-white/[.03] border border-white/[.05]">
+                  <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-3">Estatísticas</div>
+                  <div className="space-y-2">
+                    {[
+                      { l: 'XP Semanal', v: viewingProfile.weeklyXP },
+                      { l: 'Total de Msgs', v: viewingProfile.totalMessages },
+                      { l: 'Streak Atual', v: `${viewingProfile.streak} dias` },
+                      { l: 'Maior Streak', v: `${viewingProfile.maxStreak} dias` },
+                      { l: 'Amigos', v: viewingProfile.friendsCount },
+                    ].map(st => (
+                      <div key={st.l} className="flex justify-between items-center text-[10px]">
+                        <span className="text-gray-600 font-bold">{st.l}</span>
+                        <span className="text-white font-black">{st.v}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
