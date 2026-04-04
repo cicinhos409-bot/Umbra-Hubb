@@ -1,4 +1,6 @@
 
+import React from 'react';
+
 export enum ToolTier {
   FREE = 'FREE',
   PRO = 'PRO',
@@ -11,7 +13,7 @@ export enum ToolCategory {
   TOOLS_2IN1 = '2 EM 1',
   SPECIAL = 'SPECIAL',
   CHATBOTS = 'CHATBOTS',
-  UMBRA_TRENDS = 'UMBRA TRENDS'
+  UMBRA_TIKTOK = 'UMBRA HUB TIKTOK'
 }
 
 export interface Tool {
@@ -19,7 +21,7 @@ export interface Tool {
   name: string;
   description: string;
   tier: ToolTier;
-  icon: string;
+  icon: React.ReactNode;
   category?: ToolCategory;
 }
 

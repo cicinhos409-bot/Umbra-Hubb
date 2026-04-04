@@ -9,8 +9,8 @@ interface ExtensionsDownloadToolProps {
 const ExtensionsDownloadTool: React.FC<ExtensionsDownloadToolProps> = ({ userTier }) => {
   const isLocked = userTier === ToolTier.FREE;
 
-  const DownloadButton = ({ href, fileName }: { href: string; fileName: string }) => {
-    if (isLocked) {
+  const DownloadButton = ({ href, fileName, isFree = false }: { href: string; fileName: string; isFree?: boolean }) => {
+    if (isLocked && !isFree) {
       return (
         <button
           onClick={() => {
@@ -34,6 +34,7 @@ const ExtensionsDownloadTool: React.FC<ExtensionsDownloadToolProps> = ({ userTie
       </a>
     );
   };
+
   return (
     <div className="min-h-screen font-jetbrains text-white pb-24 relative flex flex-col items-center">
       <style>{`
@@ -44,6 +45,7 @@ const ExtensionsDownloadTool: React.FC<ExtensionsDownloadToolProps> = ({ userTie
           --purple: #a855f7;
           --pink: #ec4899;
           --green: #10b981;
+          --orange: #ff4d2d;
         }
 
         .font-orbitron { font-family: 'Orbitron', sans-serif; }
@@ -317,6 +319,21 @@ const ExtensionsDownloadTool: React.FC<ExtensionsDownloadToolProps> = ({ userTie
                 Automatize prompts do Claude com cadeias de prompts e filas para interações eficientes que economizam tempo.
               </p>
               <DownloadButton href="/extensoes/umbra-claude-extension.zip" fileName="umbra-claude-extension.zip" />
+            </article>
+
+            {/* Extension 12 - ShopeeSave (FREE) */}
+            <article className="extension-card border border-white/5 rounded-[32px] p-8 backdrop-blur-xl relative overflow-hidden group">
+              <div className="mb-6">
+                <span className="text-[10px] font-black uppercase tracking-widest text-orange-500 bg-orange-500/10 border border-orange-500/20 px-3 py-1.5 rounded-lg mb-4 inline-block">
+                  Shopee • Download
+                </span>
+                <h3 className="font-orbitron text-2xl font-black text-white group-hover:text-brand-cyan transition-colors">Umbra ShopeeSave</h3>
+                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v4.1.0</span>
+              </div>
+              <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
+                Baixe imagens e vídeos de produtos da Shopee com o Umbra ShopeeSave.
+              </p>
+              <DownloadButton href="/extensoes/Umbrashopeesave.zip" fileName="Umbrashopeesave.zip" isFree={true} />
             </article>
           </div>
         </main>

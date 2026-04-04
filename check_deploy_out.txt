@@ -1,0 +1,62 @@
+﻿Total deployments: 10
+======================================================================
+SHA: 0ce410be79aa
+Env: overflowing-clarity / production
+Created: 2026-04-03T22:05:25Z
+Status: failure
+URL: https://railway.com/project/72758d8c-cdeb-4ae0-9ff3-25c843d03b6e?environmentId=e16d1978-2f30-4acb-b7ec-4ba57d0c8e98
+----------------------------------------------------------------------
+SHA: 0ce410be79aa
+Env: optimistic-prosperity / production
+Created: 2026-04-03T22:05:25Z
+Status: success
+URL: https://railway.com/project/ebb66131-f72f-4289-be77-968b1c200870?environmentId=36d629c7-88cf-4c85-a687-3833775c7671
+----------------------------------------------------------------------
+SHA: 0ce410be79aa
+Env: luminous-mercy / production
+Created: 2026-04-03T22:05:25Z
+Status: success
+URL: https://railway.com/project/4f384709-62a1-4fd7-9af2-0a6f63c6946b?environmentId=9ebee4e7-fb1d-43e1-a8df-d6112a6e8794
+----------------------------------------------------------------------
+SHA: 0ce410be79aa
+Env: Production
+Created: 2026-04-03T22:05:25Z
+Status: failure
+URL: https://umbrahubb-kvw3014af-cicero-santos-projects.vercel.app
+----------------------------------------------------------------------
+SHA: 7167e220e93f
+Env: optimistic-prosperity / production
+Created: 2026-03-27T14:37:45Z
+Status: inactive
+URL: https://railway.com/project/ebb66131-f72f-4289-be77-968b1c200870?environmentId=36d629c7-88cf-4c85-a687-3833775c7671
+----------------------------------------------------------------------
+SHA: 7167e220e93f
+Env: Production
+Created: 2026-03-27T14:37:29Z
+Status: success
+URL: https://umbrahubb-a54ets3se-cicero-santos-projects.vercel.app
+----------------------------------------------------------------------
+SHA: 7167e220e93f
+Env: overflowing-clarity / production
+Created: 2026-03-27T14:36:54Z
+Status: failure
+URL: https://railway.com/project/72758d8c-cdeb-4ae0-9ff3-25c843d03b6e?environmentId=e16d1978-2f30-4acb-b7ec-4ba57d0c8e98
+----------------------------------------------------------------------
+SHA: 7167e220e93f
+Env: luminous-mercy / production
+Created: 2026-03-27T14:36:54Z
+Status: inactive
+URL: https://railway.com/project/4f384709-62a1-4fd7-9af2-0a6f63c6946b?environmentId=9ebee4e7-fb1d-43e1-a8df-d6112a6e8794
+----------------------------------------------------------------------
+SHA: 1c0d11980e7b
+Env: Production
+Created: 2026-03-21T15:03:38Z
+Status: success
+URL: https://umbrahubb-nwql82dhe-cicero-santos-projects.vercel.app
+----------------------------------------------------------------------
+SHA: 1c0d11980e7b
+Env: overflowing-clarity / production
+Created: 2026-03-21T15:03:01Z
+Status: failure
+URL: https://railway.com/project/72758d8c-cdeb-4ae0-9ff3-25c843d03b6e?environmentId=e16d1978-2f30-4acb-b7ec-4ba57d0c8e98
+----------------------------------------------------------------------

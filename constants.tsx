@@ -1,8 +1,13 @@
 
 import React from 'react';
+import { Music, Zap, UserCircle } from 'lucide-react';
 import { ToolTier, Tool, PricingPlan, Testimonial, ToolCategory } from './types';
 
 export const TOOLS: Tool[] = [
+  { id: 'umbra-prompter', name: 'Umbra Prompter', description: 'Transforme vídeos em prompts detalhados para IA.', tier: ToolTier.FREE, icon: '🪄', category: ToolCategory.CHATBOTS },
+  { id: 'umbraviral-ai', name: 'UmbraViral AI', description: 'Geração de roteiros virais de alta conversão para TikTok Shop.', icon: <Zap className="w-5 h-5 text-gray-400 group-hover:text-brand-purple transition-colors" />, category: ToolCategory.UMBRA_TIKTOK, tier: ToolTier.FREE },
+  { id: 'umbra-agent-ugc', name: 'Umbra Agent UGC', description: 'Crie roteiros e prompts UGC de alta fidelidade para suas campanhas.', icon: <UserCircle className="w-5 h-5 text-gray-400 group-hover:text-brand-purple transition-colors" />, category: ToolCategory.UMBRA_TIKTOK, tier: ToolTier.FREE },
+
   { id: 'meus-canais', name: 'Meus Canais', description: 'Gerencie todos os seus canais do YouTube em um só lugar', tier: ToolTier.FREE, icon: '📺', category: ToolCategory.WEB },
 
   { id: 'youtube-hub', name: 'YouTube Hub', description: 'Extrair transcrições, análise viral e busca de vídeos — tudo em um só lugar.', tier: ToolTier.PRO, icon: '🔬', category: ToolCategory.WEB },
@@ -20,10 +25,11 @@ export const TOOLS: Tool[] = [
   { id: 'storytelling', name: 'Umbra You Storytelling', description: 'Gerador de roteiros virais de alto impacto com IA Mistral.', tier: ToolTier.TURBO, icon: '🎬', category: ToolCategory.CHATBOTS },
   { id: 'multimodal-ai', name: 'Umbra Multimodal AI', description: 'Plataforma all-in-one de IA: gere imagens e vídeos com 27+ modelos (Flux, Imagen, Grok, Sora, Kling, Wan, MiniMax).', tier: ToolTier.PRO, icon: '🧠', category: ToolCategory.CHATBOTS },
 
-  { id: 'tiktok-video-counter', name: 'TikTok Video Contador', description: 'Contador de visualizações, curtidas, comentários e compartilhamentos em tempo real.', tier: ToolTier.FREE, icon: '📈', category: ToolCategory.UMBRA_TRENDS },
-  { id: 'calculadora-ganhos-tiktok', name: 'Calculadora de Ganhos TikTok', description: 'Estime quanto qualquer criador ganha por post patrocinado no TikTok.', tier: ToolTier.FREE, icon: '💰', category: ToolCategory.UMBRA_TRENDS },
-  { id: 'tiktok-analytics', name: 'TikTok Analytics', description: 'Analise perfis públicos do TikTok — seguidores, engajamento, hashtags, ganhos estimados e posts recentes.', tier: ToolTier.FREE, icon: '📊', category: ToolCategory.UMBRA_TRENDS },
-  { id: 'tiksongs', name: 'Umbra TikSongs', description: 'Descubra as músicas mais virais do TikTok em tempo real com player integrado.', tier: ToolTier.FREE, icon: '🎵', category: ToolCategory.UMBRA_TRENDS },
+  { id: 'tiktok-video-counter', name: 'TikTok Video Contador', description: 'Contador de visualizações, curtidas, comentários e compartilhamentos em tempo real.', tier: ToolTier.FREE, icon: '📈', category: ToolCategory.UMBRA_TIKTOK },
+  { id: 'calculadora-ganhos-tiktok', name: 'Calculadora de Ganhos TikTok', description: 'Estime quanto qualquer criador ganha por post patrocinado no TikTok.', tier: ToolTier.FREE, icon: '💰', category: ToolCategory.UMBRA_TIKTOK },
+  { id: 'tiktok-analytics', name: 'TikTok Analytics', description: 'Analise perfis públicos do TikTok — seguidores, engajamento, hashtags, ganhos estimados e posts recentes.', tier: ToolTier.FREE, icon: '📊', category: ToolCategory.UMBRA_TIKTOK },
+  { id: 'tiksongs', name: 'TikSongs', description: 'Encontre sons virais para o seu nicho.', icon: <Music className="w-5 h-5 text-gray-400 group-hover:text-brand-purple transition-colors" />, category: ToolCategory.UMBRA_TIKTOK, tier: ToolTier.FREE },
+  { id: 'material-bonus', name: 'Material Bônus', description: 'Ferramentas e recursos exclusivos para criadores de conteúdo Faceless.', icon: '🎁', category: ToolCategory.WEB, tier: ToolTier.FREE },
 ];
 
 export const PLANS: PricingPlan[] = [
@@ -38,11 +44,13 @@ export const PLANS: PricingPlan[] = [
       'Ferramentas de Edição (SRT, Divisor)',
       'Screenshot Tool',
       'Downloader Hub (TikTok/Sora)',
-      'UmbraHub Trends',
+      'UmbraHub Tiktok',
       'TikTok Video Contador',
       'Calculadora de Ganhos TikTok',
-      'TikTok Analytics',
-      'Umbra TikSongs',
+      'TikTok Analytics Pro',
+      'UmbraHub Tiktok (TikSongs, UmbraViral AI, Agent UGC)',
+      'Academy acesso básico',
+      'Umbra Prompter (FREE)',
       'Umbra Áudios (Limite 3/total)'
     ],
     cta: 'COMEÇAR GRÁTIS',

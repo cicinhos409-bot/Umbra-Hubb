@@ -55,8 +55,8 @@ const Hero: React.FC<HeroProps> = ({ onEnterDashboard }) => {
             <div className="text-sm text-gray-500 font-medium tracking-tight">Vídeos Gerados</div>
           </div>
           <div className="text-center">
-            <div className="text-3xl font-bold text-white mb-1 leading-none tracking-tighter">R$19</div>
-            <div className="text-sm text-gray-500 font-medium tracking-tight">A partir de</div>
+            <div className="text-3xl font-bold text-white mb-1 leading-none tracking-tighter">🏆</div>
+            <div className="text-sm text-gray-500 font-medium tracking-tight">Qualidade Pro</div>
           </div>
         </div>
       </div>

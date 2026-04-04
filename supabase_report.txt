@@ -1,0 +1,206 @@
+﻿RESUMO DO PROJETO Supabase: epwmoicgvuprzkcpxjoy
+============================================================
+
+TABELA: payments
+  Linhas: 570
+  Colunas: id, client_id, asaas_id, amount, status, payment_date
+
+TABELA: mike_jobs
+  Linhas: 0
+  (vazia ou sem acesso)
+
+TABELA: client_group_history
+  Linhas: 0
+  (vazia ou sem acesso)
+
+TABELA: clients
+  Linhas: 558
+  Colunas: id, name, whatsapp, product_id, due_day, active, created_at, asaas_customer_id, cpf, last_payment, email, agreed_price, sync_wa, product_id_2, agreed_price_2, product_id_3, agreed_price_3, product_id_4, agreed_price_4, due_day_2, due_day_3, due_day_4, adspower_login, adspower_password, bp_pin, grok_email_1, grok_pass_1, grok_email_2, grok_pass_2, grok_email_3, grok_pass_3
+
+TABELA: payment_history
+  Linhas: 755
+  Colunas: id, client_id, payment_date, amount, method, status, mp_id, product_slot, product_id, reference_month
+
+TABELA: admin_popup
+  Linhas: 4
+  Colunas: id, title, message, button_text, active, created_at, show_once, priority
+
+TABELA: portal_users
+  Linhas: 420
+  Colunas: user_id, client_id, email, created_at, updated_at
+
+TABELA: veo3_assignments
+  Linhas: 203
+  Colunas: user_id, credential_id, assigned_at
+
+TABELA: products
+  Linhas: 12
+  Colunas: id, name, price, created_at
+
+TABELA: veo3_subscriptions
+  Linhas: 0
+  (vazia ou sem acesso)
+
+TABELA: credential_resets
+  Linhas: 0
+  (vazia ou sem acesso)
+
+TABELA: client_status
+  Linhas: 558
+  Colunas: id, name, due_day, active, product_id
+
+TABELA: ip_logs
+  Linhas: 1000
+  Colunas: id, ts, client_whatsapp, client_name, ip_raw, ip_whitelist, action, status, requested_by, operator, notes, cmd_output, verify_output
+
+TABELA: veo3_credit_snapshots
+  Linhas: 1000
+  Colunas: id, user_email, credits, captured_at, source, is_ultra
+
+TABELA: client_drain_scores
+  Linhas: 0
+  (vazia ou sem acesso)
+
+TABELA: portal_access_logs
+  Linhas: 0
+  (vazia ou sem acesso)
+
+TABELA: monthly_goals
+  Linhas: 2
+  Colunas: month, target_amount
+
+TABELA: system_logs
+  Linhas: 546
+  Colunas: id, created_at, user_name, action_type, details
+
+TABELA: veo3_credentials
+  Linhas: 35
+  Colunas: id, veo_email, veo_password, active, updated_at, veo_new_password, adspower_id
+
+TABELA: expenses
+  Linhas: 0
+  (vazia ou sem acesso)
+
+TABELA: client_risk_events
+  Linhas: 0
+  (vazia ou sem acesso)
+
+TABELA: admin_messages
+  Linhas: 6
+  Colunas: id, emoji, message, active, order
+
+TABELA: clients_backup
+  Linhas: 284
+  Colunas: id, name, whatsapp, product_id, due_day, active, created_at, asaas_customer_id, cpf, last_payment, email, agreed_price
+
+TABELA: credential_reset_members
+  Linhas: 0
+  (vazia ou sem acesso)
+
+TABELA: v_veo3_credit_latest_br
+  Linhas: 44
+  Colunas: user_email, credits, captured_at, captured_at_br, source
+
+TABELA: v_veo3_credit_latest
+  Linhas: 44
+  Colunas: user_email, credits, captured_at
+
+TABELA: v_client_risk_rank_60d
+  Linhas: 3
+  Colunas: client_id, user_id, whatsapp_norm, events, risk_points, last_event
+
+
+============================================================
+AMOSTRAS DE DADOS (primeiros 3 registros de cada tabela)
+============================================================
+
+--- PAYMENTS (570 registros) ---
+{"id": "151cb4c2-a63a-4384-a44c-632c80085c42", "client_id": "884a72ef-e1da-4482-bda3-8af186ee65c2", "asaas_id": null, "amount": 50.0, "status": "paid", "payment_date": "2026-02-13T00:00:00+00:00"}
+{"id": "dfd1f8e9-c958-422d-99aa-bd904e7923b3", "client_id": "dcaea9d5-dad2-46d7-9380-eda0a420a316", "asaas_id": null, "amount": 50.0, "status": "paid", "payment_date": "2026-02-04T00:00:00+00:00"}
+{"id": "e76a880a-97a3-4123-93ae-4327e58d6c08", "client_id": "c389f8d2-88bd-4248-95f2-d1f7e3325178", "asaas_id": null, "amount": 125.0, "status": "paid", "payment_date": "2026-02-05T00:00:00+00:00"}
+
+--- CLIENTS (558 registros) ---
+{"id": "d77925a6-4166-43ef-833f-98b7bf741cfa", "name": "Cicero Silva", "whatsapp": "+55 (11) 97029-3296", "product_id": "01ccb898-f88f-4bd3-8bd9-33650abf961c", "due_day": 12, "active": true, "created_at": "2026-03-04T08:46:32.639092+00:00", "asaas_customer_id": null, "cpf": null, "last_payment": "2026-03-12T00:00:00+00:00", "email": "cicerosilvalima5.0@gmail.com", "agreed_price": 50, "sync_wa": false, "product_id_2": null, "agreed_price_2": null, "product_id_3": null, "agreed_price_3": null, "product_id_4": null, "agreed_price_4": null, "due_day_2": null, "due_day_3": null, "due_day_4": null, "adspower_login": null, "adspower_password": null, "bp_pin": "769199", "grok_email_1": null, "grok_pass_1": null, "grok_email_2": null, "grok_pass_2": null, "grok_email_3": null, "grok_pass_3": null}
+{"id": "02acd6a2-bdc9-49da-94c6-7720145514cd", "name": "Wellington da Silva Pinto", "whatsapp": "5522997801112", "product_id": "943561ec-5e7c-4b7a-813e-b389eea7590f", "due_day": 13, "active": true, "created_at": "2026-03-11T23:15:37.147356+00:00", "asaas_customer_id": null, "cpf": null, "last_payment": "2026-03-13T00:00:00+00:00", "email": "cursoonline2015@gmail.com", "agreed_price": 35, "sync_wa": false, "product_id_2": "8024dd7f-6df3-4eb7-9567-42c7198be3b7", "agreed_price_2": 25, "product_id_3": "01ccb898-f88f-4bd3-8bd9-33650abf961c", "agreed_price_3": 50, "product_id_4": null, "agreed_price_4": null, "due_day_2": 13, "due_day_3": 30, "due_day_4": null, "adspower_login": null, "adspower_password": null, "bp_pin": "101981", "grok_email_1": null, "grok_pass_1": null, "grok_email_2": null, "grok_pass_2": null, "grok_email_3": null, "grok_pass_3": null}
+{"id": "48e1d996-3b56-428c-b017-1ffe11f05593", "name": "orlando oliveira", "whatsapp": "556198262497", "product_id": "01ccb898-f88f-4bd3-8bd9-33650abf961c", "due_day": 23, "active": true, "created_at": "2026-02-23T12:24:13.010489+00:00", "asaas_customer_id": null, "cpf": null, "last_payment": "2026-03-23T00:00:00+00:00", "email": "orlandooliveiraprof@gmail.com", "agreed_price": 50.0, "sync_wa": false, "product_id_2": null, "agreed_price_2": null, "product_id_3": null, "agreed_price_3": null, "product_id_4": null, "agreed_price_4": null, "due_day_2": null, "due_day_3": null, "due_day_4": null, "adspower_login": null, "adspower_password": null, "bp_pin": "351384", "grok_email_1": null, "grok_pass_1": null, "grok_email_2": null, "grok_pass_2": null, "grok_email_3": null, "grok_pass_3": null}
+
+--- PAYMENT_HISTORY (755 registros) ---
+{"id": "733757e0-3730-4505-9cce-3b9c5e04a0a1", "client_id": "b4858ac2-877e-459b-a52c-0750a53ac790", "payment_date": "2026-01-15T00:00:00+00:00", "amount": 80.0, "method": "reconstituicao_manual", "status": "approved", "mp_id": null, "product_slot": null, "product_id": "1c13544a-1435-4071-a10a-566e80cad327", "reference_month": "2026-01"}
+{"id": "25160967-5679-482f-b57d-074381658585", "client_id": "b4858ac2-877e-459b-a52c-0750a53ac790", "payment_date": "2026-02-19T00:00:00+00:00", "amount": 80.0, "method": "reconstituicao_manual", "status": "approved", "mp_id": null, "product_slot": null, "product_id": "1c13544a-1435-4071-a10a-566e80cad327", "reference_month": "2026-02"}
+{"id": "a1a4e8dd-b070-4f9c-bf6d-5c286fff0285", "client_id": "e608a8b9-9122-4a87-a953-630a2463031e", "payment_date": "2026-02-08T12:00:00+00:00", "amount": 89.9, "method": "manual", "status": "approved", "mp_id": null, "product_slot": null, "product_id": "1c13544a-1435-4071-a10a-566e80cad327", "reference_month": "2026-02"}
+
+--- ADMIN_POPUP (4 registros) ---
+{"id": 1, "title": "ConsciÛncia coletiva", "message": "Use modo an¶nimo e o Flow ôVeo 3.1 - Fast [Lower Priority]ö (mesmo resultado, sem gastar crÚditos). Acesso Ú individual: nÒo compartilhe senha; indique amigos para novos grupos.", "button_text": "Entendi", "active": false, "created_at": "2026-03-07T08:25:33.75072+00:00", "show_once": true, "priority": 50}
+{"id": 2, "title": "ConsciÛncia coletiva", "message": "Ambiente monitorado: clientes drenadores de crÚditos serÒo banidos. Use modo an¶nimo e o Flow ôVeo 3.1 - Fast [Lower Priority]ö (mesmo resultado, sem gastar crÚditos). Acesso Ú individual: nÒo compartilhe senha; indique amigos para novos grupos.", "button_text": "Entendi", "active": false, "created_at": "2026-03-07T08:25:38.089583+00:00", "show_once": true, "priority": 50}
+python : Traceback (most recent call last):
+No linha:1 caractere:1
++ python parse_supabase.py 2>&1 | Out-File -FilePath 
+supabase_report.tx ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Tracebac 
+   k (most recent call last)::String) [], RemoteExce  
+  ption
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "C:\Users\Usuario\Downloads\umbra-hub---arsenal
+-definitivo-para-canais-dark\parse_supabase.py", line 
+34, in <module>
+    print(json.dumps(row, ensure_ascii=False, 
+default=str))
+  File "C:\Users\Usuario\AppData\Local\Programs\Python
+\Python312\Lib\encodings\cp1252.py", line 19, in 
+encode
+    return codecs.charmap_encode(input,self.errors,enc
+oding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode 
+character '\U0001f4a1' in position 20: character maps 
+to <undefined>
+{"id": 3, "title": "Ambiente monitorado", "message": "Ambiente monitorado: clientes drenadores de crÚditos serÒo banidos. Use modo an¶nimo e o Flow ôVeo 3.1 - Fast [Lower Priority]ö (mesmo resultado, sem gastar crÚditos). Acesso Ú individual: nÒo compartilhe senha; indique amigos para novos grupos.", "button_text": "Entendi", "active": true, "created_at": "2026-03-07T08:31:45.049747+00:00", "show_once": true, "priority": 50}
+
+--- PORTAL_USERS (420 registros) ---
+{"user_id": "7568e932-63b5-4fbc-b059-85292e8df70a", "client_id": "ab132761-6dca-4b28-b439-194618e1da4a", "email": "jonatasadvir@gmail.com", "created_at": "2026-03-03T14:21:15.766191+00:00", "updated_at": "2026-03-03T14:21:15.766191+00:00"}
+{"user_id": "86739979-77a7-4eb4-847d-a64ba727dbfb", "client_id": "e46bedd7-23b8-4ee9-a57e-01c79bc44091", "email": "grid-heat-vegan@duck.com", "created_at": "2026-03-03T09:52:54.52311+00:00", "updated_at": "2026-03-25T09:33:29.046587+00:00"}
+{"user_id": "9fe2daab-6ce4-4486-a1d6-94b2a8fd58ec", "client_id": "e5a7a58a-2560-4a79-8273-39c6c83d00b2", "email": "ximporamotion@gmail.com", "created_at": "2026-02-23T12:35:41.185361+00:00", "updated_at": "2026-03-21T01:11:02.808632+00:00"}
+
+--- VEO3_ASSIGNMENTS (203 registros) ---
+{"user_id": "162c2017-c84c-4d0e-bdf9-d62b0ad981ad", "credential_id": 70, "assigned_at": "2026-04-02T19:24:39.687307+00:00"}
+{"user_id": "4702e454-860d-455c-ac44-ebbef8a57f85", "credential_id": 69, "assigned_at": "2026-03-29T20:29:05.67516+00:00"}
+{"user_id": "31271cc8-612c-4309-ab7d-eba8e0bb0d27", "credential_id": 70, "assigned_at": "2026-04-03T06:57:01.74273+00:00"}
+
+--- PRODUCTS (12 registros) ---
+{"id": "783f332d-1213-4c14-b1ca-26f06577c898", "name": "VEO Ultra", "price": 149.9, "created_at": "2026-01-30T04:09:38.900565+00:00"}
+{"id": "8024dd7f-6df3-4eb7-9567-42c7198be3b7", "name": "Capcut ", "price": 25.0, "created_at": "2026-02-01T02:37:13.005153+00:00"}
+{"id": "173bcf1c-4704-43c1-958b-ab5c336641ce", "name": "Kotas", "price": 0.0, "created_at": "2026-02-16T09:30:51.333219+00:00"}
+
+--- CLIENT_STATUS (558 registros) ---
+{"id": "d77925a6-4166-43ef-833f-98b7bf741cfa", "name": "Cicero Silva", "due_day": 12, "active": true, "product_id": "01ccb898-f88f-4bd3-8bd9-33650abf961c"}
+{"id": "02acd6a2-bdc9-49da-94c6-7720145514cd", "name": "Wellington da Silva Pinto", "due_day": 13, "active": true, "product_id": "943561ec-5e7c-4b7a-813e-b389eea7590f"}
+{"id": "48e1d996-3b56-428c-b017-1ffe11f05593", "name": "orlando oliveira", "due_day": 23, "active": true, "product_id": "01ccb898-f88f-4bd3-8bd9-33650abf961c"}
+
+--- IP_LOGS (1000 registros) ---
+{"id": "adf623b3-0adb-4469-bc1e-a4c94da4aaaf", "ts": "2026-02-16T00:06:35.686468+00:00", "client_whatsapp": "+550000000001", "client_name": null, "ip_raw": "1.2.3.4", "ip_whitelist": "1.2.*.*", "action": "add", "status": "ok", "requested_by": null, "operator": "bot", "notes": null, "cmd_output": "test", "verify_output": "test"}
+{"id": "a35c908e-4cf1-4078-8b33-366134273c8a", "ts": "2026-02-16T00:21:16.385953+00:00", "client_whatsapp": "+556792581533", "client_name": "Giselle Soken (novo cliente)", "ip_raw": "191.251.96.105", "ip_whitelist": "191.251.*.*", "action": "add", "status": "ok", "requested_by": null, "operator": "bot", "notes": null, "cmd_output": "(manual) client reported working; AdsPower whitelist UI not confirmable", "verify_output": "(manual)"}
+{"id": "b8d3deec-e7e0-43ae-a2b4-7a83d60af9c8", "ts": "2026-02-16T00:29:12.24947+00:00", "client_whatsapp": "+5522988546356", "client_name": null, "ip_raw": "187.33.106.158", "ip_whitelist": "187.33.*.*", "action": "add", "status": "ok", "requested_by": null, "operator": "bot", "notes": null, "cmd_output": "OK: ConfiguraþÒo salva!\nIP 187.33.*.* adicionado com sucesso.", "verify_output": "187.33.*.*\nOK_VERIFIED"}
+
+--- VEO3_CREDIT_SNAPSHOTS (1000 registros) ---
+{"id": 3251, "user_email": "lanaveo25kcrd226688@tunqerovastelin.sbs", "credits": 14980, "captured_at": "2026-03-12T09:09:32.183+00:00", "source": "extension_v7_locale_fix", "is_ultra": false}
+{"id": 3287, "user_email": "lanaveo25kcrd226688@tunqerovastelin.sbs", "credits": 14920, "captured_at": "2026-03-12T10:19:09.034+00:00", "source": "extension_v7_locale_fix", "is_ultra": false}
+{"id": 3323, "user_email": "lanaveo25kcrd226688@tunqerovastelin.sbs", "credits": 14370, "captured_at": "2026-03-12T11:19:48.283+00:00", "source": "extension_v7_locale_fix", "is_ultra": false}
+
+--- MONTHLY_GOALS (2 registros) ---
+{"month": "2026-02", "target_amount": 10000}
+{"month": "2026-03", "target_amount": 20000}
+
+--- SYSTEM_LOGS (546 registros) ---
+{"id": 5, "created_at": "2026-02-06T10:18:31.09+00:00", "user_name": "CÝcero", "action_type": "Novo Cliente", "details": "AAAAASTANIA"}
+{"id": 6, "created_at": "2026-02-06T10:18:40.299+00:00", "user_name": "CÝcero", "action_type": "Excluir Cliente", "details": "AAAAASTANIA"}
+{"id": 7, "created_at": "2026-02-06T10:19:21.337+00:00", "user_name": "CÝcero", "action_type": "Editar Cliente", "details": "Aana Pereira"}
+
+--- VEO3_CREDENTIALS (35 registros) ---
+{"id": 46, "veo_email": "16geaz@lirzi.xyz", "veo_password": "76564736251453", "active": true, "updated_at": "2026-03-14T19:46:13.670383+00:00", "veo_new_password": "76564736251453", "adspower_id": null}
+{"id": 48, "veo_email": "6nmiuu@kruyi.online", "veo_password": "8746352453647545", "active": true, "updated_at": "2026-03-14T21:41:05.60149+00:00", "veo_new_password": "8746352453647545", "adspower_id": null}
+{"id": 54, "veo_email": "v25n20t3kbh88@avexironqeltasarionix.sbs", "veo_password": "645362378226272783664382672334", "active": false, "updated_at": "2026-03-21T02:02:27.320513+00:00", "veo_new_password": "645362378226272783664382672334", "adspower_id": null}
+
+--- ADMIN_MESSAGES (6 registros) ---

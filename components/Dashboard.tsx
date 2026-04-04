@@ -27,11 +27,16 @@ import TikTokAnalyticsTool from './TikTokAnalyticsTool';
 import TikTokMoneyCalculator from './TikTokMoneyCalculator';
 import TikTokVideoCounter from './TikTokVideoCounter';
 import TikSongsTool from './TikSongsTool';
+import UmbraAgentUGCTool from './UmbraAgentUGCTool';
+import UmbraViralAITool from './UmbraViralAITool';
 
 
 import AcademyTool from './AcademyTool';
 import ExtensionsDownloadTool from './ExtensionsDownloadTool';
 import LicensesTool from './LicensesTool';
+import UmbraPrompterTool from './UmbraPrompterTool';
+import BonusMaterialTool from './BonusMaterialTool';
+import UmbraZTool from './UmbraZTool';
 
 import {
   LayoutDashboard,
@@ -62,7 +67,8 @@ import {
   Package,
   FileText,
   Key,
-  BarChart3
+  BarChart3,
+  Flame
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -102,7 +108,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, us
     [ToolCategory.TOOLS_2IN1]: true,
     [ToolCategory.WEB]: true,
     [ToolCategory.CHATBOTS]: true,
-    [ToolCategory.UMBRA_TRENDS]: true,
+    [ToolCategory.UMBRA_TIKTOK]: true,
   });
 
   const toggleCategory = (cat: string) => {
@@ -325,7 +331,23 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, us
             >
               <Key className="w-5 h-5" /> Minhas Licenças
             </button>
-            {renderToolsList(ToolCategory.UMBRA_TRENDS, 'UmbraHub Trends')}
+            <button
+              onClick={() => { setActiveTab('umbra-z'); if (window.innerWidth < 768) setIsSidebarOpen(false); }}
+              className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all font-bold text-sm group relative overflow-hidden ${
+                activeTab === 'umbra-z'
+                  ? 'text-white shadow-xl'
+                  : 'text-gray-400 hover:text-white hover:bg-white/5'
+              }`}
+              style={activeTab === 'umbra-z' ? { background: 'linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)', boxShadow: '0 8px 32px rgba(124,58,237,0.35)' } : {}}
+            >
+              {activeTab !== 'umbra-z' && (
+                <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.1) 0%, rgba(236,72,153,0.05) 100%)' }} />
+              )}
+              <Flame className="w-5 h-5 relative z-10 shrink-0" style={activeTab === 'umbra-z' ? {} : { color: '#a855f7' }} />
+              <span className="relative z-10 flex-1 text-left">Umbra Z</span>
+              <span className="relative z-10 text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-wider" style={{ background: activeTab === 'umbra-z' ? 'rgba(255,255,255,0.2)' : 'rgba(124,58,237,0.2)', color: activeTab === 'umbra-z' ? 'white' : '#a855f7' }}>NOVO</span>
+            </button>
+            {renderToolsList(ToolCategory.UMBRA_TIKTOK, 'UmbraHub Tiktok')}
             {renderToolsList(ToolCategory.CHATBOTS, 'ChatBots')}
             {renderToolsList(ToolCategory.WEB, 'Arsenal Web')}
             {renderToolsList(ToolCategory.MOTOR_SUPREMO, 'Motor Supremo')}
@@ -391,7 +413,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, us
 
             <div className="flex flex-col">
               <h2 className="text-base md:text-xl font-black text-white uppercase tracking-tighter truncate max-w-[180px] md:max-w-none">
-                {activeTab === 'home' ? 'Visão Geral' : activeTab === 'profile' ? 'Configurações' : activeTab === 'extensions' ? 'Downloads' : activeTab === 'licenses' ? 'Licenças' : selectedTool?.name}
+                {activeTab === 'home' ? 'Visão Geral' : activeTab === 'profile' ? 'Configurações' : activeTab === 'extensions' ? 'Downloads' : activeTab === 'licenses' ? 'Licenças' : activeTab === 'umbra-z' ? 'Umbra Z — Comunidade' : selectedTool?.name}
               </h2>
               {activeTab !== 'home' && activeTab !== 'profile' && (
                 <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest hidden md:block">Ferramenta Ativa</span>
@@ -540,10 +562,15 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, us
             {activeTab === 'calculadora-ganhos-tiktok' && <TikTokMoneyCalculator />}
             {activeTab === 'tiktok-video-counter' && <TikTokVideoCounter />}
             {activeTab === 'tiksongs' && <TikSongsTool />}
+            {activeTab === 'umbraviral-ai' && <UmbraViralAITool userTier={userTier} />}
+            {activeTab === 'umbra-agent-ugc' && <UmbraAgentUGCTool userTier={userTier} />}
+            {activeTab === 'umbra-prompter' && <UmbraPrompterTool userTier={userTier} />}
+            {activeTab === 'material-bonus' && <BonusMaterialTool userTier={userTier} />}
+            {activeTab === 'umbra-z' && <UmbraZTool userTier={userTier} userName={userName} />}
 
             {/* Tool Loader / Fallback */}
-            {activeTab !== 'home' && activeTab !== 'profile' && activeTab !== 'academy' && activeTab !== 'extensions' && activeTab !== 'licenses' && !activeTab.includes('home') && selectedTool && (
-              !['meus-canais', 'srt', 'screenshot', 'downloader-hub', 'motor-hub', 'prompt-vault', 'media-hub', 'youtube-hub', 'turbo-hub', 'umbra-audios', 'umbra-edit', 'storytelling', 'multimodal-ai', 'tiktok-analytics', 'tiksongs', 'calculadora-ganhos-tiktok', 'tiktok-video-counter'].includes(activeTab) && (
+            {activeTab !== 'home' && activeTab !== 'profile' && activeTab !== 'academy' && activeTab !== 'extensions' && activeTab !== 'licenses' && activeTab !== 'umbra-z' && !activeTab.includes('home') && selectedTool && (
+              !['meus-canais', 'srt', 'screenshot', 'downloader-hub', 'motor-hub', 'prompt-vault', 'media-hub', 'youtube-hub', 'turbo-hub', 'umbra-audios', 'umbra-edit', 'storytelling', 'multimodal-ai', 'tiktok-analytics', 'tiksongs', 'calculadora-ganhos-tiktok', 'tiktok-video-counter', 'umbra-prompter', 'umbra-agent-ugc', 'umbraviral-ai', 'material-bonus', 'umbra-z'].includes(activeTab) && (
                 <div className="animate-in fade-in slide-in-from-bottom-8 duration-500">
                   <div className="mb-8 p-12 bg-background-mid border border-white/5 rounded-[56px] shadow-2xl relative overflow-hidden">
                     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-brand-purple/5 to-transparent pointer-events-none" />
