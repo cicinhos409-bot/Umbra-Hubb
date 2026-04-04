@@ -7,6 +7,7 @@ import { supabase } from '../services/supabaseClient';
 import {
   Hash, Volume2, Send, Smile, Paperclip, Mic, MicOff, Headphones,
   Search, ChevronDown, X, Plus, Users, Lock, Menu, Check, AlertCircle,
+  Image as ImageIcon, Film, PhoneOff, Video, VideoOff, MonitorUp,
 } from 'lucide-react';
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
@@ -25,6 +26,8 @@ interface Message {
   isSystem?: boolean;
   isSending?: boolean;
   failed?: boolean;
+  mediaUrl?: string;        // base64 data URL or remote URL
+  mediaType?: 'image' | 'video';
 }
 
 interface Member {
@@ -144,7 +147,20 @@ function mapRow(row: Record<string,unknown>): Message {
     reactions:    (row.reactions as Record<string,number>) ?? {},
     isSystem:     Boolean(row.is_system),
     createdAt:    new Date(String(row.created_at)),
+    mediaUrl:     row.media_url   ? String(row.media_url)   : undefined,
+    mediaType:    row.media_type  ? String(row.media_type) as 'image'|'video' : undefined,
   };
+}
+
+const MAX_MEDIA_BYTES = 4 * 1024 * 1024; // 4 MB hard limit
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((res, rej) => {
+    if (file.size > MAX_MEDIA_BYTES) { rej(new Error('FILE_TOO_LARGE')); return; }
+    const reader = new FileReader();
+    reader.onload = () => res(reader.result as string);
+    reader.onerror = rej;
+    reader.readAsDataURL(file);
+  });
 }
 
 /* ─── MessageBubble — extracted as React.memo to avoid full-list re-renders */
@@ -182,10 +198,29 @@ const MessageBubble = memo(({ msg, prevMsg, onReaction, onRetry, onOpenEmoji }: 
           </div>
         )}
 
-        <div className={`text-sm leading-relaxed whitespace-pre-wrap break-words font-medium
-          ${msg.isSending?'text-gray-500':'text-gray-300'}`}>
-          {msg.content}
-        </div>
+        {msg.content && (
+          <div className={`text-sm leading-relaxed whitespace-pre-wrap break-words font-medium
+            ${msg.isSending?'text-gray-500':'text-gray-300'}`}>
+            {msg.content}
+          </div>
+        )}
+
+        {/* Media rendering */}
+        {msg.mediaType==='image' && msg.mediaUrl && (
+          <div className="mt-2 max-w-xs">
+            <img src={msg.mediaUrl} alt="imagem" loading="lazy"
+              className={`rounded-2xl max-h-64 object-cover border border-white/10 cursor-pointer transition-all hover:opacity-90 ${msg.isSending?'opacity-50':''}`}
+              onClick={() => window.open(msg.mediaUrl,'_blank')}
+            />
+          </div>
+        )}
+        {msg.mediaType==='video' && msg.mediaUrl && (
+          <div className="mt-2 max-w-xs">
+            <video src={msg.mediaUrl} controls
+              className={`rounded-2xl max-h-64 w-full border border-white/10 ${msg.isSending?'opacity-50':''}`}
+            />
+          </div>
+        )}
 
         {msg.isSending && !msg.failed && (
           <span className="text-[9px] text-gray-600 font-bold mt-0.5 block">Enviando...</span>
@@ -243,6 +278,13 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
   const [isSending,    setIsSending]    = useState(false);
   const [isAtBottom,   setIsAtBottom]   = useState(true);
   const [toastAch,     setToastAch]     = useState<AchievementDef|null>(null);
+  const [imagePreview, setImagePreview] = useState<{url:string; type:'image'|'video'; file:File}|null>(null);
+  const [mediaError,   setMediaError]   = useState<string|null>(null);
+  // Voice room
+  const [voiceJoined,  setVoiceJoined]  = useState(false);
+  const [voiceMuted,   setVoiceMuted]   = useState(false);
+  const [voiceVideo,   setVoiceVideo]   = useState(false);
+  const [speaking,     setSpeaking]     = useState<string[]>(['u2']); // simulated
 
   const [userXP, setUserXP] = useState<number>(() => {
     const s = localStorage.getItem(XP_KEY); return s ? parseInt(s,10) : 0;
@@ -255,6 +297,19 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
   const endRef        = useRef<HTMLDivElement>(null);
   const scrollRef     = useRef<HTMLDivElement>(null);
   const channelRef    = useRef<ReturnType<typeof supabase.channel>|null>(null);
+  const fileInputRef  = useRef<HTMLInputElement>(null);
+
+  // Simulated speaking cycle for voice room
+  useEffect(() => {
+    if (!voiceJoined) return;
+    const members = ['u1','u2','u5'];
+    const iv = setInterval(() => {
+      const pick = Math.floor(Math.random() * members.length);
+      setSpeaking([members[pick]]);
+      setTimeout(() => setSpeaking([]), 1200);
+    }, 2500);
+    return () => clearInterval(iv);
+  }, [voiceJoined]);
 
   const userRank = getRank(userXP);
   const nextRank = getNextRank(userXP);
@@ -375,21 +430,45 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
     return () => { supabase.removeChannel(ch); channelRef.current=null; };
   }, [activeRoom.id]);
 
+  /* ── File / paste handler ── */
+  const handleFile = useCallback(async (file: File) => {
+    setMediaError(null);
+    const isImg   = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+    if (!isImg && !isVideo) { setMediaError('Somente imagens e vídeos são suportados.'); return; }
+    try {
+      const url = await fileToDataUrl(file);
+      setImagePreview({ url, type: isImg ? 'image' : 'video', file });
+    } catch {
+      setMediaError('Arquivo muito grande. Limite: 4 MB.');
+    }
+  }, []);
+
+  const handlePaste = useCallback((e: React.ClipboardEvent) => {
+    const items = Array.from(e.clipboardData.items) as DataTransferItem[];
+    const media = items.find(i => i.type.startsWith('image/') || i.type.startsWith('video/'));
+    if (media) { const f = media.getAsFile(); if (f) handleFile(f); }
+  }, [handleFile]);
+
   /* ── Send: optimistic → confirm/rollback ── */
   const sendMessage = async () => {
-    if (!inputValue.trim() || isSending) return;
+    if (!inputValue.trim() && !imagePreview || isSending) return;
     setIsSending(true);
-    const isFirst = !unlockedAchs.has('first-message');
-    const tempId  = `temp-${Date.now()}`;
-    const content = inputValue.trim();
+    const isFirst  = !unlockedAchs.has('first-message');
+    const tempId   = `temp-${Date.now()}`;
+    const content  = inputValue.trim();
+    const mediaUrl = imagePreview?.url;
+    const mediaType= imagePreview?.type;
 
     const optimistic: Message = {
       id:tempId, content, roomId:activeRoom.id, authorId:userId,
       authorName:userName, authorRank:userRank.name, authorXP:userXP,
       authorAvatar:'🫵', reactions:{}, isSending:true, createdAt:new Date(),
+      mediaUrl, mediaType,
     };
     setMessages(prev => [...prev, optimistic]);
     setInputValue('');
+    setImagePreview(null);
 
     const { data, error } = await supabase
       .from('umbra_z_messages')
@@ -397,6 +476,7 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
         content, room_id:activeRoom.id, author_id:userId,
         author_name:userName, author_rank:userRank.name,
         author_xp:userXP, author_avatar:'🫵', reactions:{},
+        media_url: mediaUrl ?? null, media_type: mediaType ?? null,
       })
       .select().single();
 
@@ -707,19 +787,106 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
         </div>
 
         {activeRoom.type==='voice' ? (
-          <div className="flex-1 flex items-center justify-center p-8">
-            <div className="text-center max-w-sm">
-              <div className="w-24 h-24 rounded-[32px] flex items-center justify-center text-4xl mx-auto mb-6"
-                style={{background:'linear-gradient(135deg,rgba(124,58,237,.2),rgba(236,72,153,.1))',border:'1px solid rgba(124,58,237,.3)'}}>🎙️</div>
-              <h3 className="text-2xl font-black text-white mb-2">Sala de Voz</h3>
-              <p className="text-gray-500 text-sm font-medium mb-4">Plano <strong className="text-white">{activeRoom.plan}</strong> necessário.</p>
-              {activeRoom.online!=null && <p className="text-green-500 text-xs font-black mb-6">● {activeRoom.online} online</p>}
-              <button className="px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest text-white transition-all hover:scale-105"
-                style={{background:'linear-gradient(135deg,#7c3aed,#ec4899)',boxShadow:'0 8px 32px rgba(124,58,237,.4)'}}>
-                Entrar na Sala
-              </button>
+          !voiceJoined ? (
+            /* ── Voice lobby ── */
+            <div className="flex-1 flex items-center justify-center p-8">
+              <div className="text-center max-w-sm">
+                <div className="relative w-28 h-28 mx-auto mb-6">
+                  <div className="w-28 h-28 rounded-[32px] flex items-center justify-center text-5xl"
+                    style={{background:'linear-gradient(135deg,rgba(124,58,237,.25),rgba(236,72,153,.15))',border:'1px solid rgba(124,58,237,.4)'}}>
+                    🎙️
+                  </div>
+                  {activeRoom.online && (
+                    <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-[9px] font-black text-white"
+                      style={{background:'#22c55e'}}>●{activeRoom.online}</span>
+                  )}
+                </div>
+                <h3 className="text-2xl font-black text-white mb-1">{activeRoom.name}</h3>
+                <p className="text-gray-500 text-sm font-medium mb-1">Sala de Voz · Plano <span className="font-black text-white">{activeRoom.plan}</span></p>
+                {/* Online members avatars */}
+                <div className="flex justify-center gap-2 my-5">
+                  {ONLINE_MEMBERS.filter(m=>m.status==='online').slice(0,4).map(m=>(
+                    <div key={m.id} className="relative">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+                        style={{background:`${rankColor(m.rank)}22`,border:`1px solid ${rankColor(m.rank)}40`}}>{m.avatar}</div>
+                      <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
+                        style={{background:statusDot(m.status),borderColor:'#0d0d14'}}/>
+                    </div>
+                  ))}
+                </div>
+                <button onClick={() => setVoiceJoined(true)}
+                  className="px-10 py-4 rounded-2xl font-black text-sm uppercase tracking-widest text-white transition-all hover:scale-105 active:scale-95"
+                  style={{background:'linear-gradient(135deg,#7c3aed,#ec4899)',boxShadow:'0 8px 32px rgba(124,58,237,.45)'}}>
+                  🎙️ Entrar na Sala
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            /* ── Voice call active ── */
+            <div className="flex-1 flex flex-col" style={{background:'#09090f'}}>
+              {/* Members grid */}
+              <div className="flex-1 flex items-center justify-center p-6">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-lg w-full">
+                  {/* Self tile */}
+                  <div className="flex flex-col items-center gap-2 p-4 rounded-3xl relative"
+                    style={{background:'linear-gradient(135deg,rgba(124,58,237,.2),rgba(236,72,153,.1))',border:'2px solid rgba(124,58,237,.5)'}}>
+                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
+                      style={{background:'rgba(124,58,237,.3)'}}>🫵</div>
+                    <span className="text-xs font-black text-white truncate max-w-full">{userName}</span>
+                    <span className="text-[9px] font-black" style={{color:userRank.color}}>{userRank.icon} {userRank.name}</span>
+                    {voiceMuted && (
+                      <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-red-500 flex items-center justify-center">
+                        <MicOff className="w-3 h-3 text-white"/>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 rounded-3xl pointer-events-none"
+                      style={{border:'2px solid rgba(124,58,237,.8)',boxShadow:'0 0 16px rgba(124,58,237,.3)'}}
+                    />
+                  </div>
+                  {/* Other members */}
+                  {ONLINE_MEMBERS.filter(m=>m.status==='online').slice(0,5).map(m=>(
+                    <div key={m.id} className="flex flex-col items-center gap-2 p-4 rounded-3xl relative transition-all"
+                      style={{background:speaking.includes(m.id)?'rgba(34,197,94,.08)':'rgba(255,255,255,.03)',
+                        border:speaking.includes(m.id)?'2px solid rgba(34,197,94,.6)':'1px solid rgba(255,255,255,.07)',
+                        boxShadow:speaking.includes(m.id)?'0 0 20px rgba(34,197,94,.2)':'none'}}>
+                      <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl"
+                        style={{background:`${rankColor(m.rank)}18`}}>{m.avatar}</div>
+                      <span className="text-xs font-black text-white truncate max-w-full">{m.name}</span>
+                      <span className="text-[9px] font-black" style={{color:rankColor(m.rank)}}>{m.rank}</span>
+                      {speaking.includes(m.id) && (
+                        <div className="flex gap-0.5 items-end h-4 absolute top-2 right-2">
+                          {[1,2,3].map(b=>(
+                            <div key={b} className="w-1 rounded-full animate-pulse" style={{background:'#22c55e',height:`${(b*30)+20}%`}}/>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {/* Controls bar */}
+              <div className="pb-6 flex justify-center">
+                <div className="flex items-center gap-3 px-6 py-4 rounded-2xl"
+                  style={{background:'rgba(255,255,255,.05)',border:'1px solid rgba(255,255,255,.08)',backdropFilter:'blur(20px)'}}>
+                  <button onClick={() => setVoiceMuted(p=>!p)}
+                    className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all hover:scale-110 ${voiceMuted?'bg-red-500 text-white':'bg-white/10 text-gray-300 hover:bg-white/15'}`}>
+                    {voiceMuted?<MicOff className="w-5 h-5"/>:<Mic className="w-5 h-5"/>}
+                  </button>
+                  <button onClick={() => setVoiceVideo(p=>!p)}
+                    className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all hover:scale-110 ${voiceVideo?'bg-purple-500 text-white':'bg-white/10 text-gray-300 hover:bg-white/15'}`}>
+                    {voiceVideo?<Video className="w-5 h-5"/>:<VideoOff className="w-5 h-5"/>}
+                  </button>
+                  <button className="w-12 h-12 rounded-2xl flex items-center justify-center bg-white/10 text-gray-300 hover:bg-white/15 transition-all hover:scale-110">
+                    <MonitorUp className="w-5 h-5"/>
+                  </button>
+                  <button onClick={() => setVoiceJoined(false)}
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center bg-red-500 text-white transition-all hover:scale-110 hover:bg-red-600">
+                    <PhoneOff className="w-5 h-5"/>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
         ) : (
           <>
             {/* Messages — smart scroll via onScroll handler */}
@@ -762,6 +929,10 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
               </button>
             )}
 
+            {/* Hidden file input */}
+            <input ref={fileInputRef} type="file" accept="image/*,video/*" className="hidden"
+              onChange={e => { const f=e.target.files?.[0]; if(f) handleFile(f); e.target.value=''; }}/>
+
             {/* Input */}
             <div className="p-4 shrink-0" style={{background:'rgba(0,0,0,.3)',borderTop:'1px solid rgba(255,255,255,.05)'}}>
               {showEmoji && (
@@ -773,8 +944,38 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
                   ))}
                 </div>
               )}
+
+              {/* Image/video preview */}
+              {imagePreview && (
+                <div className="mb-3 p-3 rounded-2xl flex items-center gap-3"
+                  style={{background:'rgba(124,58,237,.1)',border:'1px solid rgba(124,58,237,.3)'}}>
+                  {imagePreview.type==='image'
+                    ? <img src={imagePreview.url} className="h-16 w-16 rounded-xl object-cover border border-white/10" alt="preview"/>
+                    : <div className="h-16 w-16 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                        <Film className="w-6 h-6 text-purple-400"/>
+                      </div>}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-black text-white">{imagePreview.file.name}</div>
+                    <div className="text-[10px] text-gray-500">{(imagePreview.file.size/1024).toFixed(0)} KB · {imagePreview.type==='image'?'Imagem':'Vídeo'}</div>
+                  </div>
+                  <button onClick={() => setImagePreview(null)}
+                    className="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-white/10 transition-all">
+                    <X className="w-4 h-4"/>
+                  </button>
+                </div>
+              )}
+
+              {/* Error banner */}
+              {mediaError && (
+                <div className="mb-3 flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-red-400"
+                  style={{background:'rgba(239,68,68,.08)',border:'1px solid rgba(239,68,68,.2)'}}>
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0"/>{mediaError}
+                  <button onClick={() => setMediaError(null)} className="ml-auto"><X className="w-3 h-3"/></button>
+                </div>
+              )}
+
               <div className="flex items-center gap-3 px-4 py-3 rounded-2xl"
-                style={{background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.07)'}}>
+                style={{background:'rgba(255,255,255,.04)',border:`1px solid ${imagePreview?'rgba(124,58,237,.4)':'rgba(255,255,255,.07)'}`}}>
                 <button onClick={() => setShowEmoji(p=>!p)} className="text-gray-500 hover:text-yellow-400 transition-colors shrink-0">
                   <Smile className="w-5 h-5"/>
                 </button>
@@ -782,20 +983,24 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
                   value={inputValue}
                   onChange={e => setInputValue(e.target.value)}
                   onKeyDown={e => { if (e.key==='Enter'&&!e.shiftKey) { e.preventDefault(); sendMessage(); } }}
-                  placeholder={`Mensagem em #${activeRoom.name}`}
+                  onPaste={handlePaste}
+                  placeholder={imagePreview ? 'Adicione uma legenda (opcional)...' : `Mensagem em #${activeRoom.name}`}
                   className="flex-1 bg-transparent text-sm text-white outline-none placeholder-gray-600 font-medium"
                 />
-                <button className="text-gray-500 hover:text-white transition-colors hidden sm:block shrink-0">
-                  <Paperclip className="w-4 h-4"/>
+                {/* Paperclip — now functional */}
+                <button onClick={() => fileInputRef.current?.click()}
+                  className={`text-gray-500 hover:text-purple-400 transition-colors shrink-0 ${imagePreview?'text-purple-400':''}`}>
+                  {imagePreview ? <ImageIcon className="w-4 h-4"/> : <Paperclip className="w-4 h-4"/>}
                 </button>
-                <button onClick={sendMessage} disabled={!inputValue.trim()||isSending}
+                <button onClick={sendMessage}
+                  disabled={(!inputValue.trim()&&!imagePreview)||isSending}
                   className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
-                  style={{background:inputValue.trim()&&!isSending?'linear-gradient(135deg,#7c3aed,#ec4899)':'rgba(255,255,255,.05)'}}>
+                  style={{background:(inputValue.trim()||imagePreview)&&!isSending?'linear-gradient(135deg,#7c3aed,#ec4899)':'rgba(255,255,255,.05)'}}>
                   <Send className="w-4 h-4 text-white"/>
                 </button>
               </div>
               <div className="flex items-center justify-between mt-1.5 px-1">
-                <span className="text-[9px] text-gray-700 font-black">+5 XP por mensagem · Enter para enviar</span>
+                <span className="text-[9px] text-gray-700 font-black">📎 Clique no clipe ou cole (Ctrl+V) para enviar mídia</span>
                 <span className="text-[9px] font-black" style={{color:userRank.color}}>{userRank.icon} {userRank.name} · {userXP} XP</span>
               </div>
             </div>
