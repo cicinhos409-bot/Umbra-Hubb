@@ -1,14 +1,14 @@
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { ToolTier } from '../types';
 import { supabase } from '../services/supabaseClient';
 import {
   Hash, Volume2, Send, Smile, Paperclip, Mic, MicOff, Headphones,
-  Settings, Search, ChevronDown, Flame, Check, X, Plus, Users,
-  Lock, Menu, MessageCircle, Video, TrendingUp,
+  Settings, Search, ChevronDown, X, Plus, Users,
+  Lock, Menu, Check, AlertCircle,
 } from 'lucide-react';
 
-/* ─── Types ────────────────────────────────────────────────────────────── */
+/* ─── Types ─────────────────────────────────────────────────────────────── */
 type TabType = 'members' | 'achievements';
 
 interface Room {
@@ -19,20 +19,23 @@ interface Room {
 interface Message {
   id: string; content: string; authorId: string; authorName: string;
   authorRank: string; authorXP: number; authorAvatar: string;
-  roomId: string; createdAt: Date; reactions: Record<string, number>;
+  roomId: string; createdAt: Date;
+  reactions: Record<string, number>;
   isSystem?: boolean;
+  isSending?: boolean; // optimistic
+  failed?: boolean;    // send failed
 }
 
 interface Member {
-  id: string; name: string; rank: string; xp: number; avatar: string;
-  status: 'online' | 'away' | 'offline'; plan: ToolTier;
+  id: string; name: string; rank: string; xp: number;
+  avatar: string; status: 'online' | 'away' | 'offline'; plan: ToolTier;
 }
 
 interface AchievementDef {
   id: string; name: string; description: string; icon: string; xp: number;
 }
 
-/* ─── Constants ─────────────────────────────────────────────────────────── */
+/* ─── Static data ───────────────────────────────────────────────────────── */
 const RANKS = [
   { name: 'Iniciante',  min: 0,     color: '#6b7280', icon: '🌱' },
   { name: 'Aprendiz',   min: 100,   color: '#3b82f6', icon: '📘' },
@@ -43,84 +46,83 @@ const RANKS = [
 ];
 
 const ROOMS: Room[] = [
-  { id: 'boas-vindas',  name: 'boas-vindas',  emoji: '👋', category: 'Comunidade', plan: ToolTier.FREE,  type: 'text' },
-  { id: 'geral',        name: 'geral',        emoji: '💬', category: 'Comunidade', plan: ToolTier.FREE,  type: 'text', unread: 12 },
-  { id: 'apresente-se', name: 'apresente-se', emoji: '🙋', category: 'Comunidade', plan: ToolTier.FREE,  type: 'text' },
-  { id: 'suporte',      name: 'suporte',      emoji: '🛠️', category: 'Comunidade', plan: ToolTier.FREE,  type: 'text' },
-  { id: 'algoritmo',    name: 'algoritmo',    emoji: '🔥', category: 'Produção',   plan: ToolTier.PRO,   type: 'text' },
-  { id: 'monetizacao',  name: 'monetizacao',  emoji: '💰', category: 'Produção',   plan: ToolTier.PRO,   type: 'text', unread: 5 },
-  { id: 'bastidores',   name: 'bastidores',   emoji: '🎬', category: 'Produção',   plan: ToolTier.PRO,   type: 'text' },
-  { id: 'voz-criadores',name: 'Voz Criadores',emoji: '🎙️', category: 'Produção',   plan: ToolTier.PRO,   type: 'voice', online: 3 },
-  { id: 'estrategias',  name: 'estratégias',  emoji: '📈', category: 'Crescimento',plan: ToolTier.TURBO, type: 'text' },
-  { id: 'sala-vip',     name: 'sala-vip',     emoji: '💎', category: 'Crescimento',plan: ToolTier.TURBO, type: 'text' },
-  { id: 'umbra-lab',    name: 'umbra-lab',    emoji: '⚗️', category: 'Crescimento',plan: ToolTier.TURBO, type: 'text' },
-  { id: 'voice-elite',  name: 'Voice Elite',  emoji: '🏆', category: 'Crescimento',plan: ToolTier.TURBO, type: 'voice', online: 1 },
+  { id:'boas-vindas',  name:'boas-vindas',   emoji:'👋', category:'Comunidade', plan:ToolTier.FREE,  type:'text' },
+  { id:'geral',        name:'geral',         emoji:'💬', category:'Comunidade', plan:ToolTier.FREE,  type:'text', unread:12 },
+  { id:'apresente-se', name:'apresente-se',  emoji:'🙋', category:'Comunidade', plan:ToolTier.FREE,  type:'text' },
+  { id:'suporte',      name:'suporte',       emoji:'🛠️', category:'Comunidade', plan:ToolTier.FREE,  type:'text' },
+  { id:'algoritmo',    name:'algoritmo',     emoji:'🔥', category:'Produção',   plan:ToolTier.PRO,   type:'text' },
+  { id:'monetizacao',  name:'monetizacao',   emoji:'💰', category:'Produção',   plan:ToolTier.PRO,   type:'text', unread:5 },
+  { id:'bastidores',   name:'bastidores',    emoji:'🎬', category:'Produção',   plan:ToolTier.PRO,   type:'text' },
+  { id:'voz-criadores',name:'Voz Criadores', emoji:'🎙️', category:'Produção',   plan:ToolTier.PRO,   type:'voice', online:3 },
+  { id:'estrategias',  name:'estratégias',   emoji:'📈', category:'Crescimento',plan:ToolTier.TURBO, type:'text' },
+  { id:'sala-vip',     name:'sala-vip',      emoji:'💎', category:'Crescimento',plan:ToolTier.TURBO, type:'text' },
+  { id:'umbra-lab',    name:'umbra-lab',     emoji:'⚗️', category:'Crescimento',plan:ToolTier.TURBO, type:'text' },
+  { id:'voice-elite',  name:'Voice Elite',   emoji:'🏆', category:'Crescimento',plan:ToolTier.TURBO, type:'voice', online:1 },
 ];
 
-const WELCOME_MESSAGES: Record<string, Message[]> = {
+const SEED_MESSAGES: Record<string, Message[]> = {
   'boas-vindas': [
-    { id: 'sys-1', content: '👋 Bem-vindo à Umbra Z! A comunidade definitiva para criadores de canais Dark. Apresente-se no canal #apresente-se!', authorId: 'system', authorName: 'Umbra Bot', authorRank: 'SISTEMA', authorXP: 99999, authorAvatar: '🤖', roomId: 'boas-vindas', createdAt: new Date(Date.now() - 3600000), reactions: { '❤️': 24, '🔥': 18 }, isSystem: true },
-    { id: 'sys-2', content: '📌 Regras: 1. Respeite todos  2. Sem spam  3. Use os canais certos  4. Compartilhe conhecimento!\n\nBoa jornada, Criador! 🚀', authorId: 'system', authorName: 'Umbra Bot', authorRank: 'SISTEMA', authorXP: 99999, authorAvatar: '🤖', roomId: 'boas-vindas', createdAt: new Date(Date.now() - 3500000), reactions: {}, isSystem: true },
+    { id:'sys-1', content:'👋 Bem-vindo à Umbra Z!\n\nA comunidade definitiva para criadores de canais Dark. Apresente-se no canal #apresente-se!', authorId:'system', authorName:'Umbra Bot', authorRank:'SISTEMA', authorXP:99999, authorAvatar:'🤖', roomId:'boas-vindas', createdAt:new Date(Date.now()-3600000), reactions:{'❤️':24,'🔥':18}, isSystem:true },
+    { id:'sys-2', content:'📌 Regras da comunidade:\n1. Respeite todos os membros\n2. Sem spam ou autopromoção excessiva\n3. Use os canais com bom senso\n4. Compartilhe conhecimento e cresça junto!\n\nBoa jornada, Criador! 🚀', authorId:'system', authorName:'Umbra Bot', authorRank:'SISTEMA', authorXP:99999, authorAvatar:'🤖', roomId:'boas-vindas', createdAt:new Date(Date.now()-3500000), reactions:{}, isSystem:true },
   ],
   'geral': [
-    { id: 'g-1', content: 'Galera, qual software vocês usam pra edição? Tô testando o CapCut mas não tô gostando...', authorId: 'u1', authorName: 'Rafael_Dark', authorRank: 'Criador', authorXP: 820, authorAvatar: '🎭', roomId: 'geral', createdAt: new Date(Date.now() - 7200000), reactions: { '👍': 8 } },
-    { id: 'g-2', content: 'DaVinci Resolve é o rei! Gratuito e profissional demais 🔥', authorId: 'u2', authorName: 'Luna_Conteúdo', authorRank: 'Pro', authorXP: 2100, authorAvatar: '🌙', roomId: 'geral', createdAt: new Date(Date.now() - 7000000), reactions: { '🔥': 15, '❤️': 6 } },
-    { id: 'g-3', content: 'Acabei de atingir 10k subs no meu segundo canal! 🎉 Obrigado a todos daqui!', authorId: 'u3', authorName: 'Marcos_Faceless', authorRank: 'Aprendiz', authorXP: 340, authorAvatar: '🎯', roomId: 'geral', createdAt: new Date(Date.now() - 5000000), reactions: { '🎉': 32, '❤️': 21, '🔥': 19 } },
-    { id: 'g-4', content: 'Isso!! O Umbra Hub é o melhor investimento para minha carreira 🙌', authorId: 'u2', authorName: 'Luna_Conteúdo', authorRank: 'Pro', authorXP: 2100, authorAvatar: '🌙', roomId: 'geral', createdAt: new Date(Date.now() - 4000000), reactions: { '🔥': 11 } },
+    { id:'g-1', content:'Galera, qual software vocês usam pra edição? Tô testando o CapCut mas não tô gostando...', authorId:'u1', authorName:'Rafael_Dark', authorRank:'Criador', authorXP:820, authorAvatar:'🎭', roomId:'geral', createdAt:new Date(Date.now()-7200000), reactions:{'👍':8} },
+    { id:'g-2', content:'DaVinci Resolve é o rei! Gratuito e profissional demais 🔥', authorId:'u2', authorName:'Luna_Conteúdo', authorRank:'Pro', authorXP:2100, authorAvatar:'🌙', roomId:'geral', createdAt:new Date(Date.now()-7000000), reactions:{'🔥':15} },
+    { id:'g-3', content:'Acabei de atingir 10k subs no meu segundo canal! 🎉 Obrigado a todos daqui!', authorId:'u3', authorName:'Marcos_Faceless', authorRank:'Aprendiz', authorXP:340, authorAvatar:'🎯', roomId:'geral', createdAt:new Date(Date.now()-5000000), reactions:{'🎉':32,'❤️':21,'🔥':19} },
+    { id:'g-4', content:'Isso!! O Umbra Hub é o melhor investimento para minha carreira 🙌', authorId:'u2', authorName:'Luna_Conteúdo', authorRank:'Pro', authorXP:2100, authorAvatar:'🌙', roomId:'geral', createdAt:new Date(Date.now()-4000000), reactions:{'🔥':11} },
   ],
   'algoritmo': [
-    { id: 'a-1', content: '🔥 DICA PRO: Títulos com "Você Não Vai Acreditar" + número estão com CTR médio de 14% essa semana. Testei em 3 canais.', authorId: 'u2', authorName: 'Luna_Conteúdo', authorRank: 'Pro', authorXP: 2100, authorAvatar: '🌙', roomId: 'algoritmo', createdAt: new Date(Date.now() - 3000000), reactions: { '🔥': 28, '💎': 12 } },
+    { id:'a-1', content:'🔥 DICA PRO: Títulos com "Você Não Vai Acreditar" + número estão com CTR médio de 14% essa semana. Testei em 3 canais.', authorId:'u2', authorName:'Luna_Conteúdo', authorRank:'Pro', authorXP:2100, authorAvatar:'🌙', roomId:'algoritmo', createdAt:new Date(Date.now()-3000000), reactions:{'🔥':28,'💎':12} },
+    { id:'a-2', content:'CTR de 14% é loucura. Qual thumbnail você tá usando? Rosto + texto ou só visual?', authorId:'u5', authorName:'Priya_Dark', authorRank:'Elite', authorXP:5200, authorAvatar:'⚡', roomId:'algoritmo', createdAt:new Date(Date.now()-2800000), reactions:{} },
+    { id:'a-3', content:'Rosto AI gerado + paleta vermelha/preta. O contraste é tudo.', authorId:'u2', authorName:'Luna_Conteúdo', authorRank:'Pro', authorXP:2100, authorAvatar:'🌙', roomId:'algoritmo', createdAt:new Date(Date.now()-2600000), reactions:{'👍':18} },
   ],
   'estrategias': [
-    { id: 'e-1', content: '💎 ESTRATÉGIA ELITE: Poste às 18h-20h horário de Brasília. Retenção aumenta 23%.', authorId: 'u5', authorName: 'Priya_Dark', authorRank: 'Elite', authorXP: 5200, authorAvatar: '⚡', roomId: 'estrategias', createdAt: new Date(Date.now() - 1800000), reactions: { '👑': 8, '🔥': 22 } },
+    { id:'e-1', content:'💎 ESTRATÉGIA ELITE: Poste às 18h-20h horário de Brasília. Retenção aumenta 23%.', authorId:'u5', authorName:'Priya_Dark', authorRank:'Elite', authorXP:5200, authorAvatar:'⚡', roomId:'estrategias', createdAt:new Date(Date.now()-1800000), reactions:{'👑':8,'🔥':22} },
   ],
 };
 
 const ONLINE_MEMBERS: Member[] = [
-  { id: 'u5', name: 'Priya_Dark',     rank: 'Elite',    xp: 5200, avatar: '⚡', status: 'online',  plan: ToolTier.TURBO },
-  { id: 'u2', name: 'Luna_Conteúdo',  rank: 'Pro',      xp: 2100, avatar: '🌙', status: 'online',  plan: ToolTier.PRO },
-  { id: 'u1', name: 'Rafael_Dark',    rank: 'Criador',  xp: 820,  avatar: '🎭', status: 'online',  plan: ToolTier.PRO },
-  { id: 'u4', name: 'Dark_Vítor',     rank: 'Criador',  xp: 950,  avatar: '🕵️', status: 'away',    plan: ToolTier.PRO },
-  { id: 'u3', name: 'Marcos_Faceless',rank: 'Aprendiz', xp: 340,  avatar: '🎯', status: 'online',  plan: ToolTier.FREE },
-  { id: 'u6', name: 'Ana_Script',     rank: 'Criador',  xp: 750,  avatar: '📝', status: 'online',  plan: ToolTier.PRO },
-  { id: 'u7', name: 'Pedro_Viral',    rank: 'Aprendiz', xp: 220,  avatar: '🎪', status: 'offline', plan: ToolTier.FREE },
+  { id:'u5', name:'Priya_Dark',      rank:'Elite',    xp:5200, avatar:'⚡', status:'online',  plan:ToolTier.TURBO },
+  { id:'u2', name:'Luna_Conteúdo',   rank:'Pro',      xp:2100, avatar:'🌙', status:'online',  plan:ToolTier.PRO },
+  { id:'u1', name:'Rafael_Dark',     rank:'Criador',  xp:820,  avatar:'🎭', status:'online',  plan:ToolTier.PRO },
+  { id:'u4', name:'Dark_Vítor',      rank:'Criador',  xp:950,  avatar:'🕵️', status:'away',    plan:ToolTier.PRO },
+  { id:'u3', name:'Marcos_Faceless', rank:'Aprendiz', xp:340,  avatar:'🎯', status:'online',  plan:ToolTier.FREE },
+  { id:'u6', name:'Ana_Script',      rank:'Criador',  xp:750,  avatar:'📝', status:'online',  plan:ToolTier.PRO },
+  { id:'u7', name:'Pedro_Viral',     rank:'Aprendiz', xp:220,  avatar:'🎪', status:'offline', plan:ToolTier.FREE },
 ];
 
 const ACHIEVEMENTS: AchievementDef[] = [
-  { id: 'first-message', name: 'Primeira Mensagem', description: 'Enviou sua primeira mensagem', icon: '💬', xp: 10 },
-  { id: 'rank-aprendiz', name: 'Rank Aprendiz',     description: 'Alcançou 100 XP',             icon: '📘', xp: 25 },
-  { id: 'rank-criador',  name: 'Rank Criador',      description: 'Alcançou 500 XP',             icon: '🎬', xp: 50 },
-  { id: 'rank-pro',      name: 'Rank Pro!',         description: 'Alcançou 1500 XP',            icon: '⚡', xp: 100 },
-  { id: 'rank-elite',    name: 'Rank Elite!',       description: 'Alcançou 4000 XP',            icon: '💎', xp: 200 },
-  { id: 'rank-lenda',    name: 'LENDA DA UMBRA!',   description: 'Alcançou 10000 XP',           icon: '👑', xp: 500 },
-  { id: 'pro-member',    name: 'Membro Pro',        description: 'Assinou o plano Pro ou Turbo',icon: '⭐', xp: 0 },
+  { id:'first-message', name:'Primeira Mensagem', description:'Enviou sua primeira mensagem', icon:'💬', xp:10 },
+  { id:'rank-aprendiz', name:'Rank Aprendiz',     description:'Alcançou 100 XP',            icon:'📘', xp:25 },
+  { id:'rank-criador',  name:'Rank Criador',      description:'Alcançou 500 XP',            icon:'🎬', xp:50 },
+  { id:'rank-pro',      name:'Rank Pro!',         description:'Alcançou 1500 XP',           icon:'⚡', xp:100 },
+  { id:'rank-elite',    name:'Rank Elite!',       description:'Alcançou 4000 XP',           icon:'💎', xp:200 },
+  { id:'rank-lenda',    name:'LENDA DA UMBRA!',   description:'Alcançou 10000 XP',          icon:'👑', xp:500 },
+  { id:'pro-member',    name:'Membro Premium',    description:'Assinou um plano pago',      icon:'⭐', xp:0 },
 ];
 
+const CAT_COLORS: Record<string, string> = {
+  Comunidade:'#06b6d4', Produção:'#a855f7', Crescimento:'#ec4899',
+};
 const TIER_LEVELS: Record<ToolTier, number> = {
-  [ToolTier.FREE]: 0, [ToolTier.PRO]: 1, [ToolTier.TURBO]: 2,
+  [ToolTier.FREE]:0, [ToolTier.PRO]:1, [ToolTier.TURBO]:2,
 };
-
-const CATEGORY_COLORS: Record<string, string> = {
-  'Comunidade': '#06b6d4', 'Produção': '#a855f7', 'Crescimento': '#ec4899',
-};
-
 const EMOJIS = ['😄','😂','🔥','❤️','👍','💎','⚡','🎉','😎','🤩','🙌','💪'];
-
-/* ─── Helpers ───────────────────────────────────────────────────────────── */
-const getRank  = (xp: number) => [...RANKS].reverse().find(r => xp >= r.min) ?? RANKS[0];
-const getNextRank = (xp: number) => RANKS.find(r => xp < r.min) ?? null;
-const getXPProgress = (xp: number) => {
-  const cur = getRank(xp); const nxt = getNextRank(xp);
-  if (!nxt) return 100;
-  return Math.round(((xp - cur.min) / (nxt.min - cur.min)) * 100);
-};
-const getRankColor  = (name: string) => RANKS.find(r => r.name === name)?.color ?? '#6b7280';
-const getStatusDot  = (s: string) => s === 'online' ? '#22c55e' : s === 'away' ? '#f59e0b' : '#4b5563';
-const fmtTime = (d: Date) => d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
 const XP_KEY  = 'umbra_z_xp';
-const ACH_KEY = 'umbra_z_achievements';
+const ACH_KEY = 'umbra_z_achs';
 
-function mapRow(row: Record<string, unknown>): Message {
+/* ─── Pure helpers ──────────────────────────────────────────────────────── */
+const getRank     = (xp: number) => [...RANKS].reverse().find(r => xp >= r.min) ?? RANKS[0];
+const getNextRank = (xp: number) => RANKS.find(r => xp < r.min) ?? null;
+const getXPPct    = (xp: number) => {
+  const c = getRank(xp); const n = getNextRank(xp);
+  return n ? Math.round(((xp-c.min)/(n.min-c.min))*100) : 100;
+};
+const rankColor = (name: string) => RANKS.find(r=>r.name===name)?.color ?? '#6b7280';
+const dot       = (s:string) => s==='online'?'#22c55e':s==='away'?'#f59e0b':'#4b5563';
+const fmtTime   = (d:Date) => d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+
+function mapRow(row: Record<string,unknown>): Message {
   return {
     id:           String(row.id),
     content:      String(row.content),
@@ -130,51 +132,53 @@ function mapRow(row: Record<string, unknown>): Message {
     authorRank:   String(row.author_rank),
     authorXP:     Number(row.author_xp),
     authorAvatar: String(row.author_avatar),
-    reactions:    (row.reactions as Record<string, number>) ?? {},
+    reactions:    (row.reactions as Record<string,number>) ?? {},
     isSystem:     Boolean(row.is_system),
     createdAt:    new Date(String(row.created_at)),
   };
 }
 
 /* ─── Component ─────────────────────────────────────────────────────────── */
-interface UmbraZToolProps { userTier: ToolTier; userName?: string; }
+interface Props { userTier: ToolTier; userName?: string; }
 
-export default function UmbraZTool({ userTier, userName = 'Criador' }: UmbraZToolProps) {
-  const [activeRoom,       setActiveRoom]       = useState<Room>(ROOMS[0]);
-  const [messages,         setMessages]         = useState<Message[]>([]);
-  const [inputValue,       setInputValue]       = useState('');
-  const [expandedCats,     setExpandedCats]     = useState<Record<string,boolean>>({ Comunidade:true, Produção:true, Crescimento:true });
-  const [showMembers,      setShowMembers]      = useState(true);
-  const [showEmoji,        setShowEmoji]        = useState(false);
-  const [tab,              setTab]              = useState<TabType>('members');
-  const [isMuted,          setIsMuted]          = useState(false);
-  const [isDeafened,       setIsDeafened]       = useState(false);
-  const [sidebarOpen,      setSidebarOpen]      = useState(false);   // mobile
-  const [isLoadingMsgs,    setIsLoadingMsgs]    = useState(true);
-  const [isSending,        setIsSending]        = useState(false);
-  const [toastAch,         setToastAch]         = useState<AchievementDef | null>(null);
+export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
+  const [activeRoom,    setActiveRoom]    = useState<Room>(ROOMS[0]);
+  const [messages,      setMessages]      = useState<Message[]>([]);
+  const [inputValue,    setInputValue]    = useState('');
+  const [searchQuery,   setSearchQuery]   = useState('');
+  const [expandedCats,  setExpandedCats]  = useState<Record<string,boolean>>({ Comunidade:true, Produção:true, Crescimento:true });
+  const [showMembers,   setShowMembers]   = useState(true);
+  const [showEmoji,     setShowEmoji]     = useState(false);
+  const [tab,           setTab]           = useState<TabType>('members');
+  const [isMuted,       setIsMuted]       = useState(false);
+  const [isDeafened,    setIsDeafened]    = useState(false);
+  const [sidebarOpen,   setSidebarOpen]   = useState(false);
+  const [isLoading,     setIsLoading]     = useState(true);
+  const [isSending,     setIsSending]     = useState(false);
+  const [toastAch,      setToastAch]      = useState<AchievementDef|null>(null);
 
-  // Persistent XP & unlocked achievements
-  const [userXP,           setUserXP]           = useState<number>(() => {
-    const saved = localStorage.getItem(XP_KEY); return saved ? parseInt(saved, 10) : 0;
+  const [userXP, setUserXP] = useState<number>(() => {
+    const s = localStorage.getItem(XP_KEY); return s ? parseInt(s,10) : 0;
   });
-  const [unlockedAchs,     setUnlockedAchs]     = useState<Set<string>>(() => {
-    const saved = localStorage.getItem(ACH_KEY);
-    return saved ? new Set<string>(JSON.parse(saved)) : new Set<string>();
+  const [unlockedAchs, setUnlockedAchs] = useState<Set<string>>(() => {
+    const s = localStorage.getItem(ACH_KEY);
+    return s ? new Set<string>(JSON.parse(s)) : new Set<string>();
   });
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const channelRef     = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const endRef     = useRef<HTMLDivElement>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel>|null>(null);
 
-  const userRank    = getRank(userXP);
-  const nextRank    = getNextRank(userXP);
-  const xpProgress  = getXPProgress(userXP);
+  const userRank = getRank(userXP);
+  const nextRank = getNextRank(userXP);
+  const xpPct    = getXPPct(userXP);
+  const userId   = `user_${userName.replace(/\s+/g,'_').toLowerCase()}`;
+  const canAccess= (r:Room) => TIER_LEVELS[userTier] >= TIER_LEVELS[r.plan];
 
-  // Persist XP
+  /* Save XP */
   useEffect(() => { localStorage.setItem(XP_KEY, String(userXP)); }, [userXP]);
 
-  // Unlock achievement if not already earned
-  const unlockAchievement = useCallback((ach: AchievementDef) => {
+  /* Unlock achievement */
+  const unlockAch = useCallback((ach: AchievementDef) => {
     setUnlockedAchs(prev => {
       if (prev.has(ach.id)) return prev;
       const next = new Set(prev).add(ach.id);
@@ -185,181 +189,203 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: UmbraZToo
     });
   }, []);
 
-  // Give XP with rank-up detection
-  const giveXP = useCallback((amount: number, firstMessage = false) => {
+  /* Give XP — detects rank-up */
+  const giveXP = useCallback((amount: number, firstMsg=false) => {
     setUserXP(prev => {
-      const newXP  = prev + amount;
-      const oldRnk = getRank(prev);
-      const newRnk = getRank(newXP);
-
-      if (newRnk.name !== oldRnk.name) {
-        const rankAch = ACHIEVEMENTS.find(a => a.id === `rank-${newRnk.name.toLowerCase()}`);
-        if (rankAch) unlockAchievement(rankAch);
+      const newXP = prev + amount;
+      const oldR  = getRank(prev);
+      const newR  = getRank(newXP);
+      if (newR.name !== oldR.name) {
+        const a = ACHIEVEMENTS.find(x => x.id===`rank-${newR.name.toLowerCase()}`);
+        if (a) unlockAch(a);
       }
-      if (firstMessage) {
-        const fa = ACHIEVEMENTS.find(a => a.id === 'first-message');
-        if (fa) unlockAchievement(fa);
+      if (firstMsg) {
+        const a = ACHIEVEMENTS.find(x => x.id==='first-message'); if (a) unlockAch(a);
       }
+      // Atomic DB increment via RPC
+      supabase.rpc('increment_user_xp',{ p_user_id: userId, p_amount: amount }).then(()=>{});
       return newXP;
     });
-  }, [unlockAchievement]);
+  }, [unlockAch, userId]);
 
-  // Unlock pro achievement
+  /* Pro achievement */
   useEffect(() => {
     if (userTier !== ToolTier.FREE) {
-      const pAch = ACHIEVEMENTS.find(a => a.id === 'pro-member');
-      if (pAch) unlockAchievement(pAch);
+      const a = ACHIEVEMENTS.find(x=>x.id==='pro-member'); if (a) unlockAch(a);
     }
-  }, [userTier, unlockAchievement]);
+  }, [userTier, unlockAch]);
 
-  // Load messages + subscribe to Realtime
+  /* Load messages + Realtime */
   useEffect(() => {
-    setIsLoadingMsgs(true);
-
-    // Remove previous channel
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
+    setIsLoading(true);
+    if (channelRef.current) { supabase.removeChannel(channelRef.current); channelRef.current=null; }
 
     const roomId = activeRoom.id;
 
-    // 1. Load from DB
     supabase
       .from('umbra_z_messages')
       .select('*')
       .eq('room_id', roomId)
-      .order('created_at', { ascending: true })
+      .order('created_at',{ascending:true})
       .limit(80)
       .then(({ data, error }) => {
-        if (error || !data || data.length === 0) {
-          // fallback to welcome messages
-          setMessages(WELCOME_MESSAGES[roomId] ?? []);
-        } else {
-          setMessages(data.map(mapRow));
-        }
-        setIsLoadingMsgs(false);
+        setMessages((!error && data && data.length>0)
+          ? data.map(mapRow)
+          : (SEED_MESSAGES[roomId] ?? []));
+        setIsLoading(false);
       });
 
-    // 2. Subscribe realtime
-    const ch = supabase
-      .channel(`umbra-z:${roomId}`)
-      .on('postgres_changes', {
-        event: 'INSERT', schema: 'public', table: 'umbra_z_messages',
-        filter: `room_id=eq.${roomId}`,
-      }, payload => {
-        if (!payload.new) return;
-        const msg = mapRow(payload.new as Record<string, unknown>);
-        setMessages(prev => {
-          if (prev.find(m => m.id === msg.id)) return prev;
-          return [...prev, msg];
-        });
-      })
-      .on('postgres_changes', {
-        event: 'UPDATE', schema: 'public', table: 'umbra_z_messages',
-        filter: `room_id=eq.${roomId}`,
-      }, payload => {
-        if (!payload.new) return;
-        const updated = mapRow(payload.new as Record<string, unknown>);
-        setMessages(prev => prev.map(m => m.id === updated.id ? updated : m));
-      })
+    const ch = supabase.channel(`umbra-z:${roomId}`)
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'umbra_z_messages',filter:`room_id=eq.${roomId}`},
+        payload => {
+          if (!payload.new) return;
+          const incoming = mapRow(payload.new as Record<string,unknown>);
+          setMessages(prev => {
+            // Replace optimistic temp message if it matches author+content
+            const tempIdx = prev.findIndex(m =>
+              m.isSending && m.authorId===incoming.authorId && m.content===incoming.content
+            );
+            if (tempIdx !== -1) {
+              const next = [...prev];
+              next[tempIdx] = incoming;      // swap temp → real
+              return next;
+            }
+            if (prev.find(m => m.id===incoming.id)) return prev; // already there
+            return [...prev, incoming];
+          });
+        })
+      .on('postgres_changes',{event:'UPDATE',schema:'public',table:'umbra_z_messages',filter:`room_id=eq.${roomId}`},
+        payload => {
+          if (!payload.new) return;
+          const updated = mapRow(payload.new as Record<string,unknown>);
+          setMessages(prev => prev.map(m => m.id===updated.id ? updated : m));
+        })
       .subscribe();
 
     channelRef.current = ch;
-    return () => { supabase.removeChannel(ch); channelRef.current = null; };
+    return () => { supabase.removeChannel(ch); channelRef.current=null; };
   }, [activeRoom.id]);
 
-  // Auto-scroll
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  /* Auto-scroll */
+  useEffect(() => { endRef.current?.scrollIntoView({behavior:'smooth'}); }, [messages]);
 
-  const canAccess = (room: Room) => TIER_LEVELS[userTier] >= TIER_LEVELS[room.plan];
-
-  const selectRoom = (room: Room) => {
-    if (!canAccess(room)) return;
-    setActiveRoom(room);
-    setSidebarOpen(false);
-  };
-
+  /* ── Send message: optimistic → DB confirm/rollback ── */
   const sendMessage = async () => {
     if (!inputValue.trim() || isSending) return;
     setIsSending(true);
-    const userId = `user_${userName.replace(/\s+/g,'_').toLowerCase()}`;
-    const isFirst = !unlockedAchs.has('first-message');
 
-    const payload = {
-      content:      inputValue.trim(),
-      room_id:      activeRoom.id,
-      author_id:    userId,
-      author_name:  userName,
-      author_rank:  userRank.name,
-      author_xp:    userXP,
-      author_avatar:'🫵',
-      reactions:    {},
+    const isFirst  = !unlockedAchs.has('first-message');
+    const tempId   = `temp-${Date.now()}`;
+    const content  = inputValue.trim();
+
+    // 1. Optimistic insert
+    const optimistic: Message = {
+      id: tempId, content, roomId: activeRoom.id,
+      authorId: userId, authorName: userName,
+      authorRank: userRank.name, authorXP: userXP,
+      authorAvatar: '🫵', reactions: {}, isSending:true,
+      createdAt: new Date(),
     };
+    setMessages(prev => [...prev, optimistic]);
     setInputValue('');
 
-    const { error } = await supabase.from('umbra_z_messages').insert(payload);
-    if (!error) {
+    // 2. DB insert
+    const { data, error } = await supabase
+      .from('umbra_z_messages')
+      .insert({
+        content, room_id: activeRoom.id, author_id: userId,
+        author_name: userName, author_rank: userRank.name,
+        author_xp: userXP, author_avatar: '🫵', reactions: {},
+      })
+      .select()
+      .single();
+
+    if (!error && data) {
+      // Realtime will swap tempId automatically via the INSERT handler
+      // But in case it doesn't (race), do it here too
+      setMessages(prev => prev.map(m => m.id===tempId ? mapRow(data) : m));
       giveXP(5, isFirst);
-      // Persist XP to DB (upsert)
-      supabase.from('umbra_z_user_xp').upsert({
-        user_id: userId, xp: userXP + 5,
-        total_messages: 1, updated_at: new Date().toISOString(),
-      }, { onConflict: 'user_id' }).then(() => {});
     } else {
-      // Offline fallback: add message locally
-      const local: Message = {
-        id: Date.now().toString(), ...payload,
-        roomId: activeRoom.id, authorId: userId,
-        authorName: userName, authorRank: userRank.name,
-        authorXP: userXP, authorAvatar: '🫵',
-        createdAt: new Date(),
-      };
-      setMessages(prev => [...prev, local]);
-      giveXP(5, isFirst);
+      // Mark as failed — don't remove, let user retry
+      setMessages(prev => prev.map(m => m.id===tempId ? { ...m, isSending:false, failed:true } : m));
     }
+
     setIsSending(false);
   };
 
-  const addReaction = async (msgId: string, emoji: string) => {
-    setMessages(prev => prev.map(msg => {
-      if (msg.id !== msgId) return msg;
-      const r = { ...msg.reactions, [emoji]: (msg.reactions[emoji] ?? 0) + 1 };
-      // Persist async
-      supabase.from('umbra_z_messages').update({ reactions: r }).eq('id', msgId).then(() => {});
-      return { ...msg, reactions: r };
-    }));
+  /* Retry a failed message */
+  const retryMessage = async (msg: Message) => {
+    setMessages(prev => prev.map(m => m.id===msg.id ? { ...m, failed:false, isSending:true } : m));
+    const { data, error } = await supabase
+      .from('umbra_z_messages')
+      .insert({
+        content: msg.content, room_id: msg.roomId, author_id: msg.authorId,
+        author_name: msg.authorName, author_rank: msg.authorRank,
+        author_xp: msg.authorXP, author_avatar: msg.authorAvatar, reactions: {},
+      }).select().single();
+
+    if (!error && data) setMessages(prev => prev.map(m => m.id===msg.id ? mapRow(data) : m));
+    else setMessages(prev => prev.map(m => m.id===msg.id ? { ...m, isSending:false, failed:true } : m));
   };
 
-  const groupedRooms = ROOMS.reduce<Record<string, Room[]>>((acc, r) => {
-    (acc[r.category] ??= []).push(r); return acc;
-  }, {});
+  /* Atomic reaction via RPC */
+  const addReaction = async (msgId: string, emoji: string) => {
+    // Optimistic update
+    setMessages(prev => prev.map(m => {
+      if (m.id !== msgId) return m;
+      return { ...m, reactions:{ ...m.reactions, [emoji]:(m.reactions[emoji]??0)+1 } };
+    }));
+    // Real-time update via RPC (atomic, no race condition)
+    await supabase.rpc('add_reaction',{ p_msg_id: msgId, p_emoji: emoji });
+  };
 
-  /* ─── Sidebar ────────────────────────────────────────────────────────── */
-  const RoomSidebar = (
-    <aside style={{ width: 240, background: '#111118', borderRight: '1px solid rgba(255,255,255,0.05)', flexShrink: 0 }}
+  /* Search filter */
+  const filteredRooms = useMemo(() =>
+    searchQuery.trim()
+      ? ROOMS.filter(r => r.name.toLowerCase().includes(searchQuery.toLowerCase()))
+      : ROOMS,
+  [searchQuery]);
+
+  const groupedRooms = useMemo(() =>
+    filteredRooms.reduce<Record<string,Room[]>>((acc,r) => {
+      (acc[r.category] ??= []).push(r); return acc;
+    }, {}),
+  [filteredRooms]);
+
+  /* ── Sidebar (memoised to avoid full re-render on message state change) ── */
+  const RoomSidebar = useMemo(() => (
+    <aside style={{ width:240, background:'#111118', borderRight:'1px solid rgba(255,255,255,0.05)', flexShrink:0 }}
       className="flex flex-col h-full">
+
       {/* Header */}
-      <div className="p-4 flex items-center justify-between border-b" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+      <div className="p-4 flex items-center justify-between border-b" style={{borderColor:'rgba(255,255,255,.05)'}}>
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-white text-sm shadow-lg"
-            style={{ background:'linear-gradient(135deg,#7c3aed,#ec4899)' }}>Z</div>
+            style={{background:'linear-gradient(135deg,#7c3aed,#ec4899)'}}>Z</div>
           <div>
             <div className="text-white font-black text-sm">Umbra Z</div>
-            <div className="text-[9px] font-black uppercase tracking-widest" style={{ color:'#7c3aed' }}>Comunidade</div>
+            <div className="text-[9px] font-black uppercase tracking-widest" style={{color:'#7c3aed'}}>Comunidade</div>
           </div>
         </div>
         <button className="md:hidden p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-white/5 transition-all"
-          onClick={() => setSidebarOpen(false)}><X className="w-4 h-4" /></button>
+          onClick={() => setSidebarOpen(false)}><X className="w-4 h-4"/></button>
       </div>
 
-      {/* Search */}
+      {/* Search — functional! */}
       <div className="px-3 py-2">
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{ background:'rgba(255,255,255,0.05)' }}>
-          <Search className="w-3.5 h-3.5 text-gray-600" />
-          <input className="bg-transparent text-xs text-gray-400 outline-none w-full placeholder-gray-600 font-medium" placeholder="Buscar..." />
+        <div className="flex items-center gap-2 px-3 py-2 rounded-xl" style={{background:'rgba(255,255,255,.05)'}}>
+          <Search className="w-3.5 h-3.5 text-gray-600 shrink-0"/>
+          <input
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="bg-transparent text-xs text-gray-400 outline-none w-full placeholder-gray-600 font-medium"
+            placeholder="Buscar canal..."
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} className="text-gray-600 hover:text-gray-400 shrink-0 transition-colors">
+              <X className="w-3 h-3"/>
+            </button>
+          )}
         </div>
       </div>
 
@@ -367,112 +393,121 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: UmbraZToo
       <div className="flex-1 overflow-y-auto px-2 py-2">
         {Object.entries(groupedRooms).map(([cat, rooms]) => (
           <div key={cat} className="mb-3">
-            <button onClick={() => setExpandedCats(p => ({ ...p, [cat]: !p[cat] }))}
+            <button onClick={() => setExpandedCats(p=>({...p,[cat]:!p[cat]}))}
               className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg hover:bg-white/5 transition-colors mb-0.5">
-              <span className="text-[9px] font-black uppercase tracking-[0.15em] flex-1 text-left" style={{ color: CATEGORY_COLORS[cat] || '#6b7280' }}>{cat}</span>
-              <ChevronDown className={`w-3 h-3 text-gray-600 transition-transform ${expandedCats[cat] ? '' : '-rotate-90'}`} />
+              <span className="text-[9px] font-black uppercase tracking-[.15em] flex-1 text-left"
+                style={{color: CAT_COLORS[cat]||'#6b7280'}}>{cat}</span>
+              <ChevronDown className={`w-3 h-3 text-gray-600 transition-transform ${expandedCats[cat]?'':'rotate-[-90deg]'}`}/>
             </button>
             {expandedCats[cat] && rooms.map(room => {
-              const ok = canAccess(room);
+              const ok     = canAccess(room);
               const active = activeRoom.id === room.id;
               return (
-                <button key={room.id} onClick={() => selectRoom(room)}
+                <button key={room.id} onClick={() => { if (ok) { setActiveRoom(room); setSidebarOpen(false); } }}
                   className={`w-full flex items-center gap-2 px-2 py-2 rounded-xl transition-all mb-0.5 text-xs
-                    ${active ? 'text-white' : ok ? 'text-gray-500 hover:text-gray-300 hover:bg-white/5' : 'text-gray-700 cursor-not-allowed opacity-40'}`}
-                  style={active ? { background:'linear-gradient(135deg,rgba(124,58,237,.2),rgba(236,72,153,.1))', borderLeft:'2px solid #7c3aed' } : {}}>
+                    ${active?'text-white': ok?'text-gray-500 hover:text-gray-300 hover:bg-white/5':'text-gray-700 cursor-not-allowed opacity-40'}`}
+                  style={active?{background:'linear-gradient(135deg,rgba(124,58,237,.2),rgba(236,72,153,.1))',borderLeft:'2px solid #7c3aed'}:{}}>
                   <span>{room.emoji}</span>
-                  {room.type==='voice' ? <Volume2 className="w-3.5 h-3.5 shrink-0"/> : <Hash className="w-3.5 h-3.5 shrink-0"/>}
+                  {room.type==='voice'
+                    ? <Volume2 className="w-3.5 h-3.5 shrink-0"/>
+                    : <Hash    className="w-3.5 h-3.5 shrink-0"/>}
                   <span className="flex-1 text-left font-bold truncate">{room.name}</span>
                   {!ok && <Lock className="w-3 h-3 text-gray-700 shrink-0"/>}
-                  {room.unread && ok && <span className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[9px] font-black"
-                    style={{ background:'#7c3aed' }}>{room.unread}</span>}
-                  {room.online && ok && <span className="text-[9px] font-black text-green-500 flex items-center gap-0.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-500"/>{room.online}</span>}
+                  {room.unread!=null && ok && (
+                    <span className="w-4 h-4 rounded-full flex items-center justify-center text-white text-[9px] font-black"
+                      style={{background:'#7c3aed'}}>{room.unread}</span>)}
+                  {room.online!=null && ok && (
+                    <span className="text-[9px] font-black text-green-500 flex items-center gap-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"/>{room.online}</span>)}
                 </button>
               );
             })}
+            {searchQuery && rooms.length === 0 && (
+              <p className="px-2 py-2 text-[10px] text-gray-600 font-medium">Nenhum canal encontrado.</p>
+            )}
           </div>
         ))}
       </div>
 
-      {/* User Footer */}
-      <div className="p-3 border-t" style={{ borderColor:'rgba(255,255,255,0.05)', background:'rgba(0,0,0,.3)' }}>
+      {/* User footer */}
+      <div className="p-3 border-t" style={{borderColor:'rgba(255,255,255,.05)',background:'rgba(0,0,0,.3)'}}>
         <div className="flex items-center gap-2">
           <div className="relative shrink-0">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center text-base"
-              style={{ background:'linear-gradient(135deg,#7c3aed,#ec4899)' }}>🫵</div>
+              style={{background:'linear-gradient(135deg,#7c3aed,#ec4899)'}}>🫵</div>
             <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
-              style={{ background:'#22c55e', borderColor:'#111118' }}/>
+              style={{background:'#22c55e',borderColor:'#111118'}}/>
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-xs font-black text-white truncate">{userName}</div>
-            <div className="text-[9px] font-black" style={{ color: userRank.color }}>{userRank.icon} {userRank.name} · {userXP} XP</div>
+            <div className="text-[9px] font-black" style={{color:userRank.color}}>{userRank.icon} {userRank.name} · {userXP} XP</div>
           </div>
           <div className="flex gap-1">
-            <button onClick={() => setIsMuted(!isMuted)}
-              className={`p-1.5 rounded-lg transition-all ${isMuted ? 'text-red-500 bg-red-500/10' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}>
+            <button onClick={() => setIsMuted(p=>!p)}
+              className={`p-1.5 rounded-lg transition-all ${isMuted?'text-red-500 bg-red-500/10':'text-gray-500 hover:text-white hover:bg-white/5'}`}>
               {isMuted ? <MicOff className="w-3.5 h-3.5"/> : <Mic className="w-3.5 h-3.5"/>}
             </button>
-            <button onClick={() => setIsDeafened(!isDeafened)}
-              className={`p-1.5 rounded-lg transition-all ${isDeafened ? 'text-red-500 bg-red-500/10' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}>
+            <button onClick={() => setIsDeafened(p=>!p)}
+              className={`p-1.5 rounded-lg transition-all ${isDeafened?'text-red-500 bg-red-500/10':'text-gray-500 hover:text-white hover:bg-white/5'}`}>
               <Headphones className="w-3.5 h-3.5"/>
             </button>
           </div>
         </div>
         <div className="mt-2">
           <div className="flex justify-between items-center mb-1">
-            <span className="text-[8px] text-gray-600 font-black uppercase tracking-widest">XP Progress</span>
-            {nextRank && <span className="text-[8px] font-black" style={{ color: nextRank.color }}>→ {nextRank.name} ({nextRank.min - userXP} restam)</span>}
+            <span className="text-[8px] text-gray-600 font-black uppercase tracking-widest">XP</span>
+            {nextRank && <span className="text-[8px] font-black" style={{color:nextRank.color}}>→ {nextRank.name} ({nextRank.min-userXP})</span>}
           </div>
-          <div className="h-1 rounded-full overflow-hidden" style={{ background:'rgba(255,255,255,.05)' }}>
+          <div className="h-1 rounded-full overflow-hidden" style={{background:'rgba(255,255,255,.05)'}}>
             <div className="h-full rounded-full transition-all duration-700"
-              style={{ width:`${xpProgress}%`, background:`linear-gradient(90deg,${userRank.color},${nextRank?.color || userRank.color})` }}/>
+              style={{width:`${xpPct}%`,background:`linear-gradient(90deg,${userRank.color},${nextRank?.color||userRank.color})`}}/>
           </div>
         </div>
       </div>
     </aside>
-  );
+  ), [activeRoom.id, expandedCats, userXP, sidebarOpen, isMuted, isDeafened, searchQuery, groupedRooms, nextRank, userRank, xpPct, userName]); // eslint-disable-line
 
-  /* ─── Members / Achievements Panel ─────────────────────────────────── */
-  const RightPanel = showMembers && (
-    <aside style={{ width: 220, background:'#111118', borderLeft:'1px solid rgba(255,255,255,.05)', flexShrink: 0 }}
+  /* ── Right panel (memoised) ── */
+  const RightPanel = useMemo(() => !showMembers ? null : (
+    <aside style={{width:220,background:'#111118',borderLeft:'1px solid rgba(255,255,255,.05)',flexShrink:0}}
       className="hidden lg:flex flex-col h-full">
-      <div className="flex border-b" style={{ borderColor:'rgba(255,255,255,.05)' }}>
+      <div className="flex border-b" style={{borderColor:'rgba(255,255,255,.05)'}}>
         {(['members','achievements'] as TabType[]).map(t => (
           <button key={t} onClick={() => setTab(t)}
-            className={`flex-1 py-3 text-[9px] font-black uppercase tracking-widest transition-colors border-b-2 ${tab===t ? 'text-white' : 'text-gray-600 border-transparent hover:text-gray-400'}`}
-            style={tab===t ? { borderColor:'#7c3aed' } : {}}>
-            {t==='members' ? '👥 Membros' : '🏆 XP & Ranks'}
+            className={`flex-1 py-3 text-[9px] font-black uppercase tracking-widest transition-colors border-b-2 ${tab===t?'text-white':'text-gray-600 border-transparent hover:text-gray-400'}`}
+            style={tab===t?{borderColor:'#7c3aed'}:{}}>
+            {t==='members'?'👥 Membros':'🏆 XP & Ranks'}
           </button>
         ))}
       </div>
 
-      {tab === 'members' && (
+      {tab==='members' && (
         <div className="flex-1 overflow-y-auto p-3">
           {(['online','away','offline'] as const).map(status => {
-            const list = ONLINE_MEMBERS.filter(m => m.status === status);
+            const list = ONLINE_MEMBERS.filter(m => m.status===status);
             if (!list.length) return null;
             return (
               <div key={status} className="mb-4">
-                <div className="text-[9px] font-black uppercase tracking-[.15em] mb-2 px-1" style={{ color:getStatusDot(status) }}>
+                <div className="text-[9px] font-black uppercase tracking-[.15em] mb-2 px-1"
+                  style={{color:dot(status)}}>
                   {status==='online'?'🟢 Online':status==='away'?'🟡 Ausente':'⚫ Offline'} — {list.length}
                 </div>
                 {list.map(m => (
                   <div key={m.id} className="flex items-center gap-2 p-2 rounded-xl hover:bg-white/5 transition-all cursor-pointer mb-1 group">
                     <div className="relative shrink-0">
                       <div className="w-7 h-7 rounded-xl flex items-center justify-center text-sm"
-                        style={{ background:`${getRankColor(m.rank)}20`, border:`1px solid ${getRankColor(m.rank)}30` }}>{m.avatar}</div>
+                        style={{background:`${rankColor(m.rank)}20`,border:`1px solid ${rankColor(m.rank)}30`}}>{m.avatar}</div>
                       <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full border"
-                        style={{ background:getStatusDot(m.status), borderColor:'#111118' }}/>
+                        style={{background:dot(m.status),borderColor:'#111118'}}/>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="text-xs font-bold text-gray-300 group-hover:text-white transition-colors truncate">{m.name}</div>
-                      <div className="text-[9px] font-black" style={{ color:getRankColor(m.rank) }}>{RANKS.find(r=>r.name===m.rank)?.icon} {m.rank}</div>
+                      <div className="text-[9px] font-black" style={{color:rankColor(m.rank)}}>{RANKS.find(r=>r.name===m.rank)?.icon} {m.rank}</div>
                     </div>
-                    {m.plan !== ToolTier.FREE && (
+                    {m.plan!==ToolTier.FREE && (
                       <span className="text-[8px] font-black px-1 py-0.5 rounded"
-                        style={{ background: m.plan===ToolTier.TURBO?'rgba(236,72,153,.15)':'rgba(124,58,237,.15)', color: m.plan===ToolTier.TURBO?'#ec4899':'#a855f7' }}>
-                        {m.plan}</span>
+                        style={{background:m.plan===ToolTier.TURBO?'rgba(236,72,153,.15)':'rgba(124,58,237,.15)',
+                          color:m.plan===ToolTier.TURBO?'#ec4899':'#a855f7'}}>{m.plan}</span>
                     )}
                   </div>
                 ))}
@@ -482,10 +517,10 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: UmbraZToo
         </div>
       )}
 
-      {tab === 'achievements' && (
+      {tab==='achievements' && (
         <div className="flex-1 overflow-y-auto p-3">
-          {/* XP card */}
-          <div className="p-3 rounded-2xl mb-4" style={{ background:'linear-gradient(135deg,rgba(124,58,237,.15),rgba(236,72,153,.1))', border:'1px solid rgba(124,58,237,.2)' }}>
+          <div className="p-3 rounded-2xl mb-4"
+            style={{background:'linear-gradient(135deg,rgba(124,58,237,.15),rgba(236,72,153,.1))',border:'1px solid rgba(124,58,237,.2)'}}>
             <div className="flex items-center gap-2 mb-2">
               <span className="text-2xl">{userRank.icon}</span>
               <div>
@@ -493,25 +528,24 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: UmbraZToo
                 <div className="text-[9px] text-gray-500 font-black">{userXP} XP total</div>
               </div>
             </div>
-            <div className="h-1.5 rounded-full overflow-hidden mb-1" style={{ background:'rgba(255,255,255,.05)' }}>
-              <div className="h-full rounded-full transition-all duration-700"
-                style={{ width:`${xpProgress}%`, background:`linear-gradient(90deg,${userRank.color},${nextRank?.color||userRank.color})` }}/>
+            <div className="h-1.5 rounded-full overflow-hidden mb-1" style={{background:'rgba(255,255,255,.05)'}}>
+              <div className="h-full rounded-full" style={{width:`${xpPct}%`,background:`linear-gradient(90deg,${userRank.color},${nextRank?.color||userRank.color})`}}/>
             </div>
             {nextRank && <div className="text-[9px] text-gray-600 font-black">{nextRank.min-userXP} XP para {nextRank.icon} {nextRank.name}</div>}
           </div>
 
           <div className="text-[9px] font-black uppercase tracking-[.15em] text-gray-600 mb-2 px-1">Patentes</div>
           {RANKS.map(rank => {
-            const unlocked = userXP >= rank.min;
+            const earned = userXP >= rank.min;
             return (
-              <div key={rank.name} className={`flex items-center gap-2 p-2 rounded-xl mb-1 ${!unlocked?'opacity-35':''}`}
-                style={{ background: unlocked?`${rank.color}12`:'rgba(255,255,255,.02)', border:`1px solid ${unlocked?rank.color+'25':'rgba(255,255,255,.03)'}` }}>
+              <div key={rank.name} className={`flex items-center gap-2 p-2 rounded-xl mb-1 ${!earned?'opacity-35':''}`}
+                style={{background:earned?`${rank.color}12`:'rgba(255,255,255,.02)',border:`1px solid ${earned?rank.color+'25':'rgba(255,255,255,.03)'}`}}>
                 <span className="text-lg">{rank.icon}</span>
                 <div className="flex-1">
-                  <div className="text-xs font-black" style={{ color: unlocked?rank.color:'#4b5563' }}>{rank.name}</div>
+                  <div className="text-xs font-black" style={{color:earned?rank.color:'#4b5563'}}>{rank.name}</div>
                   <div className="text-[9px] text-gray-600 font-medium">{rank.min.toLocaleString()} XP</div>
                 </div>
-                {unlocked && <Check className="w-3.5 h-3.5" style={{ color:rank.color }}/>}
+                {earned && <Check className="w-3.5 h-3.5" style={{color:rank.color}}/>}
               </div>
             );
           })}
@@ -521,33 +555,35 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: UmbraZToo
             const earned = unlockedAchs.has(ach.id);
             return (
               <div key={ach.id} className={`flex items-center gap-2 p-2 rounded-xl mb-1 ${!earned?'opacity-35':''}`}
-                style={{ background: earned?'rgba(124,58,237,.08)':'rgba(255,255,255,.02)', border:`1px solid ${earned?'rgba(124,58,237,.2)':'rgba(255,255,255,.03)'}` }}>
+                style={{background:earned?'rgba(124,58,237,.08)':'rgba(255,255,255,.02)',border:`1px solid ${earned?'rgba(124,58,237,.2)':'rgba(255,255,255,.03)'}`}}>
                 <span className="text-lg">{ach.icon}</span>
                 <div className="flex-1 min-w-0">
                   <div className={`text-xs font-black truncate ${earned?'text-white':'text-gray-600'}`}>{ach.name}</div>
-                  <div className="text-[9px] text-gray-600 font-medium truncate">{ach.description}</div>
+                  <div className="text-[9px] text-gray-600 truncate">{ach.description}</div>
                 </div>
-                {ach.xp > 0 && <span className="text-[9px] font-black shrink-0" style={{ color:'#7c3aed' }}>+{ach.xp}</span>}
+                {ach.xp>0 && <span className="text-[9px] font-black shrink-0" style={{color:'#7c3aed'}}>+{ach.xp}</span>}
               </div>
             );
           })}
         </div>
       )}
     </aside>
-  );
+  ), [showMembers, tab, userXP, userRank, nextRank, xpPct, unlockedAchs]); // eslint-disable-line
 
-  /* ─── Message Bubble ─────────────────────────────────────────────────── */
-  const renderMessage = (msg: Message, idx: number) => {
-    const prev = messages[idx - 1];
-    const grouped = prev?.authorId === msg.authorId && !msg.isSystem
-      && (msg.createdAt.getTime() - prev.createdAt.getTime()) < 300000;
-    const color = msg.isSystem ? '#06b6d4' : getRankColor(msg.authorRank);
+  /* ── Message bubble renderer ── */
+  const renderMsg = (msg: Message, idx: number) => {
+    const prev    = messages[idx-1];
+    const grouped = prev?.authorId===msg.authorId && !msg.isSystem
+      && (msg.createdAt.getTime()-prev.createdAt.getTime()) < 300000;
+    const color   = msg.isSystem ? '#06b6d4' : rankColor(msg.authorRank);
 
     return (
-      <div key={msg.id} className={`group flex gap-3 px-3 py-1.5 rounded-2xl transition-all hover:bg-white/[0.03] ${!grouped?'mt-3':'mt-0.5'}`}>
+      <div key={msg.id}
+        className={`group flex gap-3 px-3 py-1.5 rounded-2xl transition-all ${!grouped?'mt-3':'mt-0.5'} ${msg.failed?'':'hover:bg-white/[.03]'}`}
+        style={msg.failed?{background:'rgba(239,68,68,.05)',border:'1px solid rgba(239,68,68,.15)'}:{}}>
         {!grouped ? (
-          <div className="w-9 h-9 rounded-2xl flex items-center justify-center text-lg shrink-0 mt-0.5 shadow-lg"
-            style={{ background: msg.isSystem?'linear-gradient(135deg,#7c3aed,#06b6d4)':`${color}25`, border:`1px solid ${color}30` }}>
+          <div className="w-9 h-9 rounded-2xl flex items-center justify-center text-lg shrink-0 mt-0.5"
+            style={{background:msg.isSystem?'linear-gradient(135deg,#7c3aed,#06b6d4)':`${color}22`,border:`1px solid ${color}28`}}>
             {msg.authorAvatar}
           </div>
         ) : (
@@ -558,29 +594,43 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: UmbraZToo
         <div className="flex-1 min-w-0">
           {!grouped && (
             <div className="flex items-center gap-2 mb-0.5">
-              <span className="text-sm font-black" style={{ color }}>{msg.authorName}</span>
+              <span className="text-sm font-black" style={{color}}>{msg.authorName}</span>
               {!msg.isSystem && (
                 <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-wider"
-                  style={{ background:`${color}20`, color }}>
+                  style={{background:`${color}20`,color}}>
                   {RANKS.find(r=>r.name===msg.authorRank)?.icon} {msg.authorRank}
                 </span>
               )}
               <span className="text-[10px] text-gray-700">{fmtTime(msg.createdAt)}</span>
             </div>
           )}
-          <div className="text-sm text-gray-300 font-medium leading-relaxed whitespace-pre-wrap break-words">{msg.content}</div>
+          <div className={`text-sm leading-relaxed whitespace-pre-wrap break-words font-medium ${msg.isSending?'text-gray-500':'text-gray-300'}`}>
+            {msg.content}
+          </div>
+          {/* State indicators */}
+          {msg.isSending && !msg.failed && (
+            <span className="text-[9px] text-gray-600 font-bold mt-0.5 block">Enviando...</span>
+          )}
+          {msg.failed && (
+            <div className="flex items-center gap-2 mt-1">
+              <AlertCircle className="w-3.5 h-3.5 text-red-500 shrink-0"/>
+              <span className="text-[10px] text-red-400 font-bold">Falha ao enviar.</span>
+              <button onClick={() => retryMessage(msg)} className="text-[10px] font-black text-brand-purple hover:underline">Tentar novamente</button>
+            </div>
+          )}
+          {/* Reactions */}
           {Object.keys(msg.reactions).length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1.5">
-              {Object.entries(msg.reactions).map(([emoji, count]) => (
+              {Object.entries(msg.reactions).map(([emoji,count]) => (
                 <button key={emoji} onClick={() => addReaction(msg.id, emoji)}
                   className="flex items-center gap-1 px-2 py-0.5 rounded-lg text-xs font-bold transition-all hover:scale-110"
-                  style={{ background:'rgba(124,58,237,.15)', border:'1px solid rgba(124,58,237,.3)', color:'#a78bfa' }}>
+                  style={{background:'rgba(124,58,237,.15)',border:'1px solid rgba(124,58,237,.3)',color:'#a78bfa'}}>
                   <span>{emoji}</span><span>{count}</span>
                 </button>
               ))}
-              <button onClick={() => setShowEmoji(!showEmoji)}
+              <button onClick={() => setShowEmoji(p=>!p)}
                 className="flex items-center px-2 py-0.5 rounded-lg text-xs opacity-0 group-hover:opacity-100 transition-all hover:scale-110"
-                style={{ background:'rgba(255,255,255,.05)', color:'#6b7280' }}>
+                style={{background:'rgba(255,255,255,.05)',color:'#6b7280'}}>
                 <Plus className="w-3 h-3"/>
               </button>
             </div>
@@ -593,7 +643,7 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: UmbraZToo
   /* ─── Render ─────────────────────────────────────────────────────────── */
   return (
     <div className="flex h-full rounded-[32px] overflow-hidden border border-white/5 shadow-2xl relative"
-      style={{ minHeight: '80vh', background:'#0d0d14' }}>
+      style={{minHeight:'80vh',background:'#0d0d14'}}>
 
       {/* Mobile backdrop */}
       {sidebarOpen && (
@@ -601,53 +651,52 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: UmbraZToo
           onClick={() => setSidebarOpen(false)}/>
       )}
 
-      {/* Sidebar – desktop always visible, mobile drawer */}
-      <div className={`
-        fixed inset-y-0 left-0 z-40 md:relative md:z-auto
-        transition-transform duration-300
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-      `} style={{ width: 240 }}>
+      {/* Sidebar */}
+      <div className={`fixed inset-y-0 left-0 z-40 md:relative md:z-auto transition-transform duration-300 ${sidebarOpen?'translate-x-0':'-translate-x-full md:translate-x-0'}`}
+        style={{width:240}}>
         {RoomSidebar}
       </div>
 
-      {/* Main area */}
+      {/* Main */}
       <div className="flex-1 flex flex-col h-full min-w-0 overflow-hidden">
+
         {/* Channel header */}
         <div className="h-14 border-b flex items-center justify-between px-4 shrink-0"
-          style={{ borderColor:'rgba(255,255,255,.05)', background:'rgba(0,0,0,.25)', backdropFilter:'blur(20px)' }}>
+          style={{borderColor:'rgba(255,255,255,.05)',background:'rgba(0,0,0,.25)',backdropFilter:'blur(20px)'}}>
           <div className="flex items-center gap-2">
-            {/* Hamburger mobile */}
             <button className="md:hidden p-2 rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition-all mr-1"
-              onClick={() => setSidebarOpen(true)}>
-              <Menu className="w-5 h-5"/>
-            </button>
+              onClick={() => setSidebarOpen(true)}><Menu className="w-5 h-5"/></button>
             <span className="text-lg">{activeRoom.emoji}</span>
-            {activeRoom.type==='voice' ? <Volume2 className="w-4 h-4 text-gray-400"/> : <Hash className="w-4 h-4 text-gray-400"/>}
+            {activeRoom.type==='voice'
+              ? <Volume2 className="w-4 h-4 text-gray-400"/>
+              : <Hash    className="w-4 h-4 text-gray-400"/>}
             <span className="font-black text-white text-sm">{activeRoom.name}</span>
-            {activeRoom.plan !== ToolTier.FREE && (
+            {activeRoom.plan!==ToolTier.FREE && (
               <span className="hidden sm:inline text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider"
-                style={{ background: activeRoom.plan===ToolTier.TURBO?'rgba(236,72,153,.15)':'rgba(124,58,237,.15)', color: activeRoom.plan===ToolTier.TURBO?'#ec4899':'#a855f7', border:`1px solid ${activeRoom.plan===ToolTier.TURBO?'rgba(236,72,153,.3)':'rgba(124,58,237,.3)'}` }}>
+                style={{background:activeRoom.plan===ToolTier.TURBO?'rgba(236,72,153,.15)':'rgba(124,58,237,.15)',
+                  color:activeRoom.plan===ToolTier.TURBO?'#ec4899':'#a855f7',
+                  border:`1px solid ${activeRoom.plan===ToolTier.TURBO?'rgba(236,72,153,.3)':'rgba(124,58,237,.3)'}`}}>
                 {activeRoom.plan}
               </span>
             )}
           </div>
-          <button onClick={() => setShowMembers(!showMembers)}
+          <button onClick={() => setShowMembers(p=>!p)}
             className={`hidden lg:flex p-2 rounded-xl transition-all ${showMembers?'text-white bg-white/10':'text-gray-500 hover:text-white hover:bg-white/5'}`}>
             <Users className="w-4 h-4"/>
           </button>
         </div>
 
-        {/* Voice placeholder or chat */}
-        {activeRoom.type === 'voice' ? (
+        {/* Voice placeholder */}
+        {activeRoom.type==='voice' ? (
           <div className="flex-1 flex items-center justify-center p-8">
             <div className="text-center max-w-sm">
-              <div className="w-24 h-24 rounded-[32px] flex items-center justify-center text-4xl mx-auto mb-6 shadow-2xl"
-                style={{ background:'linear-gradient(135deg,rgba(124,58,237,.2),rgba(236,72,153,.1))', border:'1px solid rgba(124,58,237,.3)' }}>🎙️</div>
-              <h3 className="text-2xl font-black text-white mb-2 tracking-tight">Sala de Voz</h3>
-              <p className="text-gray-500 text-sm font-medium mb-4">Chat de voz ao vivo com outros membros do plano <span className="font-black text-white">{activeRoom.plan}</span>.</p>
-              {activeRoom.online && <p className="text-green-500 text-xs font-black mb-6">● {activeRoom.online} membro{activeRoom.online>1?'s':''} online</p>}
-              <button className="px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest text-white shadow-xl transition-all hover:scale-105"
-                style={{ background:'linear-gradient(135deg,#7c3aed,#ec4899)', boxShadow:'0 8px 32px rgba(124,58,237,.4)' }}>
+              <div className="w-24 h-24 rounded-[32px] flex items-center justify-center text-4xl mx-auto mb-6"
+                style={{background:'linear-gradient(135deg,rgba(124,58,237,.2),rgba(236,72,153,.1))',border:'1px solid rgba(124,58,237,.3)'}}>🎙️</div>
+              <h3 className="text-2xl font-black text-white mb-2">Sala de Voz</h3>
+              <p className="text-gray-500 text-sm font-medium mb-4">Chat de voz ao vivo — plano <strong className="text-white">{activeRoom.plan}</strong>.</p>
+              {activeRoom.online!=null && <p className="text-green-500 text-xs font-black mb-6">● {activeRoom.online} membro{activeRoom.online>1?'s':''} online</p>}
+              <button className="px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest text-white transition-all hover:scale-105"
+                style={{background:'linear-gradient(135deg,#7c3aed,#ec4899)',boxShadow:'0 8px 32px rgba(124,58,237,.4)'}}>
                 Entrar na Sala
               </button>
             </div>
@@ -655,15 +704,15 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: UmbraZToo
         ) : (
           <>
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-2" style={{ background:'#0d0d14' }}>
-              {isLoadingMsgs ? (
+            <div className="flex-1 overflow-y-auto p-2" style={{background:'#0d0d14'}}>
+              {isLoading ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
-                    <div className="w-10 h-10 border-2 border-brand-purple/30 border-t-brand-purple rounded-full animate-spin mx-auto mb-3"/>
+                    <div className="w-10 h-10 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mx-auto mb-3"/>
                     <p className="text-gray-600 text-xs font-bold">Carregando mensagens...</p>
                   </div>
                 </div>
-              ) : messages.length === 0 ? (
+              ) : messages.length===0 ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
                     <div className="text-5xl mb-4">{activeRoom.emoji}</div>
@@ -672,25 +721,25 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: UmbraZToo
                   </div>
                 </div>
               ) : (
-                <>{messages.map((m, i) => renderMessage(m, i))}</>
+                <>{messages.map((m,i) => renderMsg(m,i))}</>
               )}
-              <div ref={messagesEndRef}/>
+              <div ref={endRef}/>
             </div>
 
             {/* Input */}
-            <div className="p-4 shrink-0" style={{ background:'rgba(0,0,0,.3)', borderTop:'1px solid rgba(255,255,255,.05)' }}>
+            <div className="p-4 shrink-0" style={{background:'rgba(0,0,0,.3)',borderTop:'1px solid rgba(255,255,255,.05)'}}>
               {showEmoji && (
-                <div className="mb-3 p-3 rounded-2xl flex flex-wrap gap-2"
-                  style={{ background:'#111118', border:'1px solid rgba(255,255,255,.05)' }}>
+                <div className="mb-3 p-3 rounded-2xl flex flex-wrap gap-2 shadow-xl"
+                  style={{background:'#111118',border:'1px solid rgba(255,255,255,.07)'}}>
                   {EMOJIS.map(e => (
-                    <button key={e} onClick={() => { setInputValue(p => p+e); setShowEmoji(false); }}
+                    <button key={e} onClick={() => { setInputValue(p=>p+e); setShowEmoji(false); }}
                       className="text-xl hover:scale-125 transition-transform">{e}</button>
                   ))}
                 </div>
               )}
               <div className="flex items-center gap-3 px-4 py-3 rounded-2xl"
-                style={{ background:'rgba(255,255,255,.04)', border:'1px solid rgba(255,255,255,.07)' }}>
-                <button onClick={() => setShowEmoji(!showEmoji)} className="text-gray-500 hover:text-yellow-400 transition-colors shrink-0">
+                style={{background:'rgba(255,255,255,.04)',border:'1px solid rgba(255,255,255,.07)'}}>
+                <button onClick={() => setShowEmoji(p=>!p)} className="text-gray-500 hover:text-yellow-400 transition-colors shrink-0">
                   <Smile className="w-5 h-5"/>
                 </button>
                 <input
@@ -700,42 +749,39 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: UmbraZToo
                   placeholder={`Mensagem em #${activeRoom.name}`}
                   className="flex-1 bg-transparent text-sm text-white outline-none placeholder-gray-600 font-medium"
                 />
-                <div className="flex items-center gap-2 shrink-0">
-                  <button className="text-gray-500 hover:text-white transition-colors hidden sm:block">
-                    <Paperclip className="w-4 h-4"/>
-                  </button>
-                  <button onClick={sendMessage} disabled={!inputValue.trim() || isSending}
-                    className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed"
-                    style={{ background: inputValue.trim() && !isSending ? 'linear-gradient(135deg,#7c3aed,#ec4899)' : 'rgba(255,255,255,.05)' }}>
-                    <Send className="w-4 h-4 text-white"/>
-                  </button>
-                </div>
+                <button className="text-gray-500 hover:text-white transition-colors hidden sm:block shrink-0">
+                  <Paperclip className="w-4 h-4"/>
+                </button>
+                <button onClick={sendMessage} disabled={!inputValue.trim()||isSending}
+                  className="w-8 h-8 rounded-xl flex items-center justify-center transition-all hover:scale-110 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+                  style={{background: inputValue.trim()&&!isSending?'linear-gradient(135deg,#7c3aed,#ec4899)':'rgba(255,255,255,.05)'}}>
+                  <Send className="w-4 h-4 text-white"/>
+                </button>
               </div>
               <div className="flex items-center justify-between mt-1.5 px-1">
-                <span className="text-[9px] text-gray-700 font-black">+5 XP por mensagem enviada</span>
-                <span className="text-[9px] font-black" style={{ color:userRank.color }}>{userRank.icon} {userRank.name} · {userXP} XP</span>
+                <span className="text-[9px] text-gray-700 font-black">+5 XP por mensagem · Enter para enviar</span>
+                <span className="text-[9px] font-black" style={{color:userRank.color}}>{userRank.icon} {userRank.name} · {userXP} XP</span>
               </div>
             </div>
           </>
         )}
       </div>
 
-      {/* Right panel */}
       {RightPanel}
 
       {/* Achievement toast */}
       {toastAch && (
         <div className="fixed bottom-6 right-6 z-50 animate-in slide-in-from-bottom-4 duration-500">
           <div className="flex items-center gap-3 p-4 rounded-2xl shadow-2xl"
-            style={{ background:'linear-gradient(135deg,#7c3aed,#ec4899)', border:'1px solid rgba(255,255,255,.15)' }}>
+            style={{background:'linear-gradient(135deg,#7c3aed,#ec4899)',border:'1px solid rgba(255,255,255,.15)'}}>
             <span className="text-3xl">{toastAch.icon}</span>
             <div>
               <div className="text-[9px] font-black text-white/70 uppercase tracking-widest">Conquista Desbloqueada!</div>
               <div className="text-base font-black text-white">{toastAch.name}</div>
               <div className="text-xs text-white/70 font-medium">{toastAch.description}</div>
-              {toastAch.xp > 0 && <div className="text-xs font-black text-white mt-0.5">+{toastAch.xp} XP bônus</div>}
+              {toastAch.xp>0 && <div className="text-xs font-black text-yellow-300 mt-0.5">+{toastAch.xp} XP bônus</div>}
             </div>
-            <button onClick={() => setToastAch(null)} className="text-white/60 hover:text-white ml-1">
+            <button onClick={() => setToastAch(null)} className="text-white/60 hover:text-white ml-1 transition-colors">
               <X className="w-4 h-4"/>
             </button>
           </div>
