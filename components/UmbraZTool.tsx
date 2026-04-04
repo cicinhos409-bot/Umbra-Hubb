@@ -45,6 +45,7 @@ interface MsgBubbleProps {
   onReaction: (id: string, emoji: string) => void;
   onRetry: (msg: Message) => void;
   onOpenEmoji: () => void;
+  onLightbox: (url: string) => void;
 }
 
 /* ─── Static data ───────────────────────────────────────────────────────── */
@@ -164,7 +165,7 @@ function fileToDataUrl(file: File): Promise<string> {
 }
 
 /* ─── MessageBubble — extracted as React.memo to avoid full-list re-renders */
-const MessageBubble = memo(({ msg, prevMsg, onReaction, onRetry, onOpenEmoji }: MsgBubbleProps) => {
+const MessageBubble = memo(({ msg, prevMsg, onReaction, onRetry, onOpenEmoji, onLightbox }: MsgBubbleProps) => {
   const grouped = prevMsg?.authorId===msg.authorId && !msg.isSystem
     && (msg.createdAt.getTime() - (prevMsg?.createdAt?.getTime()??0)) < 300000;
   const color = msg.isSystem ? '#06b6d4' : rankColor(msg.authorRank);
@@ -207,10 +208,12 @@ const MessageBubble = memo(({ msg, prevMsg, onReaction, onRetry, onOpenEmoji }: 
 
         {/* Media rendering */}
         {msg.mediaType==='image' && msg.mediaUrl && (
-          <div className="mt-2 max-w-xs">
+          <div className="mt-2">
             <img src={msg.mediaUrl} alt="imagem" loading="lazy"
-              className={`rounded-2xl max-h-64 object-cover border border-white/10 cursor-pointer transition-all hover:opacity-90 ${msg.isSending?'opacity-50':''}`}
-              onClick={() => window.open(msg.mediaUrl,'_blank')}
+              className={`rounded-2xl max-h-64 max-w-xs object-cover border border-white/10
+                cursor-zoom-in transition-all hover:opacity-90 hover:scale-[1.02]
+                ${msg.isSending?'opacity-50':''}`}
+              onClick={() => !msg.isSending && onLightbox(msg.mediaUrl!)}
             />
           </div>
         )}
@@ -280,6 +283,7 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
   const [toastAch,     setToastAch]     = useState<AchievementDef|null>(null);
   const [imagePreview, setImagePreview] = useState<{url:string; type:'image'|'video'; file:File}|null>(null);
   const [mediaError,   setMediaError]   = useState<string|null>(null);
+  const [lightboxUrl,  setLightboxUrl]  = useState<string|null>(null);  // ← lightbox
   // Voice room
   const [voiceJoined,  setVoiceJoined]  = useState(false);
   const [voiceMuted,   setVoiceMuted]   = useState(false);
@@ -298,6 +302,14 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
   const scrollRef     = useRef<HTMLDivElement>(null);
   const channelRef    = useRef<ReturnType<typeof supabase.channel>|null>(null);
   const fileInputRef  = useRef<HTMLInputElement>(null);
+
+  // Close lightbox on Escape
+  useEffect(() => {
+    if (!lightboxUrl) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setLightboxUrl(null); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [lightboxUrl]);
 
   // Simulated speaking cycle for voice room
   useEffect(() => {
@@ -406,9 +418,9 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
       .on('postgres_changes',{event:'INSERT',schema:'public',table:'umbra_z_messages',filter:`room_id=eq.${roomId}`},
         payload => {
           if (!payload.new) return;
-          const incoming = mapRow(payload.new as Record<string,unknown>);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const incoming = mapRow(payload.new as any);
           setMessages(prev => {
-            // Swap optimistic temp → confirmed
             const tempIdx = prev.findIndex(m =>
               m.isSending && m.authorId===incoming.authorId && m.content===incoming.content);
             if (tempIdx !== -1) {
@@ -421,7 +433,8 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
       .on('postgres_changes',{event:'UPDATE',schema:'public',table:'umbra_z_messages',filter:`room_id=eq.${roomId}`},
         payload => {
           if (!payload.new) return;
-          const updated = mapRow(payload.new as Record<string,unknown>);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const updated = mapRow(payload.new as any);
           setMessages(prev => prev.map(m => m.id===updated.id ? updated : m));
         })
       .subscribe();
@@ -513,6 +526,7 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
   }, []);
 
   const openEmoji = useCallback(() => setShowEmoji(p=>!p), []);
+  const openLightbox = useCallback((url: string) => setLightboxUrl(url), []);
 
   /* ── Filtered + grouped rooms ── */
   const filteredRooms = useMemo(() =>
@@ -914,6 +928,7 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
                     onReaction={addReaction}
                     onRetry={retryMessage}
                     onOpenEmoji={openEmoji}
+                    onLightbox={openLightbox}
                   />
                 ))
               )}
@@ -1025,6 +1040,49 @@ export default function UmbraZTool({ userTier, userName = 'Criador' }: Props) {
             <button onClick={() => setToastAch(null)} className="text-white/60 hover:text-white ml-1 transition-colors">
               <X className="w-4 h-4"/>
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Lightbox modal ── */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center"
+          style={{background:'rgba(0,0,0,.92)',backdropFilter:'blur(20px)'}}
+          onClick={() => setLightboxUrl(null)}
+        >
+          {/* Click inside image doesn't close */}
+          <div className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center"
+            onClick={e => e.stopPropagation()}>
+
+            <img src={lightboxUrl} alt="visualização"
+              className="max-w-full max-h-[85vh] rounded-3xl shadow-2xl object-contain"
+              style={{border:'1px solid rgba(255,255,255,.1)'}}
+            />
+
+            {/* Close button */}
+            <button
+              onClick={() => setLightboxUrl(null)}
+              className="absolute -top-4 -right-4 w-10 h-10 rounded-full flex items-center justify-center
+                text-white transition-all hover:scale-110 shadow-xl"
+              style={{background:'rgba(0,0,0,.8)',border:'1px solid rgba(255,255,255,.15)'}}>
+              <X className="w-5 h-5"/>
+            </button>
+
+            {/* Download button */}
+            <a
+              href={lightboxUrl} download="umbra-z-image"
+              onClick={e => e.stopPropagation()}
+              className="absolute -bottom-4 left-1/2 -translate-x-1/2 px-5 py-2 rounded-full
+                text-xs font-black text-white transition-all hover:scale-105 shadow-xl"
+              style={{background:'linear-gradient(135deg,#7c3aed,#ec4899)',border:'1px solid rgba(255,255,255,.15)'}}>
+              ⬇ Baixar imagem
+            </a>
+          </div>
+
+          {/* Hint */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-xs text-gray-600 font-bold">
+            Pressione Esc ou clique fora para fechar
           </div>
         </div>
       )}
