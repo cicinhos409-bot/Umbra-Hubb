@@ -1,6 +1,6 @@
-import urllib.request, json
+import urllib.request, json, os
 
-TOKEN = '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'
+TOKEN = os.environ['GH_TOKEN']
 
 req = urllib.request.Request(
     'https://api.github.com/repos/cicinhos409-bot/Umbra-Hubb/deployments?per_page=10',

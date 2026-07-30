@@ -1,0 +1,21 @@
+{
+  "panel": {
+    "defaultWidth": 420,
+    "defaultHeight": 650,
+    "minWidth": 320,
+    "minHeight": 200,
+    "headerHeight": 46,
+    "minimizedHeight": 46,
+    "defaultPosition": { "top": 20, "right": 20 }
+  },
+  "api": {
+    "provider": "pindown.io",
+    "endpoint": "https://pindown.io/pt1",
+    "method": "POST",
+    "lang": "pt"
+  },
+  "download": {
+    "folder": "Pinterest",
+    "filenamePattern": "pinterest_{quality}_{timestamp}.mp4"
+  }
+}

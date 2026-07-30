@@ -1,0 +1,224 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import BaseLayout from './BaseLayout.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import ShareButtons from '../components/ShareButtons.astro';
+import RelatedPosts from '../components/RelatedPosts.astro';
+import TableOfContents from '../components/TableOfContents.astro';
+
+interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+
+interface Props {
+  title: string;
+  description: string;
+  pubDate: Date;
+  updatedDate?: Date;
+  image?: string;
+  author?: string;
+  readTime?: string;
+  tags?: string[];
+  slug?: string;
+  canonical?: string;
+  headings?: Heading[];
+  allPosts?: CollectionEntry<'blog'>[];
+}
+
+const {
+  title,
+  description,
+  pubDate,
+  updatedDate,
+  image,
+  author = 'Time UmbraHub',
+  readTime,
+  tags = [],
+  slug = '',
+  canonical,
+  headings = [],
+  allPosts = [],
+} = Astro.props;
+
+const formattedDate = pubDate.toLocaleDateString('pt-BR', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+
+const formattedUpdatedDate = updatedDate?.toLocaleDateString('pt-BR', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+
+const shareUrl = Astro.site
+  ? new URL(`/blog/${slug}/`, Astro.site).href
+  : `https://umbrahubb-blog.vercel.app/blog/${slug}/`;
+---
+
+<BaseLayout title={`${title} | Blog UmbraHub`} description={description} image={image} canonical={canonical} updatedDate={updatedDate}>
+  <!-- Reading progress bar -->
+  <div id="reading-progress" class="fixed top-0 left-0 right-0 h-0.5 bg-primary z-[200] origin-left" style="transform: scaleX(0);" aria-hidden="true"></div>
+
+  <Header />
+
+  <main class="max-w-3xl mx-auto px-4 py-12">
+
+    <!-- Breadcrumb -->
+    <nav class="text-sm text-gray-500 dark:text-gray-400 mb-8" aria-label="Breadcrumb">
+      <a href="/blog" class="hover:text-primary transition-colors">Blog</a>
+      <span class="mx-2">›</span>
+      <span class="text-gray-700 dark:text-gray-300 line-clamp-1">{title}</span>
+    </nav>
+
+    <!-- Header do post -->
+    <header class="mb-10">
+      {tags.length > 0 && (
+        <div class="flex flex-wrap gap-2 mb-4">
+          {tags.map(tag => (
+            <a
+              href={`/blog/tag/${tag}`}
+              class="text-xs font-semibold uppercase tracking-wide text-primary bg-primary-pale dark:bg-primary/20 dark:text-primary-light px-3 py-1 rounded-full hover:bg-primary hover:text-white dark:hover:bg-primary transition-colors"
+            >
+              {tag}
+            </a>
+          ))}
+        </div>
+      )}
+
+      <h1 class="text-4xl font-black text-gray-900 dark:text-white leading-tight mb-4">{title}</h1>
+      <p class="text-xl text-gray-500 dark:text-gray-400 mb-6">{description}</p>
+
+      <div class="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400 border-t border-b border-gray-100 dark:border-gray-800 py-4">
+        <span class="font-semibold text-gray-700 dark:text-gray-200">{author}</span>
+        <span>·</span>
+        <time datetime={pubDate.toISOString()}>{formattedDate}</time>
+        {readTime && (
+          <>
+            <span>·</span>
+            <span>{readTime} de leitura</span>
+          </>
+        )}
+        {formattedUpdatedDate && (
+          <>
+            <span>·</span>
+            <span class="text-gray-400 dark:text-gray-500 italic">Atualizado em {formattedUpdatedDate}</span>
+          </>
+        )}
+      </div>
+    </header>
+
+    {image && (
+      <img
+        src={image}
+        alt={title}
+        width="1200"
+        height="630"
+        loading="eager"
+        decoding="async"
+        class="w-full rounded-2xl object-cover mb-10 aspect-video"
+      />
+    )}
+
+    <!-- Tabela de conteúdo -->
+    <TableOfContents headings={headings} />
+
+    <!-- Conteúdo MDX -->
+    <article
+      data-pagefind-body
+      class="
+        prose prose-lg max-w-none dark:prose-invert
+
+        prose-p:text-gray-600 dark:prose-p:text-gray-300 prose-p:leading-[1.85] prose-p:my-5
+        prose-p:text-[1.05rem]
+
+        prose-headings:font-black prose-headings:text-gray-900 dark:prose-headings:text-white prose-headings:tracking-tight
+        prose-h2:text-2xl prose-h2:mt-12 prose-h2:mb-4 prose-h2:pb-2 prose-h2:border-b prose-h2:border-gray-100 dark:prose-h2:border-gray-800
+        prose-h3:text-xl prose-h3:mt-8 prose-h3:mb-3
+        prose-h4:text-lg prose-h4:mt-6 prose-h4:mb-2
+
+        prose-a:text-primary prose-a:font-semibold prose-a:no-underline hover:prose-a:underline
+
+        prose-strong:text-gray-800 dark:prose-strong:text-gray-200 prose-strong:font-bold
+
+        prose-ul:my-5 prose-ul:space-y-1
+        prose-ol:my-5 prose-ol:space-y-1
+        prose-li:text-gray-600 dark:prose-li:text-gray-300 prose-li:leading-relaxed prose-li:my-1
+
+        prose-code:text-primary prose-code:bg-primary-pale dark:prose-code:bg-primary/20 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-semibold prose-code:before:content-none prose-code:after:content-none
+
+        prose-pre:bg-gray-900 dark:prose-pre:bg-gray-950 prose-pre:text-gray-100 prose-pre:rounded-xl prose-pre:my-6
+
+        prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-primary-pale dark:prose-blockquote:bg-primary/10 prose-blockquote:rounded-r-xl prose-blockquote:px-6 prose-blockquote:py-4 prose-blockquote:my-6 prose-blockquote:not-italic prose-blockquote:text-gray-700 dark:prose-blockquote:text-gray-300
+
+        prose-table:text-sm prose-table:my-6
+        prose-thead:bg-gray-50 dark:prose-thead:bg-gray-800
+        prose-th:font-bold prose-th:text-gray-700 dark:prose-th:text-gray-300 prose-th:px-4 prose-th:py-3
+        prose-td:px-4 prose-td:py-3 prose-td:border-b prose-td:border-gray-100 dark:prose-td:border-gray-800
+
+        prose-hr:my-10 prose-hr:border-gray-100 dark:prose-hr:border-gray-800
+
+        prose-img:rounded-xl prose-img:my-6
+      "
+    >
+      <slot />
+    </article>
+
+    <!-- Compartilhar -->
+    <ShareButtons title={title} url={shareUrl} />
+
+    <!-- CTA fim do post -->
+    <div class="mt-10 bg-gradient-to-br from-primary-pale to-white dark:from-primary/10 dark:to-gray-900 border border-purple-100 dark:border-primary/20 rounded-2xl p-8 text-center">
+      <h3 class="text-2xl font-black text-gray-900 dark:text-white mb-2">Continue aprendendo</h3>
+      <p class="text-gray-500 dark:text-gray-400 mb-6">Explore mais guias e estratégias para crescer como criador faceless.</p>
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <a
+          href="/blog"
+          class="inline-block bg-primary text-white font-bold px-8 py-3 rounded-xl hover:bg-primary-dark transition-colors"
+        >
+          Ver todos os artigos →
+        </a>
+        <a
+          href="https://umbrahubb.vercel.app"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-block bg-white dark:bg-gray-800 text-primary dark:text-primary-light font-bold px-8 py-3 rounded-xl border border-primary dark:border-primary/50 hover:bg-primary-pale dark:hover:bg-gray-700 transition-colors"
+        >
+          Acessar Dashboard
+        </a>
+      </div>
+    </div>
+
+    <!-- Posts relacionados -->
+    {allPosts.length > 0 && (
+      <RelatedPosts
+        currentSlug={slug}
+        currentTags={tags}
+        allPosts={allPosts}
+      />
+    )}
+
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<script>
+  const bar     = document.getElementById('reading-progress');
+  const article = document.querySelector('[data-pagefind-body]');
+
+  function updateProgress() {
+    if (!bar || !article) return;
+    const { top, height } = article.getBoundingClientRect();
+    const scrollable = height - window.innerHeight;
+    const progress   = scrollable > 0 ? Math.min(Math.max(-top / scrollable, 0), 1) : 0;
+    (bar as HTMLElement).style.transform = `scaleX(${progress})`;
+  }
+
+  window.addEventListener('scroll', updateProgress, { passive: true });
+  updateProgress();
+</script>

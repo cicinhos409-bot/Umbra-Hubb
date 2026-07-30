@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0a1628"/>
+      <stop offset="50%" style="stop-color:#0d2a52"/>
+      <stop offset="100%" style="stop-color:#1e3a5f"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#8b5cf6"/>
+      <stop offset="100%" style="stop-color:#06b6d4"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="15" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Glow blobs -->
+  <circle cx="200" cy="150" r="180" fill="#8b5cf6" opacity="0.10"/>
+  <circle cx="950" cy="480" r="200" fill="#06b6d4" opacity="0.08"/>
+  <circle cx="700" cy="100" r="100" fill="#7c3aed" opacity="0.12"/>
+
+  <!-- Accent bar top -->
+  <rect x="0" y="0" width="1200" height="5" fill="url(#accent)"/>
+
+  <!-- Card -->
+  <rect x="80" y="70" width="1040" height="490" rx="24" fill="#ffffff" fill-opacity="0.04" stroke="#ffffff" stroke-opacity="0.07" stroke-width="1"/>
+
+  <!-- Category badge -->
+  <rect x="120" y="110" width="220" height="38" rx="19" fill="url(#accent)" opacity="0.9"/>
+  <text x="230" y="134" font-family="system-ui, -apple-system, sans-serif" font-size="15" font-weight="700" fill="white" text-anchor="middle" letter-spacing="1">MONETIZAÇÃO</text>
+
+  <!-- Chart bars decoration -->
+  <rect x="120" y="420" width="36" height="80" rx="6" fill="#8b5cf6" opacity="0.4"/>
+  <rect x="166" y="380" width="36" height="120" rx="6" fill="#8b5cf6" opacity="0.5"/>
+  <rect x="212" y="340" width="36" height="160" rx="6" fill="#8b5cf6" opacity="0.6"/>
+  <rect x="258" y="290" width="36" height="210" rx="6" fill="#8b5cf6" opacity="0.8"/>
+  <rect x="304" y="250" width="36" height="250" rx="6" fill="#a78bfa"/>
+
+  <!-- Main emoji -->
+  <text x="240" y="310" font-size="100" text-anchor="middle" filter="url(#glow)">💰</text>
+
+  <!-- Title -->
+  <text x="430" y="220" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="900" fill="white" letter-spacing="-1">Guia Completo de</text>
+  <text x="430" y="284" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="900" fill="#a78bfa" letter-spacing="-1">Monetização</text>
+  <text x="430" y="348" font-family="system-ui, -apple-system, sans-serif" font-size="52" font-weight="900" fill="white" letter-spacing="-1">no YouTube 2026</text>
+
+  <!-- Stats row -->
+  <text x="430" y="415" font-family="system-ui, sans-serif" font-size="20" fill="#64748b">Todas as fontes de receita •</text>
+  <text x="730" y="415" font-family="system-ui, sans-serif" font-size="20" fill="#a78bfa" font-weight="700"> RPM por nicho • Estratégia de escala</text>
+
+  <!-- Highlight boxes -->
+  <rect x="430" y="440" width="140" height="60" rx="12" fill="#ffffff" fill-opacity="0.06" stroke="#8b5cf6" stroke-width="1"/>
+  <text x="500" y="464" font-family="system-ui, sans-serif" font-size="12" fill="#94a3b8" text-anchor="middle">RPM médio</text>
+  <text x="500" y="487" font-family="system-ui, sans-serif" font-size="22" font-weight="900" fill="#a78bfa" text-anchor="middle">R$25+</text>
+
+  <rect x="585" y="440" width="140" height="60" rx="12" fill="#ffffff" fill-opacity="0.06" stroke="#06b6d4" stroke-width="1"/>
+  <text x="655" y="464" font-family="system-ui, sans-serif" font-size="12" fill="#94a3b8" text-anchor="middle">Fontes de renda</text>
+  <text x="655" y="487" font-family="system-ui, sans-serif" font-size="22" font-weight="900" fill="#67e8f9" text-anchor="middle">5+</text>
+
+  <rect x="740" y="440" width="160" height="60" rx="12" fill="#ffffff" fill-opacity="0.06" stroke="#8b5cf6" stroke-width="1"/>
+  <text x="820" y="464" font-family="system-ui, sans-serif" font-size="12" fill="#94a3b8" text-anchor="middle">Leitura</text>
+  <text x="820" y="487" font-family="system-ui, sans-serif" font-size="22" font-weight="900" fill="#a78bfa" text-anchor="middle">10 min</text>
+
+  <!-- Branding -->
+  <rect x="960" y="490" width="140" height="50" rx="12" fill="#8b5cf6" opacity="0.9"/>
+  <text x="1030" y="520" font-family="system-ui, sans-serif" font-size="20" font-weight="900" fill="white" text-anchor="middle">UmbraHub</text>
+</svg>

@@ -1,30 +1,19 @@
 {
-    "buildCommand": "npm run build",
-    "outputDirectory": "dist",
-    "framework": "vite",
-    "installCommand": "npm install",
-    "rewrites": [
-        {
-            "source": "/api/sora_down",
-            "destination": "/api/sora_down.js"
-        },
-        {
-            "source": "/api/evolink",
-            "destination": "/api/evolink.js"
-        },
-        {
-            "source": "/api/tiktok_video",
-            "destination": "/api/tiktok_video.js"
-        },
-        {
-            "source": "/api/tiktok_analytics",
-            "destination": "/api/tiktok_analytics.js"
-        },
-        { "source": "/api/songs", "destination": "/api/songs.js" },
-        { "source": "/api/cron-songs", "destination": "/api/cron-songs.js" },
-        {
-            "source": "/api/(.*)",
-            "destination": "/api/index.py"
-        }
-    ]
+  "buildCommand": "node scripts/build.mjs",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "redirects": [
+    { "source": "/app", "destination": "/", "permanent": true },
+    { "source": "/app/(.*)", "destination": "/", "permanent": true }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }

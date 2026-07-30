@@ -1,0 +1,287 @@
+/* ═══════════════════════════════════════════════════════════════
+   UMBRA - content.css
+   Oculta e censura elementos do YouTube e YouTube Studio
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── YOUTUBE: FEED ─────────────────────────────────────────── */
+html[hide_feed=true] ytd-browse[page-subtype=home] .ytd-rich-grid-renderer,
+html[hide_feed=true] ytd-browse[role=main]:not([page-subtype]):has(ytd-feed-filter-chip-bar-renderer) .ytd-rich-grid-renderer,
+html[hide_feed=true] div[tab-identifier=FEwhat_to_watch],
+html[hide_feed=true] ytd-browse[page-subtype=home] ytd-rich-grid-renderer,
+html[hide_feed=true] ytd-browse[page-subtype=home] #contents.ytd-rich-grid-renderer {
+  display: none !important;
+}
+
+/* ─── YOUTUBE: BARRA LATERAL ────────────────────────────────── */
+html[hide_sidebar=true] #secondary.ytd-watch-flexy {
+  display: none !important;
+}
+html[hide_sidebar=true] ytd-watch-flexy[flexy][is-two-columns_]:not([fullscreen]):not([theater]) {
+  --ytd-watch-flexy-max-player-width: calc(
+    var(--ytd-watch-flexy-chat-max-height) *
+    var(--ytd-watch-flexy-width-ratio) /
+    var(--ytd-watch-flexy-height-ratio)
+  ) !important;
+}
+
+html[hide_recommended=true] #items.ytd-watch-next-secondary-results-renderer,
+html[hide_recommended=true] .ytd-watch-grid > #contents,
+html[hide_recommended=true] .ytp-pause-overlay,
+html[hide_recommended=true] ytm-item-section-renderer[section-identifier=related-items] {
+  display: none !important;
+}
+
+html[hide_chat=true] ytd-live-chat-frame#chat { display: none !important; }
+html[hide_playlists=true] #playlist { display: none !important; }
+html[hide_donate=true] #donation-shelf,
+html[hide_donate=true] ytm-donation-shelf-renderer-outer { display: none !important; }
+
+/* ─── YOUTUBE: TELA FINAL ───────────────────────────────────── */
+html[hide_endscreen=true] .html5-endscreen:not(.mweb-endscreen),
+html[hide_endscreen=true] .ytp-mweb-endscreen-play-next,
+html[hide_endscreen=true] .ytp-mweb-endscreen-play-previous { display: none !important; }
+html[hide_cards=true] .ytp-ce-element { display: none !important; }
+
+/* ─── YOUTUBE: SHORTS ───────────────────────────────────────── */
+html[hide_shorts=true] #player-shorts-container,
+html[hide_shorts=true] .ytd-shorts,
+html[hide_shorts=true] yt-chip-cloud-chip-renderer:has(yt-formatted-string[title=Shorts]),
+html[hide_shorts=true] yt-tab-shape[tab-title=Shorts],
+html[hide_shorts=true] ytd-compact-video-renderer:has(a[href*="/shorts/"]),
+html[hide_shorts=true] ytd-notification-renderer:has(> a[href^="/shorts/"]),
+html[hide_shorts=true] ytd-reel-shelf-renderer,
+html[hide_shorts=true] ytd-rich-grid-renderer[is-shorts-grid],
+html[hide_shorts=true] ytd-rich-item-renderer:has(a[href*="/shorts/"]),
+html[hide_shorts=true] ytd-rich-shelf-renderer[is-shorts],
+html[hide_shorts=true] ytd-video-renderer:has(a[href*="/shorts/"]),
+html[hide_shorts=true] ytm-reel-shelf-renderer,
+html[hide_shorts=true] ytm-pivot-bar-renderer > ytm-pivot-bar-item-renderer:has(.pivot-shorts) {
+  display: none !important;
+}
+html[hide_shorts=true] .yt-simple-endpoint[title=Shorts] { display: none !important; }
+
+/* ─── YOUTUBE: COMENTÁRIOS ──────────────────────────────────── */
+html[hide_comments=true] #comment-teaser,
+html[hide_comments=true] #comments,
+html[hide_comments=true] ytm-comment-section-renderer,
+html[hide_comments=true] ytm-comments-entry-point-header-renderer,
+html[hide_comments=true] ytm-engagement-panel { display: none !important; }
+
+/* ─── YOUTUBE: MIXES ────────────────────────────────────────── */
+html[hide_mix=true] .ytp-videowall-still[data-is-mix=true],
+html[hide_mix=true] a[href*="start_radio=1"],
+html[hide_mix=true] ytd-compact-radio-renderer,
+html[hide_mix=true] ytd-radio-renderer,
+html[hide_mix=true] ytd-rich-item-renderer:has(a[href*="start_radio=1"]),
+html[hide_mix=true] ytm-compact-radio-renderer,
+html[hide_mix=true] ytm-radio-renderer { display: none !important; }
+
+/* ─── YOUTUBE: MERCH ────────────────────────────────────────── */
+html[hide_merch=true] #clarify-box,
+html[hide_merch=true] #offer-module,
+html[hide_merch=true] #ticket-shelf,
+html[hide_merch=true] .ytp-drawer,
+html[hide_merch=true] yt-alert-with-actions-renderer,
+html[hide_merch=true] ytd-merch-shelf-renderer,
+html[hide_merch=true] ytm-compact-offer-module-renderer { display: none !important; }
+
+/* ─── YOUTUBE: INFO DO VÍDEO ────────────────────────────────── */
+html[hide_meta=true] #primary-inner > #info,
+html[hide_meta=true] ytd-watch-metadata,
+html[hide_meta=true] ytm-item-section-renderer[section-identifier=slim-video-metadata] {
+  display: none !important;
+}
+
+/* ─── YOUTUBE: CABEÇALHO ────────────────────────────────────── */
+html[hide_header=true] #guide-spacer,
+html[hide_header=true] #masthead-container,
+html[hide_header=true] .mobile-topbar-header { display: none !important; }
+html[hide_header=true] #header.ytd-c4-tabbed-header-renderer,
+html[hide_header=true] #page-manager.ytd-app { margin-top: 0 !important; }
+html[hide_header=true] ytd-mini-guide-renderer.ytd-app { top: 0 !important; }
+html[hide_header=true] #player-container-id,
+html[hide_header=true] ytm-item-section-renderer[section-identifier=related-items] { top: 0 !important; }
+html[hide_header=true] ytm-app.sticky-player { padding-top: 0 !important; }
+
+/* ─── YOUTUBE: NOTIFICAÇÕES ─────────────────────────────────── */
+html[hide_notifs=true] #buttons.ytd-masthead > ytd-notification-topbar-button-renderer,
+html[hide_notifs=true] ytd-notification-topbar-button-shape-renderer { display: none !important; }
+
+/* ─── YOUTUBE: BUSCA ────────────────────────────────────────── */
+html[hide_search=true] #primary > .ytd-two-column-search-results-renderer ytd-horizontal-card-list-renderer,
+html[hide_search=true] #primary > .ytd-two-column-search-results-renderer ytd-shelf-renderer {
+  display: none !important;
+}
+
+/* ─── YOUTUBE: TRENDING / EXPLORAR ──────────────────────────── */
+html[hide_trending=true] .yt-simple-endpoint[href^="/feed/explore"],
+html[hide_trending=true] .yt-simple-endpoint[href^="/feed/trending"],
+html[hide_trending=true]:not([yt-signed-out]) #sections > ytd-guide-section-renderer:nth-child(3),
+html[hide_trending=true][yt-signed-out] #sections > ytd-guide-section-renderer:nth-child(4),
+html[hide_trending=true] ytd-browse[page-subtype=trending],
+html[hide_trending=true] div[tab-identifier=FEexplore],
+html[hide_trending=true] div[tab-identifier=FEtrending],
+html[hide_trending=true] ytm-pivot-bar-renderer > ytm-pivot-bar-item-renderer:has(.pivot-trending) {
+  display: none !important;
+}
+
+/* ─── YOUTUBE: MAIS DO YOUTUBE ──────────────────────────────── */
+html[hide_moreyt=true] #sections > ytd-guide-section-renderer:nth-last-child(2) {
+  display: none !important;
+}
+
+/* ─── YOUTUBE: INSCRIÇÕES ───────────────────────────────────── */
+html[hide_subs=true] .yt-simple-endpoint[href^="/feed/subscriptions"],
+html[hide_subs=true]:not([yt-signed-out]) #sections > ytd-guide-section-renderer:nth-child(2),
+html[hide_subs=true] ytd-browse[page-subtype=subscriptions],
+html[hide_subs=true] div[tab-identifier=FEsubscriptions],
+html[hide_subs=true] ytm-pivot-bar-renderer > ytm-pivot-bar-item-renderer:has(.pivot-subs) {
+  display: none !important;
+}
+
+/* ─── YOUTUBE: REPRODUÇÃO AUTOMÁTICA ───────────────────────── */
+html[disable_autoplay=true] .autonav-endscreen,
+html[disable_autoplay=true] button[data-tooltip-target-id=ytp-autonav-toggle-button],
+html[disable_autoplay=true] ytd-watch-flexy:not([playlist]) .ytp-chrome-controls .ytp-next-button,
+html[disable_autoplay=true] .ytm-autonav-bar,
+html[disable_autoplay=true] .ytm-autonav-toggle-button-container { display: none !important; }
+
+/* ─── YOUTUBE: ANOTAÇÕES ────────────────────────────────────── */
+html[disable_annots=true] .annOption { display: none !important; }
+
+/* ─── YOUTUBE: REDIRECT HOME ────────────────────────────────── */
+html[redirect_subs=true][hide_feed=true] .yt-simple-endpoint[href="/"],
+html[redirect_subs=true][hide_feed=true] .yt-simple-endpoint[href^="/index"],
+html[redirect_subs=true][hide_feed=true] ytm-pivot-bar-renderer > ytm-pivot-bar-item-renderer:has(.pivot-w2w) {
+  display: none !important;
+}
+
+/* ─── YOUTUBE: MISC PROMOS ──────────────────────────────────── */
+paper-dialog > ytd-single-option-survey-renderer[dialog],
+ytd-mealbar-promo-renderer[dialog],
+ytd-primetime-promo-renderer,
+#surveys,
+.mealbar-promo-renderer,
+#masthead-ad.ytd-rich-grid-renderer.style-scope,
+div#home-page-skeleton { display: none !important; }
+
+/* ─── STUDIO: ANALYTICS ──────────────────────────────────────  */
+html[studio_hide_analytics=true] ytcp-analytics-dashboard-header,
+html[studio_hide_analytics=true] ytcp-analytics-main,
+html[studio_hide_analytics=true] #analytics-section,
+html[studio_hide_analytics=true] ytcp-channel-analytics-card,
+html[studio_hide_analytics=true] .style-scope.ytcp-analytics,
+html[studio_hide_analytics=true] ytcp-analytics-filter-bar { display: none !important; }
+
+/* ─── STUDIO: COMENTÁRIOS ────────────────────────────────────  */
+html[studio_hide_comments=true] ytcp-comments-header,
+html[studio_hide_comments=true] ytcp-comment-card,
+html[studio_hide_comments=true] #comment-list-section { display: none !important; }
+
+/* ─── STUDIO: RECEITA ────────────────────────────────────────  */
+html[studio_hide_revenue=true] ytcp-monetization-section,
+html[studio_hide_revenue=true] #monetization-card,
+html[studio_hide_revenue=true] ytcp-revenue-module,
+html[studio_hide_revenue=true] [data-test-id="revenue-card"] { display: none !important; }
+
+/* ─── STUDIO: INSCRITOS ──────────────────────────────────────  */
+html[studio_hide_subs_count=true] ytcp-subscribers-count,
+html[studio_hide_subs_count=true] #subscriber-count,
+html[studio_hide_subs_count=true] .ytcp-channel-header-subscriber-count,
+html[studio_hide_subs_count=true] #channel-header-subscriber-count-compact { display: none !important; }
+
+/* ─── STUDIO: VISUALIZAÇÕES ──────────────────────────────────  */
+html[studio_hide_views=true] ytcp-views-count,
+html[studio_hide_views=true] [data-test-id="views-card"],
+html[studio_hide_views=true] .ytcp-video-list-cell-views { display: none !important; }
+
+/* ─── STUDIO: CURTIDAS ───────────────────────────────────────  */
+html[studio_hide_likes=true] ytcp-likes-count,
+html[studio_hide_likes=true] [data-test-id="likes-card"],
+html[studio_hide_likes=true] .ytcp-video-list-cell-likes { display: none !important; }
+
+/* ─── STUDIO: PAINEL INICIAL ─────────────────────────────────  */
+html[studio_hide_dashboard=true] ytcp-dashboard-main-section,
+html[studio_hide_dashboard=true] #latest-activity,
+html[studio_hide_dashboard=true] ytcp-latest-video-activity-section { display: none !important; }
+
+/* ─── STUDIO: NOVIDADES ──────────────────────────────────────  */
+html[studio_hide_news=true] ytcp-whats-new-section,
+html[studio_hide_news=true] #news-feed,
+html[studio_hide_news=true] ytcp-whats-new-card { display: none !important; }
+
+/* ─── STUDIO: MENU LATERAL ───────────────────────────────────  */
+html[studio_hide_sidebar=true] ytcp-app-header-nav,
+html[studio_hide_sidebar=true] #guide-sidebar,
+html[studio_hide_sidebar=true] ytcp-navigation-drawer { display: none !important; }
+
+/* ─── CENSURA: TÍTULOS ───────────────────────────────────────  */
+.umbra-censor-title {
+  color: transparent !important;
+  background: #1a1a1f !important;
+  border-radius: 4px !important;
+  user-select: none !important;
+  text-shadow: none !important;
+  filter: blur(0) !important;
+  position: relative !important;
+}
+
+.umbra-censor-title::after {
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: linear-gradient(90deg, #2a2a35 25%, #333340 50%, #2a2a35 75%) !important;
+  background-size: 200% 100% !important;
+  animation: umbra-shimmer 2s infinite !important;
+  border-radius: 4px !important;
+}
+
+/* ─── CENSURA: MINIATURAS ────────────────────────────────────  */
+.umbra-censor-thumb {
+  filter: blur(20px) brightness(0.3) !important;
+  transition: filter 0.3s !important;
+}
+
+.umbra-censor-thumb:hover {
+  filter: blur(0) brightness(1) !important;
+}
+
+/* ─── SHIMMER ANIMATION ──────────────────────────────────────  */
+@keyframes umbra-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ─── SCROLLBAR GLOBAL FIX ───────────────────────────────────  */
+#content > #page-manager.ytd-app { overflow-y: hidden !important; }
+
+/* ─── CENSURA: TÍTULOS (aplicada via JS) ─────────────────────────────────── */
+.umbra-censor-title,
+.umbra-censor-title * {
+  color: transparent !important;
+  text-shadow: none !important;
+}
+.umbra-censor-title {
+  background: linear-gradient(90deg, #1e1e28 25%, #2a2a38 50%, #1e1e28 75%) !important;
+  background-size: 200% 100% !important;
+  animation: umbra-shimmer 2.5s ease-in-out infinite !important;
+  border-radius: 4px !important;
+  min-width: 80px !important;
+  display: inline-block !important;
+  position: relative !important;
+}
+
+/* ─── CENSURA: MINIATURAS (aplicada via JS) ──────────────────────────────── */
+.umbra-censor-thumb {
+  filter: blur(18px) brightness(0.25) !important;
+  transition: filter 0.4s ease !important;
+  cursor: pointer !important;
+}
+.umbra-censor-thumb:hover {
+  filter: blur(0px) brightness(1) !important;
+}
+
+@keyframes umbra-shimmer {
+  0%   { background-position:  200% 0; }
+  100% { background-position: -200% 0; }
+}

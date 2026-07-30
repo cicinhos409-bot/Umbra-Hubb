@@ -1,343 +1,276 @@
 import React, { useState } from 'react';
-import { Package, Download, Chrome, Lock, Zap } from 'lucide-react';
+import { Download, Chrome, Lock, Zap, Info, Package } from 'lucide-react';
 import { ToolTier } from '../types';
 
 interface ExtensionsDownloadToolProps {
   userTier: ToolTier;
 }
 
+interface Extension {
+  name: string;
+  version: string;
+  tag: string;
+  description: string;
+  href: string;
+  fileName: string;
+  isFree?: boolean;
+}
+
+const EXTENSIONS: Extension[] = [
+  {
+    name: 'Umbra Flow',
+    version: 'v1.2.0',
+    tag: 'Vídeo • Automação',
+    description: 'Consistência total e automação avançada de prompts. Gere séries de imagens e vídeos com controle absoluto de personagens e estilos.',
+    href: '/extensoes/umbra-flow.zip',
+    fileName: 'umbra-flow.zip'
+  },
+  {
+    name: 'Umbra Vision',
+    version: 'v4.0.0',
+    tag: 'Vídeo • Download',
+    description: 'Automatize a geração e o download em massa de imagens com Meta.ai e Google Whisk. Dispare centenas de prompts no piloto automático.',
+    href: '/extensoes/umbra-vision.zip',
+    fileName: 'umbra-vision.zip'
+  },
+  {
+    name: 'Umbra TikTok Downloader',
+    version: 'v2.0.2',
+    tag: 'TikTok • Download',
+    description: 'Baixe vídeos do TikTok sem marca d\'água com painel flutuante.',
+    href: '/extensoes/umbra-tiktok.zip',
+    fileName: 'umbra-tiktok.zip'
+  },
+  {
+    name: 'Umbra Screen Recorder',
+    version: 'v1.0.0',
+    tag: 'Vídeo • Gravação',
+    description: 'Grave vídeos da tela com painel flutuante arrastável. Powered by Tab Capture API.',
+    href: '/extensoes/umbra-screen-recorder.zip',
+    fileName: 'umbra-screen-recorder.zip'
+  },
+  {
+    name: 'Umbra Printei',
+    version: 'v1.0.0',
+    tag: 'Utilidade • Screenshot',
+    description: 'Capture screenshots de qualquer página, vídeo do YouTube, TikTok, Instagram e muito mais com alta precisão.',
+    href: '/extensoes/umbra-printei.zip',
+    fileName: 'umbra-printei.zip'
+  },
+  {
+    name: 'Umbra Unified Automation',
+    version: 'v2.4.0',
+    tag: 'IA • Automação',
+    description: 'Automatize prompts no ChatGPT e no Claude com filas, sequências, variáveis, anexos de imagem e links.',
+    href: '/extensoes/umbra-unified.zip',
+    fileName: 'umbra-unified.zip'
+  },
+  {
+    name: 'Umbra Image Download',
+    version: 'v2.7.0',
+    tag: 'Web • Download',
+    description: 'Baixe todas as imagens de qualquer página da web instantaneamente. Ferramenta essencial para curadoria de mídia.',
+    href: '/extensoes/Umbra Image Download.zip',
+    fileName: 'Umbra Image Download.zip'
+  },
+  {
+    name: 'Umbra Bloqueador YT',
+    version: 'v5.1.0',
+    tag: 'Ferramentas • Foco',
+    description: 'Oculta e censura distrações do YouTube e YouTube Studio para manter seu foco total na produção de conteúdo.',
+    href: '/extensoes/Umbra - Bloqueador YouTube Studio.zip',
+    fileName: 'Umbra - Bloqueador YouTube Studio.zip'
+  },
+  {
+    name: 'Umbra ShopeeSave',
+    version: 'v4.1.0',
+    tag: 'Shopee • Download',
+    description: 'Baixe imagens e vídeos de produtos da Shopee com o Umbra ShopeeSave.',
+    href: '/extensoes/Umbrashopeesave.zip',
+    fileName: 'Umbrashopeesave.zip',
+    isFree: true
+  }
+];
+
+const INSTALL_STEPS = [
+  { step: '01', title: 'Baixar o arquivo', desc: 'Clique em "Baixar Extensão" e salve o arquivo .zip no seu computador.' },
+  { step: '02', title: 'Extrair o ZIP',    desc: 'Descompacte o arquivo baixado em uma pasta fixa — não mova depois de instalar.' },
+  { step: '03', title: 'Ativar no Chrome', desc: 'Acesse chrome://extensions → ative Modo desenvolvedor → clique em "Carregar sem compactação".' },
+];
+
 const ExtensionsDownloadTool: React.FC<ExtensionsDownloadToolProps> = ({ userTier }) => {
   const isLocked = userTier === ToolTier.FREE;
-
-  const DownloadButton = ({ href, fileName, isFree = false }: { href: string; fileName: string; isFree?: boolean }) => {
-    if (isLocked && !isFree) {
-      return (
-        <button
-          onClick={() => {
-            alert('🔒 ESSA EXTENSÃO É EXCLUSIVA\n\nEsta ferramenta é reservada para assinantes PRO ou TURBO.\n\nFaça upgrade no seu perfil para liberar o download agora!');
-          }}
-          className="download-btn w-full inline-flex flex-col items-center justify-center gap-1 py-4 rounded-2xl bg-white/5 text-gray-400 font-black text-[10px] uppercase tracking-[0.2em] cursor-pointer border border-white/10 hover:bg-white/10 transition-all shadow-inner"
-        >
-          <span className="text-lg">🔒 BLOQUEADO</span>
-          <span className="text-brand-purple animate-pulse">Fazer Upgrade</span>
-        </button>
-      );
-    }
-
-    return (
-      <a
-        href={href}
-        download={fileName}
-        className="download-btn w-full inline-flex items-center justify-center gap-3 py-4 rounded-2xl text-background-deep font-black text-xs uppercase tracking-widest shadow-xl shadow-brand-cyan/20 relative overflow-hidden"
-      >
-        <Download className="w-4 h-4" /> Baixar extensão
-      </a>
-    );
-  };
+  const [lockedId, setLockedId] = useState<string | null>(null);
 
   return (
-    <div className="min-h-screen font-jetbrains text-white pb-24 relative flex flex-col items-center">
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=JetBrains+Mono:wght@400;500&display=swap');
+    <div className="max-w-5xl mx-auto py-10 animate-in fade-in slide-in-from-bottom-8 duration-700 space-y-8">
 
-        :root {
-          --cyan: #00f5ff;
-          --purple: #a855f7;
-          --pink: #ec4899;
-          --green: #10b981;
-          --orange: #ff4d2d;
-        }
-
-        .font-orbitron { font-family: 'Orbitron', sans-serif; }
-        .font-jetbrains { font-family: 'JetBrains Mono', monospace; }
-
-        .bg-shift::before {
-          content: '';
-          position: fixed;
-          top: -50%;
-          left: -50%;
-          width: 200%;
-          height: 200%;
-          background: radial-gradient(circle at 30% 50%, rgba(168, 85, 247, 0.05) 0%, transparent 50%),
-                      radial-gradient(circle at 70% 80%, rgba(0, 245, 255, 0.05) 0%, transparent 50%),
-                      radial-gradient(circle at 50% 20%, rgba(236, 72, 153, 0.05) 0%, transparent 50%);
-          animation: backgroundShift 20s ease-in-out infinite;
-          z-index: 0;
-          pointer-events: none;
-        }
-
-        @keyframes backgroundShift {
-          0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          50% { transform: translate(5%, 5%) rotate(5deg); }
-        }
-
-        .glow-text {
-          background: linear-gradient(135deg, var(--cyan) 0%, var(--purple) 50%, var(--pink) 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-        }
-
-        .glow-line::after {
-          content: '';
-          position: absolute;
-          bottom: -10px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 60%;
-          height: 3px;
-          background: linear-gradient(90deg, transparent, var(--cyan), transparent);
-          animation: glowPulse 2s ease-in-out infinite;
-        }
-
-        @keyframes glowPulse {
-          0%, 100% { opacity: 0.6; box-shadow: 0 0 10px var(--cyan); }
-          50% { opacity: 1; box-shadow: 0 0 20px var(--cyan); }
-        }
-
-        .extension-card {
-          background: linear-gradient(135deg, rgba(18, 18, 31, 0.8) 0%, rgba(10, 10, 18, 0.6) 100%);
-          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .extension-card:hover {
-          transform: translateY(-8px);
-          border-color: var(--cyan);
-          box-shadow: 0 20px 60px rgba(0, 245, 255, 0.2), 0 0 40px rgba(168, 85, 247, 0.1);
-        }
-
-        .download-btn {
-          background: linear-gradient(135deg, var(--cyan) 0%, var(--purple) 100%);
-          transition: all 0.3s ease;
-        }
-
-        .download-btn::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: -100%;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-          transition: left 0.5s ease;
-        }
-
-        .download-btn:hover::before {
-          left: 100%;
-        }
-
-        .decorative-grid {
-          background-image: linear-gradient(rgba(0, 245, 255, 0.03) 1px, transparent 1px),
-                            linear-gradient(90deg, rgba(0, 245, 255, 0.03) 1px, transparent 1px);
-          background-size: 50px 50px;
-        }
-
-        .scroll-indicator::before {
-          content: '';
-          position: absolute;
-          top: 8px;
-          left: 50%;
-          transform: translateX(-50%);
-          width: 4px;
-          height: 8px;
-          background: var(--cyan);
-          border-radius: 2px;
-          animation: scrollDot 2s infinite;
-        }
-
-        @keyframes scrollDot {
-          0%, 100% { top: 8px; opacity: 1; }
-          50% { top: 24px; opacity: 0; }
-        }
-      `}</style>
-
-      <div className="decorative-grid fixed inset-0 pointer-events-none z-0"></div>
-
-      <div className="max-w-7xl mx-auto px-6 py-16 relative z-10 w-full animate-in fade-in duration-700">
-        <header className="text-center mb-20">
-          <h1 className="font-orbitron text-5xl md:text-7xl font-black mb-4 glow-text leading-tight glow-line relative inline-block uppercase tracking-tighter">
-            Downloads Extensões
-          </h1>
-        </header>
-
-        <main>
-          <div className="flex items-center gap-4 mb-12">
-            <span className="p-3 bg-brand-cyan/10 rounded-2xl border border-brand-cyan/20">
-              <Chrome className="w-8 h-8 text-brand-cyan" />
+      {/* ── PAGE HEADER ── */}
+      <div className="flex flex-col md:flex-row items-center gap-8 mb-4">
+        <div className="w-24 h-24 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 shrink-0">
+          <Chrome className="w-10 h-10 text-primary" />
+        </div>
+        <div className="text-center md:text-left">
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-2">
+            <span className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-black text-primary uppercase tracking-[0.2em]">
+              Chrome Extensions
             </span>
-            <h2 className="font-orbitron text-2xl md:text-3xl font-bold text-brand-cyan uppercase tracking-tight">
-              Extensões Chrome
-            </h2>
+            <span className="px-3 py-1 rounded-full bg-gray-100 border border-gray-200 text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">
+              {EXTENSIONS.length} Extensões
+            </span>
+            {!isLocked && (
+              <span className="px-3 py-1 rounded-full bg-green-50 border border-green-200 text-[10px] font-black text-green-700 uppercase tracking-[0.2em] flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse inline-block" /> Acesso PRO Ativo
+              </span>
+            )}
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Extension 1 - Renamed from Dispatch Pro */}
-            <article className="extension-card border border-white/5 rounded-[32px] p-8 backdrop-blur-xl relative overflow-hidden group">
-              <div className="mb-6">
-                <span className="text-[10px] font-black uppercase tracking-widest text-brand-green bg-brand-green/10 border border-brand-green/20 px-3 py-1.5 rounded-lg mb-4 inline-block">
-                  Vídeo • Automação
-                </span>
-                <h3 className="font-orbitron text-2xl font-black text-white group-hover:text-brand-cyan transition-colors">Umbra Flow</h3>
-                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v1.2.0</span>
-              </div>
-              <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
-                Consistência total e automação avançada de prompts. Gere séries de imagens e vídeos com controle absoluto de personagens e estilos.
-              </p>
-              <DownloadButton href="/extensoes/umbra-flow.zip" fileName="umbra-flow.zip" />
-            </article>
-
-            {/* Extension 3 */}
-            <article className="extension-card border border-white/5 rounded-[32px] p-8 backdrop-blur-xl relative overflow-hidden group">
-              <div className="mb-6">
-                <span className="text-[10px] font-black uppercase tracking-widest text-brand-green bg-brand-green/10 border border-brand-green/20 px-3 py-1.5 rounded-lg mb-4 inline-block">
-                  Vídeo • Download
-                </span>
-                <h3 className="font-orbitron text-2xl font-black text-white group-hover:text-brand-cyan transition-colors">Umbra Vision</h3>
-                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v4.0.0</span>
-              </div>
-              <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
-                Automatize a geração e o download em massa de imagens com Meta.ai e Google Whisk. Dispare centenas de prompts no piloto automático.
-              </p>
-              <DownloadButton href="/extensoes/umbra-vision.zip" fileName="umbra-vision.zip" />
-            </article>
-
-            {/* Extension 4 */}
-            <article className="extension-card border border-white/5 rounded-[32px] p-8 backdrop-blur-xl relative overflow-hidden group">
-              <div className="mb-6">
-                <span className="text-[10px] font-black uppercase tracking-widest text-brand-green bg-brand-green/10 border border-brand-green/20 px-3 py-1.5 rounded-lg mb-4 inline-block">
-                  TikTok • Download
-                </span>
-                <h3 className="font-orbitron text-2xl font-black text-white group-hover:text-brand-cyan transition-colors">Umbra TikTok Downloader</h3>
-                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v2.0.2</span>
-              </div>
-              <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
-                Baixe vídeos do TikTok sem marca d'água com painel flutuante
-              </p>
-              <DownloadButton href="/extensoes/umbra-tiktok.zip" fileName="umbra-tiktok.zip" />
-            </article>
-
-            {/* Extension 5 */}
-            <article className="extension-card border border-white/5 rounded-[32px] p-8 backdrop-blur-xl relative overflow-hidden group">
-              <div className="mb-6">
-                <span className="text-[10px] font-black uppercase tracking-widest text-brand-green bg-brand-green/10 border border-brand-green/20 px-3 py-1.5 rounded-lg mb-4 inline-block">
-                  Video • Recording
-                </span>
-                <h3 className="font-orbitron text-2xl font-black text-white group-hover:text-brand-cyan transition-colors">Umbra Screen Recorder</h3>
-                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v1.0.0</span>
-              </div>
-              <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
-                Grave vídeos da tela com painel flutuante arrastável. Powered by Tab Capture API.
-              </p>
-              <DownloadButton href="/extensoes/umbra-screen-recorder.zip" fileName="umbra-screen-recorder.zip" />
-            </article>
-
-            {/* Extension 6 - NEW */}
-            <article className="extension-card border border-white/5 rounded-[32px] p-8 backdrop-blur-xl relative overflow-hidden group">
-              <div className="mb-6">
-                <span className="text-[10px] font-black uppercase tracking-widest text-brand-cyan bg-brand-cyan/10 border border-brand-cyan/20 px-3 py-1.5 rounded-lg mb-4 inline-block">
-                  Utility • Screenshot
-                </span>
-                <h3 className="font-orbitron text-2xl font-black text-white group-hover:text-brand-cyan transition-colors">Umbra Printei</h3>
-                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v1.0.0</span>
-              </div>
-              <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
-                Capture screenshots de qualquer página, vídeo do YouTube, TikTok, Instagram e muito mais com alta precisão.
-              </p>
-              <DownloadButton href="/extensoes/umbra-printei.zip" fileName="umbra-printei.zip" />
-            </article>
-
-            {/* Extension 7 - NEW */}
-            <article className="extension-card border border-white/5 rounded-[32px] p-8 backdrop-blur-xl relative overflow-hidden group">
-              <div className="mb-6">
-                <span className="text-[10px] font-black uppercase tracking-widest text-brand-pink bg-brand-pink/10 border border-brand-pink/20 px-3 py-1.5 rounded-lg mb-4 inline-block">
-                  AI • Prompting
-                </span>
-                <h3 className="font-orbitron text-2xl font-black text-white group-hover:text-brand-cyan transition-colors">Umbra Piclumen Prompter</h3>
-                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v1.0.0</span>
-              </div>
-              <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
-                Auto Prompt sender for Piclumen — dark, powerful, and precise automation for your AI image workflow.
-              </p>
-              <DownloadButton href="/extensoes/umbra-piclumen-prompter.zip" fileName="umbra-piclumen-prompter.zip" />
-            </article>
-
-            {/* Extension 8 - NEW */}
-            <article className="extension-card border border-white/5 rounded-[32px] p-8 backdrop-blur-xl relative overflow-hidden group">
-              <div className="mb-6">
-                <span className="text-[10px] font-black uppercase tracking-widest text-brand-purple bg-brand-purple/10 border border-brand-purple/20 px-3 py-1.5 rounded-lg mb-4 inline-block">
-                  Web • Download
-                </span>
-                <h3 className="font-orbitron text-2xl font-black text-white group-hover:text-brand-cyan transition-colors">Umbra Image Download</h3>
-                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v2.6.0</span>
-              </div>
-              <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
-                Baixe todas as imagens de qualquer página da web instantaneamente. Ferramenta essencial para curadoria de mídia.
-              </p>
-              <DownloadButton href="/extensoes/Umbra-Image-Download.zip" fileName="Umbra-Image-Download.zip" />
-            </article>
-
-            {/* Extension 9 - NEW */}
-            <article className="extension-card border border-white/5 rounded-[32px] p-8 backdrop-blur-xl relative overflow-hidden group">
-              <div className="mb-6">
-                <span className="text-[10px] font-black uppercase tracking-widest text-amber-500 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg mb-4 inline-block">
-                  Tools • Focus
-                </span>
-                <h3 className="font-orbitron text-2xl font-black text-white group-hover:text-brand-cyan transition-colors">Umbra - Bloqueador YT</h3>
-                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v5.1.0</span>
-              </div>
-              <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
-                Oculta e censura distrações do YouTube e YouTube Studio para manter seu foco total na produção de conteúdo.
-              </p>
-              <DownloadButton href="/extensoes/Umbra - Bloqueador YouTube Studio.zip" fileName="Umbra - Bloqueador YouTube Studio.zip" />
-            </article>
-
-            {/* Extension 10 - NEW */}
-            <article className="extension-card border border-white/5 rounded-[32px] p-8 backdrop-blur-xl relative overflow-hidden group">
-              <div className="mb-6">
-                <span className="text-[10px] font-black uppercase tracking-widest text-brand-purple bg-brand-purple/10 border border-brand-purple/20 px-3 py-1.5 rounded-lg mb-4 inline-block">
-                  AI • Automation
-                </span>
-                <h3 className="font-orbitron text-2xl font-black text-white group-hover:text-brand-cyan transition-colors">Umbra Chat Automation</h3>
-                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v1.0.0</span>
-              </div>
-              <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
-                Automatize prompts do ChatGPT com cadeias de prompts e filas para interações eficientes que economizam tempo.
-              </p>
-              <DownloadButton href="/extensoes/umbra-chat-automation.zip" fileName="umbra-chat-automation.zip" />
-            </article>
-
-            {/* Extension 11 - NEW */}
-            <article className="extension-card border border-white/5 rounded-[32px] p-8 backdrop-blur-xl relative overflow-hidden group">
-              <div className="mb-6">
-                <span className="text-[10px] font-black uppercase tracking-widest text-brand-purple bg-brand-purple/10 border border-brand-purple/20 px-3 py-1.5 rounded-lg mb-4 inline-block">
-                  AI • Automation
-                </span>
-                <h3 className="font-orbitron text-2xl font-black text-white group-hover:text-brand-cyan transition-colors">Umbra Claude Automation</h3>
-                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v1.0.0</span>
-              </div>
-              <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
-                Automatize prompts do Claude com cadeias de prompts e filas para interações eficientes que economizam tempo.
-              </p>
-              <DownloadButton href="/extensoes/umbra-claude-extension.zip" fileName="umbra-claude-extension.zip" />
-            </article>
-
-            {/* Extension 12 - ShopeeSave (FREE) */}
-            <article className="extension-card border border-white/5 rounded-[32px] p-8 backdrop-blur-xl relative overflow-hidden group">
-              <div className="mb-6">
-                <span className="text-[10px] font-black uppercase tracking-widest text-orange-500 bg-orange-500/10 border border-orange-500/20 px-3 py-1.5 rounded-lg mb-4 inline-block">
-                  Shopee • Download
-                </span>
-                <h3 className="font-orbitron text-2xl font-black text-white group-hover:text-brand-cyan transition-colors">Umbra ShopeeSave</h3>
-                <span className="text-[10px] font-mono text-brand-purple bg-brand-purple/10 border border-brand-purple/10 px-2.5 py-1 rounded-md mt-2 inline-block">v4.1.0</span>
-              </div>
-              <p className="text-gray-400 text-sm leading-relaxed mb-10 font-medium">
-                Baixe imagens e vídeos de produtos da Shopee com o Umbra ShopeeSave.
-              </p>
-              <DownloadButton href="/extensoes/Umbrashopeesave.zip" fileName="Umbrashopeesave.zip" isFree={true} />
-            </article>
-          </div>
-        </main>
+          <h1 className="text-4xl font-black text-gray-900 tracking-tight">Downloads &amp; Extensões</h1>
+          <p className="text-gray-600 font-black mt-1">Ferramentas exclusivas para automatizar e potencializar seu fluxo de produção.</p>
+        </div>
       </div>
+
+      {/* ── COMO INSTALAR CARD ── */}
+      <section className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+        <div className="px-8 py-5 border-b border-gray-200 bg-gray-50 flex items-center gap-3">
+          <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20">
+            <Info className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h3 className="text-base font-black text-gray-900">Como Instalar</h3>
+            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Instalação manual · chrome://extensions</p>
+          </div>
+        </div>
+        <div className="p-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {INSTALL_STEPS.map(item => (
+              <div key={item.step} className="flex items-start gap-4">
+                <div className="w-9 h-9 bg-gray-900 text-white rounded-xl flex items-center justify-center font-mono text-[11px] font-black shrink-0">
+                  {item.step}
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-gray-900 mb-1">{item.title}</h4>
+                  <p className="text-xs font-black text-gray-500 leading-relaxed">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION DIVIDER ── */}
+      <div className="flex items-center gap-4">
+        <h2 className="text-xs font-black uppercase tracking-[0.4em] text-gray-400 whitespace-nowrap">
+          Extensões Disponíveis
+        </h2>
+        <div className="h-px flex-grow bg-gray-200" />
+        <span className="text-xs font-black text-gray-400 whitespace-nowrap">
+          {EXTENSIONS.length} extensões
+        </span>
+      </div>
+
+      {/* ── EXTENSIONS GRID ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {EXTENSIONS.map((ext) => {
+          const canDownload = !isLocked || ext.isFree;
+          const isShowingUpgrade = lockedId === ext.name;
+
+          return (
+            <article
+              key={ext.name}
+              className="bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col hover:border-gray-300 hover:shadow-sm transition-all duration-200"
+            >
+              {/* Card header */}
+              <div className="px-5 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-9 h-9 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20 shrink-0">
+                    <Package className="w-4 h-4 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-black text-gray-900 leading-tight truncate">{ext.name}</h3>
+                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{ext.version}</span>
+                  </div>
+                </div>
+                <span className={`shrink-0 text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-lg border ${
+                  ext.isFree
+                    ? 'bg-green-50 border-green-200 text-green-700'
+                    : 'bg-primary/10 border-primary/20 text-primary'
+                }`}>
+                  {ext.isFree ? 'Grátis' : 'PRO'}
+                </span>
+              </div>
+
+              {/* Card body */}
+              <div className="p-5 flex flex-col flex-1">
+                <div className="flex-1 mb-5">
+                  <span className="inline-block text-[9px] font-black uppercase tracking-widest text-gray-500 bg-gray-100 border border-gray-200 px-2.5 py-1 rounded-lg mb-3">
+                    {ext.tag}
+                  </span>
+                  <p className="text-gray-500 text-xs font-black leading-relaxed">
+                    {ext.description}
+                  </p>
+                </div>
+
+                {canDownload ? (
+                  <a
+                    href={ext.href}
+                    download={ext.fileName}
+                    className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-xl bg-black text-white font-black text-xs uppercase tracking-widest hover:bg-gray-900 active:scale-95 transition-all"
+                  >
+                    <Download className="w-4 h-4" /> Baixar Extensão
+                  </a>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => setLockedId(isShowingUpgrade ? null : ext.name)}
+                      className="w-full inline-flex items-center justify-center gap-2 py-3.5 rounded-xl bg-gray-50 border border-gray-200 text-gray-500 font-black text-xs uppercase tracking-[0.15em] hover:bg-gray-100 transition-all"
+                    >
+                      <Lock className="w-4 h-4" />
+                      {isShowingUpgrade ? 'Fechar' : 'Exclusivo PRO'}
+                    </button>
+
+                    {isShowingUpgrade && (
+                      <div className="mt-3 p-4 bg-primary/5 border border-primary/20 rounded-xl animate-in fade-in slide-in-from-top-2 duration-200 text-center">
+                        <p className="text-xs font-black text-gray-700 leading-relaxed mb-3">
+                          Esta extensão é exclusiva para membros PRO.
+                        </p>
+                        <button
+                          onClick={() => window.open('https://pay.cakto.com.br/3dko6xr_769683', '_blank')}
+                          className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-primary text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-primary/90 active:scale-95 transition-all"
+                        >
+                          <Zap className="w-3.5 h-3.5" /> Assinar PRO
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </article>
+          );
+        })}
+      </div>
+
+      {/* ── FOOTER ── */}
+      <div className="pt-6 border-t border-gray-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <div className="text-sm font-black text-gray-900 italic uppercase tracking-tighter">Umbra Extensions</div>
+          <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mt-1">
+            Instalação manual · chrome://extensions → Modo desenvolvedor
+          </p>
+        </div>
+        <div className="flex items-center gap-6">
+          {[
+            { label: 'Total',      value: `${EXTENSIONS.length}` },
+            { label: 'Plataforma', value: 'Chrome' },
+            { label: 'Acesso',     value: isLocked ? 'FREE' : 'PRO' },
+          ].map(stat => (
+            <div key={stat.label} className="text-center">
+              <div className="text-lg font-black text-gray-900">{stat.value}</div>
+              <div className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{stat.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
     </div>
   );
 };

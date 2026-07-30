@@ -1,207 +1,301 @@
-
 import React, { useState, useRef } from 'react';
-import { 
-  Mic, 
-  Upload, 
-  Play, 
-  Copy, 
-  Download, 
-  Clock, 
-  CheckCircle2, 
-  Terminal,
-  Activity
-} from 'lucide-react';
+import { LogEntry } from '../types';
+import { transcribeAudioStream } from '../services/geminiService';
+import { Upload, Copy, Download, Zap, Terminal, Send, ChevronDown, Check } from 'lucide-react';
+import { trackTranscriptionCompleted } from '../services/analytics';
+
+const CANAIS_KEY = 'umbra_hub_meus_canais_v5';
+
+interface Channel { id: string; name: string; color: string; scripts: ScriptItem[]; }
+interface ScriptItem { id: string; name: string; size: string; content: string; createdAt: number; }
 
 const UmbraConnectTool: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
-  const [duration, setDuration] = useState(0);
-  const [logs, setLogs] = useState<{time: string, msg: string, type: string}[]>([]);
+  const [duration, setDuration] = useState<number>(0);
+  const [logs, setLogs] = useState<LogEntry[]>([
+    { message: 'Umbra Connect pronto para uso', type: 'info', timestamp: new Date() }
+  ]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [result, setResult] = useState<string | null>(null);
+  const [result, setResult] = useState('');
+  const [showChannelPicker, setShowChannelPicker] = useState(false);
+  const [sentToChannel, setSentToChannel] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const addLog = (msg: string, type: 'info' | 'success' | 'error' = 'info') => {
-    const time = new Date().toLocaleTimeString();
-    setLogs(prev => [...prev, { time, msg, type }]);
+  const addLog = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setLogs(prev => [...prev, { message, type, timestamp: new Date() }]);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (f) {
+    const selected = e.target.files?.[0];
+    if (selected) {
       const audio = new Audio();
       const reader = new FileReader();
-      reader.onload = (ev) => {
-        if (ev.target?.result) {
-          audio.src = ev.target.result as string;
-          audio.onloadedmetadata = () => {
-            setDuration(audio.duration);
-            setFile(f);
-            addLog(`Arquivo carregado: ${f.name}`, 'success');
-          };
-        }
+      reader.onload = (event) => {
+        audio.src = event.target?.result as string;
+        audio.onloadedmetadata = () => {
+          setDuration(audio.duration);
+          setFile(selected);
+          addLog(`Arquivo: ${selected.name}`, 'success');
+        };
       };
-      reader.readAsDataURL(f);
+      reader.readAsDataURL(selected);
     }
   };
 
-  const formatTime = (s: number) => {
-    return String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(Math.floor(s % 60)).padStart(2, '0');
-  };
-
-  const generateSyncResult = (fn: string, dur: number) => {
-    const total = Math.ceil(dur / 8);
-    const fd = formatTime(dur);
-    const texts = [
-      "A Antártica não recebe humanos. Ela os testa. O vento grita a mais de 160 quilômetros por hora.",
-      "Sua respiração congela antes de sair dos pulmões. A temperatura cai tão rápido que a pele queima como fogo.",
-      "A temperatura cai tão rápido que a pele queima como fogo. Aqui não há cor, só branco, infinito. O silêncio é tão alto que parece vivo.",
-      "Um passo errado, uma luva rasgada, um segundo de distração e o corpo começa a desligar. Mesmo assim, cientistas vêm.",
-      "Eles perfuram o gelo, buscam respostas enterradas há milhões de anos. Você se sente pequeno, frágil.",
-      "A natureza não é cruel, ela é honesta, ela não se importa com quem você é. E no lugar mais frio da Terra, você entende algo desconfortável.",
-      "Sobreviver nunca é garantido. Se isso te fez pensar, diga nos comentários o que você sentiu.",
-      "Siga o perfil para mais histórias como essa."
-    ];
-    
-    let out = '============================================================\n';
-    out += 'SINCRONIZAÇÃO UMBRA CONNECT - BLOCOS DE 8 SEGUNDOS\n';
-    out += '============================================================\n';
-    out += `Arquivo: ${fn}\n`;
-    out += `Duração: ${fd}\n`;
-    out += `Total de prompts: ${total}\n`;
-    out += '============================================================\n\n';
-    
-    for (let i = 0; i < total; i++) {
-      const st = formatTime(i * 8);
-      const et = formatTime(Math.min((i + 1) * 8, dur));
-      const pn = String(i + 1).padStart(3, '0');
-      out += `PROMPT ${pn} | ${st} - ${et}\n`;
-      out += `${texts[i % texts.length]}\n`;
-      out += '------------------------------------------------------------\n';
-    }
-    return out;
-  };
-
-  const startProcessing = () => {
+  const handleSync = async () => {
     if (!file) return;
     setIsProcessing(true);
-    setResult(null);
+    setResult('');
+    setSentToChannel(null);
     setProgress(5);
-    addLog('🚀 Conectando com Umbra IA Cloud...');
-    
-    let currentProgress = 5;
-    const interval = setInterval(() => {
-      if (currentProgress < 95) {
-        currentProgress += 5;
-        setProgress(currentProgress);
+    addLog('Conectando com Umbra IA Cloud...');
+    try {
+      const stream = transcribeAudioStream(file, duration);
+      let fullText = '';
+      for await (const chunk of stream) {
+        if (progress < 95) setProgress(p => p + 2);
+        fullText += chunk;
+        setResult(fullText);
       }
-    }, 150);
-
-    setTimeout(() => {
-      clearInterval(interval);
       setProgress(100);
-      const output = generateSyncResult(file.name, duration);
-      setResult(output);
-      addLog('✅ Sincronização concluída com sucesso!', 'success');
+      trackTranscriptionCompleted(parseFloat((file.size / 1024 / 1024).toFixed(2)));
+      addLog('Transcrição concluída!', 'success');
+    } catch (error) {
+      addLog('Erro: ' + (error instanceof Error ? error.message : 'Falha na rede'), 'error');
+    } finally {
       setIsProcessing(false);
-    }, 2500);
-  };
-
-  const copyResult = () => {
-    if (result) {
-      navigator.clipboard.writeText(result);
-      addLog('📋 Resultado copiado!', 'info');
     }
   };
 
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(result);
+    addLog('Copiado para a área de transferência!', 'success');
+  };
+
+  const downloadTxt = () => {
+    const blob = new Blob([result], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${file?.name.split('.')[0]}_umbra_connect.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Lê canais do localStorage e salva transcrição como script
+  const getChannels = (): Channel[] => {
+    try {
+      const raw = localStorage.getItem(CANAIS_KEY);
+      if (!raw) return [];
+      const data = JSON.parse(raw);
+      return (data.channels ?? []) as Channel[];
+    } catch { return []; }
+  };
+
+  const sendToChannel = (channel: Channel) => {
+    try {
+      const raw = localStorage.getItem(CANAIS_KEY);
+      const data = raw ? JSON.parse(raw) : { folders: [], channels: [] };
+      const newScript: ScriptItem = {
+        id: Date.now().toString(36) + Math.random().toString(36).slice(2),
+        name: `Transcrição — ${file?.name ?? 'audio'} — ${new Date().toLocaleDateString('pt-BR')}`,
+        size: `${(new TextEncoder().encode(result).length / 1024).toFixed(1)} KB`,
+        content: result,
+        createdAt: Date.now(),
+      };
+      data.channels = (data.channels as Channel[]).map((ch: Channel) =>
+        ch.id === channel.id
+          ? { ...ch, scripts: [...(ch.scripts ?? []), newScript], updatedAt: Date.now() }
+          : ch
+      );
+      localStorage.setItem(CANAIS_KEY, JSON.stringify(data));
+      setSentToChannel(channel.name);
+      setShowChannelPicker(false);
+      addLog(`Roteiro salvo em "${channel.name}"!`, 'success');
+    } catch {
+      addLog('Erro ao salvar em Meus Canais.', 'error');
+    }
+  };
+
+  const channels = getChannels();
+
   return (
-    <div className="font-rajdhani space-y-6 animate-in fade-in duration-500 pb-20">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Log Area */}
-        <div className="bg-background-mid border border-white/5 rounded-3xl p-6 shadow-xl flex flex-col h-80">
-          <div className="flex items-center gap-2 mb-4 text-brand-cyan">
-            <Terminal className="w-4 h-4" />
-            <span className="font-orbitron text-[10px] font-black uppercase tracking-widest">Relatório Umbra</span>
+    <div className="space-y-4 animate-in fade-in duration-300">
+
+      {/* ── UPLOAD + LOG ROW ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        {/* File Upload Card */}
+        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center gap-3">
+            <div className="w-9 h-9 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20">
+              <Upload className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-gray-900">Arquivo de Áudio</h3>
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">MP3, WAV, M4A</p>
+            </div>
           </div>
-          <div className="flex-1 bg-background-deep/50 border border-white/5 rounded-xl p-4 overflow-y-auto font-space text-[10px] leading-relaxed custom-scrollbar">
-            {logs.length === 0 && <div className="text-gray-600 italic">Aguardando entrada de dados...</div>}
-            {logs.map((log, i) => (
-              <div key={i} className={`mb-1 ${log.type === 'success' ? 'text-brand-green' : log.type === 'error' ? 'text-brand-pink' : 'text-gray-400'}`}>
-                <span className="opacity-40">[{log.time}]</span> {log.msg}
-              </div>
-            ))}
+          <div className="p-6">
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all ${
+                file ? 'border-primary/40 bg-primary/5' : 'border-gray-300 hover:border-primary/50 hover:bg-gray-50'
+              }`}
+            >
+              <Upload className={`w-8 h-8 mx-auto mb-3 ${file ? 'text-primary' : 'text-gray-400'}`} />
+              <p className="text-sm font-black text-gray-900">
+                {file ? file.name : 'Clique para selecionar'}
+              </p>
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">
+                {file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : 'Formatos de áudio suportados'}
+              </p>
+            </div>
+            <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="audio/*" className="hidden" />
           </div>
         </div>
 
-        {/* Upload Zone */}
-        <div 
-          onClick={() => fileInputRef.current?.click()}
-          className={`bg-background-mid border-2 border-dashed rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all h-80 ${
-            file ? 'border-brand-cyan/40 bg-brand-cyan/5' : 'border-white/5 hover:border-brand-purple/40 hover:bg-white/5'
-          }`}
-        >
-          <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="audio/*" className="hidden" />
-          <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 transition-all ${file ? 'bg-brand-cyan text-background-deep' : 'bg-white/5 text-gray-500'}`}>
-            <Mic className="w-8 h-8" />
+        {/* Log Terminal Card */}
+        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center gap-3">
+            <div className="w-9 h-9 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20">
+              <Terminal className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-gray-900">Relatório Umbra</h3>
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Log de operações</p>
+            </div>
           </div>
-          <h3 className="text-xl font-bold mb-1">{file ? file.name : 'Selecionar Áudio'}</h3>
-          <p className="text-sm text-gray-500 font-medium">MP3, WAV, M4A {file && `(${formatTime(duration)})`}</p>
+          <div className="p-4">
+            <div className="bg-gray-900 rounded-xl p-3 h-[130px] overflow-y-auto font-mono text-[10px] leading-relaxed">
+              {logs.map((log, i) => (
+                <div
+                  key={i}
+                  className={`mb-1 flex items-start gap-2 ${
+                    log.type === 'success' ? 'text-green-400' :
+                    log.type === 'error'   ? 'text-red-400'   :
+                    'text-gray-400'
+                  }`}
+                >
+                  <span className="text-gray-600 shrink-0">[{log.timestamp.toLocaleTimeString()}]</span>
+                  <span>{log.message}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
-      <button 
-        onClick={startProcessing}
+      {/* ── ACTION BUTTON ── */}
+      <button
         disabled={!file || isProcessing}
-        className="w-full py-5 bg-brand-purple hover:bg-brand-purple/90 disabled:opacity-30 text-white font-orbitron text-xs font-black tracking-[0.3em] rounded-2xl shadow-xl shadow-brand-purple/20 transition-all flex items-center justify-center gap-3 uppercase"
+        onClick={handleSync}
+        className="w-full py-4 bg-primary hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed text-white font-black rounded-xl transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-widest"
       >
-        {isProcessing ? <RefreshCw className="w-5 h-5 animate-spin" /> : <Zap className="w-5 h-5 text-brand-cyan" />}
-        {isProcessing ? 'Sincronizando...' : 'Iniciar AGORA'}
+        {isProcessing ? (
+          <>
+            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            Processando...
+          </>
+        ) : (
+          <>
+            <Zap className="w-4 h-4" /> Iniciar Transcrição
+          </>
+        )}
       </button>
 
-      {/* Result Section */}
-      {progress > 0 && (
-        <div className="bg-background-mid border border-white/5 rounded-[40px] p-8 space-y-8 animate-in slide-in-from-bottom-4 duration-500 shadow-2xl overflow-hidden relative">
-          {progress === 100 && <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-brand-cyan via-brand-purple to-brand-pink" />}
-          
-          <div className="space-y-4">
-            <div className="flex justify-between items-end">
-              <span className="font-space text-[10px] text-gray-500 font-bold uppercase tracking-widest">Sincronização</span>
-              <span className={`font-orbitron text-xs font-black ${progress === 100 ? 'text-brand-green' : 'text-brand-cyan'}`}>
-                {progress === 100 ? 'CONCLUÍDO' : `${progress}%`}
-              </span>
+      {/* ── PROGRESS + RESULT ── */}
+      {(isProcessing || result) && (
+        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20">
+                <Zap className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-gray-900">Resultado da Transcrição</h3>
+                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Umbra IA Cloud</p>
+              </div>
             </div>
-            <div className="h-2 bg-background-deep rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-brand-purple to-brand-cyan transition-all duration-300" style={{ width: `${progress}%` }} />
-            </div>
+            <span className={`text-sm font-black ${progress === 100 ? 'text-green-600' : 'text-primary'}`}>
+              {progress === 100 ? 'Finalizado!' : `${progress}%`}
+            </span>
           </div>
 
-          {result && (
-            <div className="space-y-6">
-              <div className="bg-background-deep/80 border border-white/5 rounded-2xl p-6 font-space text-[11px] leading-loose text-gray-300 whitespace-pre-wrap max-h-96 overflow-y-auto custom-scrollbar shadow-inner">
-                {result}
-              </div>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button onClick={copyResult} className="flex-1 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all">
-                  <Copy className="w-4 h-4" /> Copiar Prompts
+          <div className="p-6 space-y-4">
+            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className={`h-full transition-all duration-300 rounded-full ${progress === 100 ? 'bg-green-500' : 'bg-primary'}`}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+
+            <div className="bg-gray-900 rounded-xl p-5 max-h-96 overflow-y-auto">
+              <pre className="whitespace-pre-wrap text-[13px] text-gray-300 leading-relaxed font-mono">
+                {result || 'Estabelecendo conexão...'}
+              </pre>
+            </div>
+
+            {result && (
+              <div className="flex flex-wrap gap-3">
+                <button
+                  onClick={copyToClipboard}
+                  className="flex-1 min-w-[120px] py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-black uppercase tracking-widest text-gray-700 hover:bg-gray-100 transition-all flex items-center justify-center gap-2"
+                >
+                  <Copy className="w-4 h-4" /> Copiar Texto
                 </button>
-                <button className="flex-1 py-4 bg-brand-cyan/10 hover:bg-brand-cyan/20 border border-brand-cyan/20 rounded-xl text-[10px] font-black uppercase tracking-widest text-brand-cyan flex items-center justify-center gap-2 transition-all">
+                <button
+                  onClick={downloadTxt}
+                  className="flex-1 min-w-[120px] py-3 bg-gray-50 border border-gray-200 rounded-xl text-xs font-black uppercase tracking-widest text-gray-700 hover:bg-gray-100 transition-all flex items-center justify-center gap-2"
+                >
                   <Download className="w-4 h-4" /> Baixar TXT
                 </button>
+
+                {/* ── ENVIAR PARA MEUS CANAIS ── */}
+                <div className="relative flex-1 min-w-[160px]">
+                  {sentToChannel ? (
+                    <div className="w-full py-3 bg-green-50 border border-green-200 rounded-xl text-xs font-black uppercase tracking-widest text-green-700 flex items-center justify-center gap-2">
+                      <Check className="w-4 h-4" /> Salvo em "{sentToChannel}"
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShowChannelPicker(v => !v)}
+                      className="w-full py-3 bg-primary text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-primary/90 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Send className="w-4 h-4" /> Enviar para Canais
+                      <ChevronDown className={`w-3 h-3 transition-transform ${showChannelPicker ? 'rotate-180' : ''}`} />
+                    </button>
+                  )}
+
+                  {showChannelPicker && !sentToChannel && (
+                    <div className="absolute bottom-full mb-2 left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-bottom-2 duration-200">
+                      {channels.length === 0 ? (
+                        <div className="px-4 py-4 text-xs font-black text-gray-500 text-center">
+                          Nenhum canal em Meus Canais.<br />Crie um canal primeiro.
+                        </div>
+                      ) : (
+                        channels.filter(ch => !(ch as unknown as { archived: boolean }).archived).map(ch => (
+                          <button
+                            key={ch.id}
+                            onClick={() => sendToChannel(ch)}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-black text-gray-900 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0"
+                          >
+                            <div className="w-6 h-6 rounded-lg shrink-0" style={{ background: ch.color }} />
+                            {ch.name}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       )}
     </div>
   );
 };
-
-const RefreshCw = ({ className }: { className?: string }) => (
-  <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
-);
-
-const Zap = ({ className }: { className?: string }) => (
-  <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-);
 
 export default UmbraConnectTool;

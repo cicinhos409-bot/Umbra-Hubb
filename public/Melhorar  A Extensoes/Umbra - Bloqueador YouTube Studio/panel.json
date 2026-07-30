@@ -1,0 +1,55 @@
+{
+  "version": "1.0.0",
+  "groups": [
+    {
+      "id": "youtube",
+      "label": "YouTube",
+      "icon": "▶",
+      "settings": [
+        { "id": "hide_feed",        "label": "Ocultar Feed Inicial",           "default": false },
+        { "id": "redirect_subs",    "label": "Redirecionar p/ Inscrições",     "default": false },
+        { "id": "hide_sidebar",     "label": "Ocultar Barra Lateral",          "default": false,
+          "children": [
+            { "id": "hide_recommended", "label": "Ocultar Recomendados",       "default": false },
+            { "id": "hide_chat",        "label": "Ocultar Chat ao Vivo",        "default": false },
+            { "id": "hide_playlists",   "label": "Ocultar Playlist",           "default": false },
+            { "id": "hide_donate",      "label": "Ocultar Financiamento",      "default": false }
+          ]
+        },
+        { "id": "hide_endscreen",   "label": "Ocultar Tela Final",            "default": false },
+        { "id": "hide_cards",       "label": "Ocultar Cards Tela Final",      "default": false },
+        { "id": "hide_shorts",      "label": "Ocultar Shorts",                "default": false },
+        { "id": "hide_comments",    "label": "Ocultar Comentários",           "default": false },
+        { "id": "hide_mix",         "label": "Ocultar Mixes",                 "default": false },
+        { "id": "hide_merch",       "label": "Ocultar Merch / Ingressos",     "default": false },
+        { "id": "hide_meta",        "label": "Ocultar Info do Vídeo",         "default": false },
+        { "id": "hide_header",      "label": "Ocultar Cabeçalho",             "default": false },
+        { "id": "hide_notifs",      "label": "Ocultar Notificações",          "default": false },
+        { "id": "hide_search",      "label": "Ocultar Busca Inapropriada",    "default": false },
+        { "id": "hide_trending",    "label": "Ocultar Em Alta / Explorar",    "default": false },
+        { "id": "hide_moreyt",      "label": "Ocultar Mais do YouTube",       "default": false },
+        { "id": "hide_subs",        "label": "Ocultar Inscrições",            "default": false },
+        { "id": "disable_autoplay", "label": "Desativar Reprodução Auto",     "default": false },
+        { "id": "disable_annots",   "label": "Desativar Anotações",           "default": false }
+      ]
+    },
+    {
+      "id": "studio",
+      "label": "Studio",
+      "icon": "🎬",
+      "settings": [
+        { "id": "studio_hide_analytics",   "label": "Ocultar Analytics",            "default": false },
+        { "id": "studio_hide_comments",    "label": "Ocultar Comentários",          "default": false },
+        { "id": "studio_hide_revenue",     "label": "Ocultar Receita / Monetiz.",   "default": false },
+        { "id": "studio_hide_subs_count",  "label": "Ocultar Contagem Inscritos",   "default": false },
+        { "id": "studio_hide_views",       "label": "Ocultar Visualizações",        "default": false },
+        { "id": "studio_hide_likes",       "label": "Ocultar Curtidas",             "default": false },
+        { "id": "studio_hide_dashboard",   "label": "Ocultar Painel Inicial",       "default": false },
+        { "id": "studio_hide_news",        "label": "Ocultar Novidades YouTube",    "default": false },
+        { "id": "studio_hide_sidebar",     "label": "Ocultar Menu Lateral",         "default": false },
+        { "id": "studio_censor_titles",    "label": "Censurar Títulos de Vídeos",   "default": false },
+        { "id": "studio_censor_thumbs",    "label": "Censurar Miniaturas",          "default": false }
+      ]
+    }
+  ]
+}

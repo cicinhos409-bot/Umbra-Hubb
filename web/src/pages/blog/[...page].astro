@@ -1,0 +1,159 @@
+---
+import { getCollection } from 'astro:content';
+import type { GetStaticPathsOptions } from 'astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+import BlogCard from '../../components/BlogCard.astro';
+
+export async function getStaticPaths({ paginate }: GetStaticPathsOptions) {
+  const allPosts = await getCollection('blog', ({ data }) =>
+    import.meta.env.PROD ? !data.draft : true
+  );
+
+  const sorted = allPosts.sort((a, b) => {
+    if (a.data.featured && !b.data.featured) return -1;
+    if (!a.data.featured && b.data.featured) return 1;
+    return new Date(b.data.pubDate).getTime() - new Date(a.data.pubDate).getTime();
+  });
+
+  const allTags = [...new Set(sorted.flatMap(p => p.data.tags ?? []))];
+
+  return paginate(sorted, {
+    pageSize: 9,
+    props: { allTags },
+  });
+}
+
+const { page, allTags } = Astro.props;
+const isFirstPage = page.currentPage === 1;
+const featuredPost = isFirstPage ? page.data[0] : null;
+const gridPosts    = isFirstPage ? page.data.slice(1) : page.data;
+
+const pageTitle = isFirstPage
+  ? 'Blog UmbraHub — Dicas para Criadores de Canais Faceless'
+  : `Blog UmbraHub — Página ${page.currentPage}`;
+---
+
+<BaseLayout
+  title={pageTitle}
+  description="Guias, tutoriais e estratégias para criar e monetizar canais faceless no YouTube com inteligência artificial."
+>
+  <Header />
+
+  <main class="max-w-6xl mx-auto px-4 py-16">
+    <!-- Header -->
+    <div class="text-center mb-14">
+      <h1 class="text-5xl font-black text-gray-900 dark:text-white mb-4">Blog UmbraHub</h1>
+      <p class="text-xl text-gray-500 dark:text-gray-400 max-w-xl mx-auto">
+        Guias práticos e estratégias para crescer como criador faceless
+      </p>
+    </div>
+
+    <!-- Tags filter -->
+    {allTags.length > 0 && (
+      <div class="flex flex-wrap gap-2 justify-center mb-12">
+        <a href="/blog" class="text-sm font-semibold px-4 py-1.5 bg-primary text-white rounded-full">
+          Todos
+        </a>
+        {allTags.map(tag => (
+          <a
+            href={`/blog/tag/${tag}`}
+            class="text-sm font-semibold px-4 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-full hover:bg-primary-pale dark:hover:bg-primary/20 hover:text-primary dark:hover:text-primary-light transition-colors"
+          >
+            {tag}
+          </a>
+        ))}
+      </div>
+    )}
+
+    <!-- Post em destaque (página 1 apenas) -->
+    {featuredPost && (
+      <div class="mb-12">
+        <article class="group grid md:grid-cols-2 gap-8 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-3xl overflow-hidden hover:shadow-lg transition-all">
+          {featuredPost.data.image && (
+            <a href={`/blog/${featuredPost.slug}`} class="block bg-gray-100 dark:bg-gray-700 aspect-video overflow-hidden">
+              <img
+                src={featuredPost.data.image}
+                alt={featuredPost.data.title}
+                width="1200"
+                height="630"
+                loading="eager"
+                decoding="async"
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              />
+            </a>
+          )}
+          <div class="p-8 flex flex-col justify-center">
+            <div class="flex items-center gap-2 mb-4">
+              <span class="text-xs font-bold uppercase tracking-wide text-primary bg-primary-pale dark:bg-primary/20 dark:text-primary-light px-3 py-1 rounded-full">
+                Em destaque
+              </span>
+              {featuredPost.data.readTime && (
+                <span class="text-xs text-gray-400 dark:text-gray-500">{featuredPost.data.readTime} de leitura</span>
+              )}
+            </div>
+            <h2 class="text-3xl font-black text-gray-900 dark:text-white mb-3 group-hover:text-primary dark:group-hover:text-primary-light transition-colors leading-tight">
+              <a href={`/blog/${featuredPost.slug}`}>{featuredPost.data.title}</a>
+            </h2>
+            <p class="text-gray-500 dark:text-gray-400 leading-relaxed mb-6">{featuredPost.data.description}</p>
+            <div class="flex items-center justify-between">
+              <time class="text-sm text-gray-400 dark:text-gray-500">
+                {featuredPost.data.pubDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+              </time>
+              <a href={`/blog/${featuredPost.slug}`} class="font-bold text-primary dark:text-primary-light hover:underline">
+                Ler artigo →
+              </a>
+            </div>
+          </div>
+        </article>
+      </div>
+    )}
+
+    <!-- Grid de posts -->
+    {gridPosts.length > 0 && (
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {gridPosts.map(post => (
+          <BlogCard post={post} />
+        ))}
+      </div>
+    )}
+
+    <!-- Paginação -->
+    {page.lastPage > 1 && (
+      <nav class="flex items-center justify-center gap-4 mt-14" aria-label="Paginação">
+        {page.url.prev ? (
+          <a
+            href={page.url.prev}
+            class="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-5 py-2.5 rounded-xl hover:border-primary hover:text-primary dark:hover:text-primary-light transition-all"
+          >
+            ← Anterior
+          </a>
+        ) : (
+          <span class="flex items-center gap-2 text-sm font-semibold text-gray-300 dark:text-gray-600 px-5 py-2.5 rounded-xl cursor-not-allowed">
+            ← Anterior
+          </span>
+        )}
+
+        <span class="text-sm text-gray-500 dark:text-gray-400 font-medium">
+          Página {page.currentPage} de {page.lastPage}
+        </span>
+
+        {page.url.next ? (
+          <a
+            href={page.url.next}
+            class="flex items-center gap-2 text-sm font-semibold text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-5 py-2.5 rounded-xl hover:border-primary hover:text-primary dark:hover:text-primary-light transition-all"
+          >
+            Próxima →
+          </a>
+        ) : (
+          <span class="flex items-center gap-2 text-sm font-semibold text-gray-300 dark:text-gray-600 px-5 py-2.5 rounded-xl cursor-not-allowed">
+            Próxima →
+          </span>
+        )}
+      </nav>
+    )}
+  </main>
+
+  <Footer />
+</BaseLayout>

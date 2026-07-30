@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState } from 'react';
 import { signInWithEmail, signUpWithEmail, signInWithPassword, signInWithGoogle } from '../services/authService';
 
@@ -100,7 +100,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBack }) => {
   };
 
   return (
-    <div className="login-page min-h-screen flex items-center justify-center relative overflow-hidden font-space text-white bg-background-deep">
+    <div className="login-page min-h-screen flex items-center justify-center relative overflow-hidden font-space text-gray-900 bg-white">
       {/* Animated orbs */}
       <div className="orb orb-1"></div>
       <div className="orb orb-2"></div>
@@ -128,19 +128,19 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBack }) => {
             </div>
           </div>
           <div className="tagline text-xs text-brand-cyan tracking-[0.3em] font-black uppercase opacity-90 mb-2">HUB</div>
-          <div className="subtitle text-sm text-gray-500 font-medium leading-relaxed">Plataforma de Ferramentas para Canais Dark</div>
+          <div className="subtitle text-sm text-gray-900 font-black leading-relaxed">Plataforma de Ferramentas para Criadores Faceless</div>
         </div>
 
         {/* Login card */}
-        <div className="card-login bg-background-light/40 border border-white/10 rounded-[32px] p-10 backdrop-blur-xl shadow-2xl relative overflow-hidden">
+        <div className="card-login bg-gray-50/40 border border-gray-200 rounded-2xl p-10  shadow-2xl relative overflow-hidden">
           {/* Animated scan line at the top */}
           <div className="scan-line absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-brand-cyan to-transparent animate-scan"></div>
 
           <div className="card-header mb-8">
-            <h1 className="card-title font-orbitron text-xl font-bold mb-2">
+            <h1 className="card-title font-orbitron text-xl font-black mb-2">
               {isSignUp ? 'Criar Conta' : 'Acessar Plataforma'}
             </h1>
-            <p className="card-description text-sm text-gray-500 leading-relaxed">
+            <p className="card-description text-sm text-gray-900 leading-relaxed">
               {isSignUp
                 ? 'Crie sua conta para acessar todas as ferramentas.'
                 : 'Entre com suas credenciais ou use o Google.'}
@@ -151,7 +151,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBack }) => {
           <button
             onClick={handleGoogleLogin}
             disabled={isLoading}
-            className="w-full bg-white hover:bg-gray-100 text-gray-800 font-bold py-4 px-6 rounded-2xl transition-all shadow-lg flex items-center justify-center gap-3 mb-6 group disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-white hover:bg-gray-100 text-gray-800 font-black py-4 px-6 rounded-2xl transition-all shadow-lg flex items-center justify-center gap-3 mb-6 group disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -159,12 +159,12 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBack }) => {
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
             </svg>
-            <span className="font-bold text-sm">Continuar com Google</span>
+            <span className="font-black text-sm">Continuar com Google</span>
           </button>
 
           <div className="divider text-center my-6 relative">
-            <div className="absolute top-1/2 left-0 w-full h-[1px] bg-white/5 -z-10" />
-            <span className="divider-text bg-background-light px-4 text-xs text-gray-600 font-bold uppercase">ou</span>
+            <div className="absolute top-1/2 left-0 w-full h-[1px] bg-gray-50 -z-10" />
+            <span className="divider-text bg-gray-50 px-4 text-xs text-gray-900 font-black uppercase">ou</span>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -177,7 +177,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBack }) => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="seu@email.com"
                 required
-                className="w-full bg-background-deep/60 border border-white/10 rounded-2xl p-5 text-sm font-bold text-white focus:border-brand-cyan outline-none transition-all shadow-inner placeholder:text-gray-700"
+                className="w-full bg-white/60 border border-gray-200 rounded-2xl p-5 text-sm font-black text-gray-900 focus:border-brand-cyan outline-none transition-all shadow-inner placeholder:text-gray-700"
               />
             </div>
 
@@ -194,7 +194,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBack }) => {
                     placeholder="••••••••"
                     required
                     minLength={6}
-                    className="w-full bg-background-deep/60 border border-white/10 rounded-2xl p-5 text-sm font-bold text-white focus:border-brand-cyan outline-none transition-all shadow-inner placeholder:text-gray-700"
+                    className="w-full bg-white/60 border border-gray-200 rounded-2xl p-5 text-sm font-black text-gray-900 focus:border-brand-cyan outline-none transition-all shadow-inner placeholder:text-gray-700"
                   />
                 </div>
 
@@ -209,7 +209,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBack }) => {
                       placeholder="••••••••"
                       required
                       minLength={6}
-                      className="w-full bg-background-deep/60 border border-white/10 rounded-2xl p-5 text-sm font-bold text-white focus:border-brand-cyan outline-none transition-all shadow-inner placeholder:text-gray-700"
+                      className="w-full bg-white/60 border border-gray-200 rounded-2xl p-5 text-sm font-black text-gray-900 focus:border-brand-cyan outline-none transition-all shadow-inner placeholder:text-gray-700"
                     />
                   </div>
                 )}
@@ -223,9 +223,9 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBack }) => {
                 id="magicLink"
                 checked={useMagicLink}
                 onChange={(e) => setUseMagicLink(e.target.checked)}
-                className="w-4 h-4 rounded border-white/10 bg-background-deep/60 text-brand-cyan focus:ring-brand-cyan"
+                className="w-4 h-4 rounded border-gray-200 bg-white/60 text-brand-cyan focus:ring-brand-cyan"
               />
-              <label htmlFor="magicLink" className="text-xs text-gray-400 cursor-pointer">
+              <label htmlFor="magicLink" className="text-xs text-gray-900 cursor-pointer">
                 Usar magic link (sem senha)
               </label>
             </div>
@@ -246,7 +246,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBack }) => {
           </form>
 
           <div className="divider text-center my-8 relative">
-            <div className="absolute top-1/2 left-0 w-full h-[1px] bg-white/5 -z-10" />
+            <div className="absolute top-1/2 left-0 w-full h-[1px] bg-gray-50 -z-10" />
           </div>
 
           <div className="footer-links text-center space-y-4">
@@ -257,7 +257,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBack }) => {
                 setSuccessMessage('');
                 setShowSuccess(false);
               }}
-              className="text-brand-cyan hover:text-brand-purple text-xs font-bold transition-all"
+              className="text-brand-cyan hover:text-brand-purple text-xs font-black transition-all"
             >
               {isSignUp ? 'Já tem uma conta? Entrar' : 'Não tem conta? Criar agora'}
             </button>
@@ -265,7 +265,7 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBack }) => {
             <div>
               <button
                 onClick={onBack}
-                className="text-gray-500 hover:text-brand-cyan text-xs font-bold transition-all flex items-center justify-center gap-2 mx-auto group"
+                className="text-gray-900 hover:text-brand-cyan text-xs font-black transition-all flex items-center justify-center gap-2 mx-auto group"
               >
                 Voltar para Home <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </button>
@@ -282,9 +282,9 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBack }) => {
           left: 0;
           width: 100%;
           height: 100%;
-          background-image: 
-              linear-gradient(90deg, rgba(0, 245, 255, 0.03) 1px, transparent 1px),
-              linear-gradient(rgba(168, 85, 247, 0.03) 1px, transparent 1px);
+          background-image:
+              linear-gradient(90deg, rgba(167, 139, 250, 0.05) 1px, transparent 1px),
+              linear-gradient(rgba(139, 92, 246, 0.05) 1px, transparent 1px);
           background-size: 50px 50px;
           animation: gridScroll 20s linear infinite;
           pointer-events: none;
@@ -304,9 +304,9 @@ const Login: React.FC<LoginProps> = ({ onLoginSuccess, onBack }) => {
           animation: floatOrb 20s ease-in-out infinite;
         }
 
-        .orb-1 { width: 400px; height: 400px; background: #00f5ff; top: -200px; left: -200px; animation-delay: 0s; }
-        .orb-2 { width: 500px; height: 500px; background: #a855f7; bottom: -250px; right: -250px; animation-delay: -10s; }
-        .orb-3 { width: 300px; height: 300px; background: #ec4899; top: 50%; right: -150px; animation-delay: -5s; }
+        .orb-1 { width: 400px; height: 400px; background: #3b82f6; top: -200px; left: -200px; animation-delay: 0s; }
+        .orb-2 { width: 500px; height: 500px; background: #a78bfa; bottom: -250px; right: -250px; animation-delay: -10s; }
+        .orb-3 { width: 300px; height: 300px; background: #8b5cf6; top: 50%; right: -150px; animation-delay: -5s; }
 
         @keyframes floatOrb {
           0%, 100% { transform: translate(0, 0) scale(1); }

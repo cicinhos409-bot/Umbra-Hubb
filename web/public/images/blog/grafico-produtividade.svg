@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 460" width="960" height="460">
+  <defs>
+    <linearGradient id="barOrange" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f97316"/>
+      <stop offset="100%" style="stop-color:#ea580c"/>
+    </linearGradient>
+    <linearGradient id="barPurple" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6"/>
+      <stop offset="100%" style="stop-color:#7c3aed"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="960" height="460" fill="#ffffff" rx="16"/>
+  <rect width="960" height="460" fill="#f8fafc" rx="16"/>
+
+  <!-- Title -->
+  <text x="480" y="38" font-family="system-ui,-apple-system,sans-serif" font-size="18" font-weight="800" fill="#0f172a" text-anchor="middle">Tempo gasto por etapa: Sem ferramentas vs Com UmbraHub</text>
+  <text x="480" y="58" font-family="system-ui,sans-serif" font-size="13" fill="#64748b" text-anchor="middle">Estimativa média por vídeo produzido</text>
+
+  <!-- Y-axis gridlines + labels -->
+  <!-- y=340 = 0h, each hour = 128px upward -->
+  <!-- 0h -->
+  <line x1="120" y1="340" x2="920" y2="340" stroke="#e2e8f0" stroke-width="1.5"/>
+  <text x="110" y="344" font-family="system-ui,sans-serif" font-size="12" fill="#94a3b8" text-anchor="end">0h</text>
+
+  <!-- 0.5h → y=276 -->
+  <line x1="120" y1="276" x2="920" y2="276" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,4"/>
+  <text x="110" y="280" font-family="system-ui,sans-serif" font-size="12" fill="#94a3b8" text-anchor="end">30min</text>
+
+  <!-- 1h → y=212 -->
+  <line x1="120" y1="212" x2="920" y2="212" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,4"/>
+  <text x="110" y="216" font-family="system-ui,sans-serif" font-size="12" fill="#94a3b8" text-anchor="end">1h</text>
+
+  <!-- 1.5h → y=148 -->
+  <line x1="120" y1="148" x2="920" y2="148" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,4"/>
+  <text x="110" y="152" font-family="system-ui,sans-serif" font-size="12" fill="#94a3b8" text-anchor="end">1h30</text>
+
+  <!-- 2h → y=84 -->
+  <line x1="120" y1="84" x2="920" y2="84" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4,4"/>
+  <text x="110" y="88" font-family="system-ui,sans-serif" font-size="12" fill="#94a3b8" text-anchor="end">2h</text>
+
+  <!-- Y-axis label -->
+  <text x="30" y="230" font-family="system-ui,sans-serif" font-size="12" fill="#94a3b8" text-anchor="middle" transform="rotate(-90, 30, 230)">Tempo</text>
+
+  <!-- GROUP 1: Pesquisa (center=220) -->
+  <!-- Antes: 1.5h → 192px → top=148 -->
+  <rect x="148" y="148" width="62" height="192" fill="url(#barOrange)" rx="6"/>
+  <text x="179" y="140" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#f97316" text-anchor="middle">1h30</text>
+  <!-- Com UmbraHub: 10min → 21px → top=319 -->
+  <rect x="218" y="319" width="62" height="21" fill="url(#barPurple)" rx="4"/>
+  <text x="249" y="312" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#8b5cf6" text-anchor="middle">10min</text>
+  <!-- Group label -->
+  <text x="220" y="368" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#374151" text-anchor="middle">Pesquisa</text>
+  <text x="220" y="384" font-family="system-ui,sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">e Pauta</text>
+
+  <!-- GROUP 2: Roteiro (center=420) -->
+  <!-- Antes: 2h → 256px → top=84 -->
+  <rect x="348" y="84" width="62" height="256" fill="url(#barOrange)" rx="6"/>
+  <text x="379" y="76" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#f97316" text-anchor="middle">2h</text>
+  <!-- Com UmbraHub: 15min → 32px → top=308 -->
+  <rect x="418" y="308" width="62" height="32" fill="url(#barPurple)" rx="4"/>
+  <text x="449" y="300" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#8b5cf6" text-anchor="middle">15min</text>
+  <!-- Group label -->
+  <text x="420" y="368" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#374151" text-anchor="middle">Roteiro</text>
+  <text x="420" y="384" font-family="system-ui,sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">e Script</text>
+
+  <!-- GROUP 3: Narração (center=620) -->
+  <!-- Antes: 1h → 128px → top=212 -->
+  <rect x="548" y="212" width="62" height="128" fill="url(#barOrange)" rx="6"/>
+  <text x="579" y="204" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#f97316" text-anchor="middle">1h</text>
+  <!-- Com UmbraHub: 5min → 11px → top=329 -->
+  <rect x="618" y="329" width="62" height="11" fill="url(#barPurple)" rx="4"/>
+  <text x="649" y="322" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#8b5cf6" text-anchor="middle">5min</text>
+  <!-- Group label -->
+  <text x="620" y="368" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#374151" text-anchor="middle">Narração</text>
+  <text x="620" y="384" font-family="system-ui,sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">e Voz</text>
+
+  <!-- GROUP 4: Thumbnail (center=820) -->
+  <!-- Antes: 1h → 128px → top=212 -->
+  <rect x="748" y="212" width="62" height="128" fill="url(#barOrange)" rx="6"/>
+  <text x="779" y="204" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#f97316" text-anchor="middle">1h</text>
+  <!-- Com UmbraHub: 5min → 11px → top=329 -->
+  <rect x="818" y="329" width="62" height="11" fill="url(#barPurple)" rx="4"/>
+  <text x="849" y="322" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#8b5cf6" text-anchor="middle">5min</text>
+  <!-- Group label -->
+  <text x="820" y="368" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#374151" text-anchor="middle">Thumbnail</text>
+  <text x="820" y="384" font-family="system-ui,sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">e Capa</text>
+
+  <!-- Baseline -->
+  <line x1="120" y1="340" x2="920" y2="340" stroke="#cbd5e1" stroke-width="2"/>
+
+  <!-- Legend -->
+  <rect x="310" y="412" width="16" height="16" fill="url(#barOrange)" rx="3"/>
+  <text x="332" y="424" font-family="system-ui,sans-serif" font-size="13" fill="#374151">Sem ferramentas</text>
+
+  <rect x="490" y="412" width="16" height="16" fill="url(#barPurple)" rx="3"/>
+  <text x="512" y="424" font-family="system-ui,sans-serif" font-size="13" fill="#374151">Com UmbraHub</text>
+
+  <!-- Savings callout -->
+  <rect x="120" y="400" width="160" height="44" rx="10" fill="#f0fdf4" stroke="#86efac" stroke-width="1"/>
+  <text x="200" y="419" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#16a34a" text-anchor="middle">Economia total</text>
+  <text x="200" y="436" font-family="system-ui,sans-serif" font-size="13" font-weight="900" fill="#15803d" text-anchor="middle">~5h30 por vídeo</text>
+
+  <rect x="730" y="400" width="160" height="44" rx="10" fill="#faf5ff" stroke="#d8b4fe" stroke-width="1"/>
+  <text x="810" y="419" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#7c3aed" text-anchor="middle">Redução de tempo</text>
+  <text x="810" y="436" font-family="system-ui,sans-serif" font-size="13" font-weight="900" fill="#6d28d9" text-anchor="middle">mais de 90%</text>
+</svg>

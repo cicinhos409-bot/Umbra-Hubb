@@ -11,12 +11,14 @@ import {
     CheckCircle2,
     AudioLines,
     Sparkles,
-    Search,
     Globe,
     User,
     Lock,
     ArrowUpCircle,
-    X
+    X,
+    Pause,
+    SlidersHorizontal,
+    Zap,
 } from 'lucide-react';
 import { supabase } from '../services/supabaseClient';
 import { ToolTier } from '../types';
@@ -32,16 +34,16 @@ interface Voice {
     naturalSampleRateHertz: number;
 }
 
-const LANGUAGE_NAMES: Record<string, { name: string, flag: string }> = {
+const LANGUAGE_NAMES: Record<string, { name: string; flag: string }> = {
     'pt-BR': { name: 'Português (Brasil)', flag: '🇧🇷' },
     'pt-PT': { name: 'Português (Portugal)', flag: '🇵🇹' },
     'en-US': { name: 'Inglês (EUA)', flag: '🇺🇸' },
     'en-GB': { name: 'Inglês (Reino Unido)', flag: '🇬🇧' },
-    'es-ES': { name: 'Espanhol (Espanha)', flag: 'es-ES' },
+    'es-ES': { name: 'Espanhol (Espanha)', flag: '🇪🇸' },
     'es-US': { name: 'Espanhol (EUA)', flag: '🇺🇸' },
-    'fr-FR': { name: 'Francês (França)', flag: '🇫🇷' },
-    'it-IT': { name: 'Italiano (Itália)', flag: '🇮🇹' },
-    'de-DE': { name: 'Alemão (Alemanha)', flag: '🇩🇪' },
+    'fr-FR': { name: 'Francês', flag: '🇫🇷' },
+    'it-IT': { name: 'Italiano', flag: '🇮🇹' },
+    'de-DE': { name: 'Alemão', flag: '🇩🇪' },
     'ja-JP': { name: 'Japonês', flag: '🇯🇵' },
     'ko-KR': { name: 'Coreano', flag: '🇰🇷' },
     'zh-CN': { name: 'Chinês (Mandarim)', flag: '🇨🇳' },
@@ -53,260 +55,167 @@ const LANGUAGE_NAMES: Record<string, { name: string, flag: string }> = {
 
 const STORAGE_LIMIT_KEY = 'umbra_audios_usage_v2';
 
+const VOICE_TYPES = [
+    { key: 'Studio', label: 'Studio', desc: 'Podcast / News' },
+    { key: 'Neural2', label: 'Neural2', desc: 'Deep Learning' },
+    { key: 'Wavenet', label: 'WaveNet', desc: 'Google Assistant' },
+    { key: 'Standard', label: 'Standard', desc: 'Alta eficiência' },
+];
+
 const UmbraAudiosTool: React.FC<UmbraAudiosToolProps> = ({ userTier }) => {
     const [voices, setVoices] = useState<Voice[]>([]);
     const [isLoadingVoices, setIsLoadingVoices] = useState(true);
     const [selectedLanguage, setSelectedLanguage] = useState('pt-BR');
     const [selectedGender, setSelectedGender] = useState<'MALE' | 'FEMALE' | 'ALL'>('ALL');
     const [selectedVoice, setSelectedVoice] = useState('');
-    const [searchTerm, setSearchTerm] = useState('');
     const [textInput, setTextInput] = useState('Bem-vindo ao Umbra Hub. Agora você tem acesso a todas as vozes premium do Google Cloud TTS.');
     const [isGenerating, setIsGenerating] = useState(false);
-    const [status, setStatus] = useState<{ type: 'loading' | 'success' | 'error' | null, message: string }>({ type: null, message: '' });
+    const [status, setStatus] = useState<{ type: 'loading' | 'success' | 'error' | null; message: string }>({ type: null, message: '' });
     const [audioUrl, setAudioUrl] = useState<string | null>(null);
     const [isPreviewing, setIsPreviewing] = useState(false);
     const [usage, setUsage] = useState({ count: 0, date: new Date().toLocaleDateString() });
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-    
-    // Audio Filters State
     const [pitch, setPitch] = useState(0);
     const [speakingRate, setSpeakingRate] = useState(1.0);
     const [volumeGain, setVolumeGain] = useState(0);
+    const [isProcessingBatch, setIsProcessingBatch] = useState(false);
+    const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
 
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const audioRef = useRef<HTMLAudioElement>(null);
+
+    const limit = userTier === ToolTier.FREE ? 3 : 30;
+    const remaining = Math.max(0, limit - usage.count);
+    const isLimitReached = usage.count >= limit;
+    const isStudioVoice = selectedVoice.toLowerCase().includes('studio') || selectedVoice.toLowerCase().includes('neural2');
+    const hasPitchAdjustment = pitch !== 0;
+
+    // ── helpers ────────────────────────────────────────────────────
+    const getLanguageLabel = (code: string) => {
+        const info = LANGUAGE_NAMES[code];
+        return info ? `${info.flag} ${info.name}` : code;
+    };
+
+    const getVoiceCategory = (name: string) => {
+        if (name.includes('Neural2')) return 'Neural2';
+        if (name.includes('Studio')) return 'Studio';
+        if (name.includes('Polyglot')) return 'Polyglot';
+        if (name.includes('Wavenet')) return 'WaveNet';
+        if (name.includes('Chirp')) return 'Chirp v3';
+        return 'Standard';
+    };
 
     const insertSSML = (tag: string, closingTag?: string) => {
         if (!textareaRef.current) return;
         const start = textareaRef.current.selectionStart;
         const end = textareaRef.current.selectionEnd;
-        const textAreaValue = textInput;
-        const selectedText = textAreaValue.substring(start, end);
-        
-        // Se for um atalho de início/fim e nada estiver selecionado, coloca um placeholder
-        const content = (closingTag && !selectedText) ? '[texto]' : selectedText;
-        
-        let newText;
-        if (closingTag) {
-            newText = textAreaValue.substring(0, start) + tag + content + closingTag + textAreaValue.substring(end);
-        } else {
-            newText = textAreaValue.substring(0, start) + tag + textAreaValue.substring(end);
-        }
-        
+        const selected = textInput.substring(start, end);
+        const content = closingTag && !selected ? '[texto]' : selected;
+        const newText = closingTag
+            ? textInput.substring(0, start) + tag + content + closingTag + textInput.substring(end)
+            : textInput.substring(0, start) + tag + textInput.substring(end);
         setTextInput(newText);
-        
-        // Retornar o foco e posicionar o cursor
         setTimeout(() => {
             if (textareaRef.current) {
                 textareaRef.current.focus();
-                const pos = start + tag.length + content.length + (closingTag ? closingTag.length : 0);
+                const pos = start + tag.length + content.length + (closingTag?.length || 0);
                 textareaRef.current.setSelectionRange(pos, pos);
             }
         }, 10);
     };
 
-    const applyDarkChannelPreset = () => {
-        setPitch(-1);
-        setSpeakingRate(0.85);
-        setStatus({ type: 'success', message: '🎭 Preset DARK CHANNEL aplicado!' });
-    };
+    const applyDarkPreset = () => { setPitch(-1); setSpeakingRate(0.85); };
 
     const loadStorytellingExample = () => {
-        const example = `<speak>
-<prosody pitch="-1st" rate="92%">
-No dia do meu casamento...
-</prosody>
-
-<break time="700ms"/>
-
-<prosody rate="95%">
-alguém se levantou no meio da cerimônia
-</prosody>
-
-<break time="400ms"/>
-
-<prosody rate="88%">
-e revelou um <emphasis level="strong">segredo</emphasis>.
-</prosody>
-</speak>`;
-        setTextInput(example);
-        setStatus({ type: 'success', message: '📖 Exemplo HUMAN STORYTELLING carregado!' });
+        setTextInput(`<speak>\n<prosody pitch="-1st" rate="92%">\nNo dia do meu casamento...\n</prosody>\n\n<break time="700ms"/>\n\n<prosody rate="95%">\nalguém se levantou no meio da cerimônia\n</prosody>\n\n<break time="400ms"/>\n\n<prosody rate="88%">\ne revelou um <emphasis level="strong">segredo</emphasis>.\n</prosody>\n</speak>`);
     };
 
-    const isStudioVoice = selectedVoice.toLowerCase().includes('studio') || selectedVoice.toLowerCase().includes('neural2');
-    const hasPitchAdjustment = pitch !== 0;
-
-    // Batch Processing State
-    const [isProcessingBatch, setIsProcessingBatch] = useState(false);
-    const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 });
-
     const splitTextIntoChunks = (text: string, maxChunkSize = 4800) => {
-        // Find if text is SSML
-        const isSSML = /<speak/i.test(text);
         const chunks: string[] = [];
-        
-        let currentText = text;
-        
-        // Very basic splitter that tries to avoid breaking tags
-        while (currentText.length > 0) {
-            if (currentText.length <= maxChunkSize) {
-                chunks.push(currentText);
-                break;
-            }
-
-            // Look for a good split point (period followed by space) near the limit
-            let splitIndex = currentText.lastIndexOf('. ', maxChunkSize);
-            
-            // If no good sentence break, just split at last space
-            if (splitIndex === -1) {
-                splitIndex = currentText.lastIndexOf(' ', maxChunkSize);
-            }
-            
-            // If still no space, just hard cut
-            if (splitIndex === -1 || splitIndex < maxChunkSize * 0.5) {
-                splitIndex = maxChunkSize;
-            } else {
-                splitIndex += 1; // Include the space or period
-            }
-
-            chunks.push(currentText.substring(0, splitIndex));
-            currentText = currentText.substring(splitIndex).trim();
+        let current = text;
+        while (current.length > 0) {
+            if (current.length <= maxChunkSize) { chunks.push(current); break; }
+            let split = current.lastIndexOf('. ', maxChunkSize);
+            if (split === -1) split = current.lastIndexOf(' ', maxChunkSize);
+            if (split === -1 || split < maxChunkSize * 0.5) split = maxChunkSize;
+            else split += 1;
+            chunks.push(current.substring(0, split));
+            current = current.substring(split).trim();
         }
-
         return chunks;
     };
 
-    // Load usage
+    // ── effects ────────────────────────────────────────────────────
     useEffect(() => {
         const saved = localStorage.getItem(STORAGE_LIMIT_KEY);
         const today = new Date().toLocaleDateString();
         if (saved) {
             try {
                 const parsed = JSON.parse(saved);
-                // Daily reset for PRO/TURBO
-                if (userTier !== ToolTier.FREE && parsed.date !== today) {
-                    setUsage({ count: 0, date: today });
-                } else {
-                    setUsage(parsed);
-                }
-            } catch (e) {
-                setUsage({ count: 0, date: today });
-            }
-        } else {
-            setUsage({ count: 0, date: today });
-        }
+                if (userTier !== ToolTier.FREE && parsed.date !== today) setUsage({ count: 0, date: today });
+                else setUsage(parsed);
+            } catch { setUsage({ count: 0, date: today }); }
+        } else { setUsage({ count: 0, date: today }); }
     }, [userTier]);
 
-    // Save usage
-    useEffect(() => {
-        localStorage.setItem(STORAGE_LIMIT_KEY, JSON.stringify(usage));
-    }, [usage]);
+    useEffect(() => { localStorage.setItem(STORAGE_LIMIT_KEY, JSON.stringify(usage)); }, [usage]);
 
-    // Fetch voices on mount
     useEffect(() => {
         const fetchVoices = async () => {
             try {
-                const { data, error } = await supabase.functions.invoke('google-tts', {
-                    body: { action: 'listVoices' }
-                });
-
+                const { data, error } = await supabase.functions.invoke('google-tts', { body: { action: 'listVoices' } });
                 if (error) throw error;
                 if (data.voices) {
-                    const sortedVoices = (data.voices as Voice[]).sort((a, b) => a.name.localeCompare(b.name));
-                    setVoices(sortedVoices);
-
-                    // Set default voice for initial language
-                    const initialVoice = sortedVoices.find(v => v.languageCodes.includes('pt-BR'));
-                    if (initialVoice) setSelectedVoice(initialVoice.name);
+                    const sorted = (data.voices as Voice[]).sort((a, b) => a.name.localeCompare(b.name));
+                    setVoices(sorted);
+                    const initial = sorted.find(v => v.languageCodes.includes('pt-BR'));
+                    if (initial) setSelectedVoice(initial.name);
                 }
-            } catch (err) {
-                console.error('Error fetching voices:', err);
-                setStatus({ type: 'error', message: 'Erro ao carregar lista de vozes' });
-            } finally {
-                setIsLoadingVoices(false);
-            }
+            } catch { setStatus({ type: 'error', message: 'Erro ao carregar lista de vozes' }); }
+            finally { setIsLoadingVoices(false); }
         };
-
         fetchVoices();
     }, []);
 
-    // Filtered languages based on available voices
     const availableLanguages = useMemo(() => {
         const langs = new Set<string>();
         voices.forEach(v => v.languageCodes.forEach(lc => langs.add(lc)));
         return Array.from(langs).sort();
     }, [voices]);
 
-    // Filtered voices based on selected language, gender and search term
-    const filteredVoices = useMemo(() => {
-        return voices.filter(v =>
+    const filteredVoices = useMemo(() =>
+        voices.filter(v =>
             v.languageCodes.includes(selectedLanguage) &&
-            (selectedGender === 'ALL' || v.ssmlGender === selectedGender) &&
-            v.name.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }, [voices, selectedLanguage, selectedGender, searchTerm]);
+            (selectedGender === 'ALL' || v.ssmlGender === selectedGender)
+        ), [voices, selectedLanguage, selectedGender]);
 
-    // Update selected voice when language or filters change
     useEffect(() => {
-        if (filteredVoices.length > 0) {
-            if (!filteredVoices.find(v => v.name === selectedVoice)) {
-                setSelectedVoice(filteredVoices[0].name);
-            }
-        } else {
-            setSelectedVoice('');
-        }
+        if (filteredVoices.length > 0 && !filteredVoices.find(v => v.name === selectedVoice)) {
+            setSelectedVoice(filteredVoices[0].name);
+        } else if (filteredVoices.length === 0) { setSelectedVoice(''); }
     }, [selectedLanguage, selectedGender, filteredVoices]);
 
+    // ── actions ────────────────────────────────────────────────────
     const handlePreview = async () => {
         if (!selectedVoice || isPreviewing) return;
-
         setIsPreviewing(true);
         try {
             const previewText = selectedLanguage.startsWith('pt')
-                ? "Olá! Esta é uma pequena demonstração desta voz no Umbra Hub."
-                : "Hello! This is a short demonstration of this voice in Umbra Hub.";
-
-            const { data, error } = await supabase.functions.invoke('google-tts', {
-                body: {
-                    text: previewText,
-                    voice: selectedVoice,
-                    languageCode: selectedLanguage
-                }
-            });
-
+                ? 'Olá! Esta é uma demonstração desta voz no Umbra Hub.'
+                : 'Hello! This is a short demonstration of this voice.';
+            const { data, error } = await supabase.functions.invoke('google-tts', { body: { text: previewText, voice: selectedVoice, languageCode: selectedLanguage } });
             if (error) throw error;
             if (data.audioContent) {
-                const binaryString = window.atob(data.audioContent);
-                const bytes = new Uint8Array(binaryString.length);
-                for (let i = 0; i < binaryString.length; i++) {
-                    bytes[i] = binaryString.charCodeAt(i);
-                }
-                const blob = new Blob([bytes], { type: 'audio/mp3' });
-                const url = URL.createObjectURL(blob);
-
-                const audio = new Audio(url);
-                audio.play();
+                const bytes = new Uint8Array(atob(data.audioContent).split('').map(c => c.charCodeAt(0)));
+                const url = URL.createObjectURL(new Blob([bytes], { type: 'audio/mp3' }));
+                new Audio(url).play();
             }
-        } catch (err) {
-            console.error('Preview error:', err);
-        } finally {
-            setIsPreviewing(false);
-        }
+        } catch { } finally { setIsPreviewing(false); }
     };
 
     const handleGenerate = async () => {
-        if (!textInput.trim()) {
-            setStatus({ type: 'error', message: '❌ Por favor, digite algum texto' });
-            return;
-        }
-
-        // Check limits based on tier
-        const limit = userTier === ToolTier.FREE ? 3 : userTier === ToolTier.PRO ? 10 : 30;
-
-        if (usage.count >= limit) {
-            setShowUpgradeModal(true);
-            return;
-        }
+        if (!textInput.trim()) { setStatus({ type: 'error', message: 'Por favor, insira algum texto' }); return; }
+        if (isLimitReached) { setShowUpgradeModal(true); return; }
 
         setIsGenerating(true);
         setStatus({ type: 'loading', message: 'Iniciando síntese de voz...' });
@@ -315,87 +224,45 @@ e revelou um <emphasis level="strong">segredo</emphasis>.
         setBatchProgress({ current: 0, total: 0 });
 
         try {
-            let fullText = textInput.trim();
-            
-            // Cleanup and Sanitize
-            fullText = fullText.replace(/&(?!(?:amp|quot|lt|gt|apos);)/g, '&amp;');
-            const emptyOrPlaceholderTagRegex = /<([a-zA-Z0-9]+)\b[^>]*>(?:\s*|\[texto\])<\/\1>/g;
-            while (emptyOrPlaceholderTagRegex.test(fullText)) {
-                fullText = fullText.replace(emptyOrPlaceholderTagRegex, '');
-            }
+            let fullText = textInput.trim().replace(/&(?!(?:amp|quot|lt|gt|apos);)/g, '&amp;');
+            const emptyTagRegex = /<([a-zA-Z0-9]+)\b[^>]*>(?:\s*|\[texto\])<\/\1>/g;
+            while (emptyTagRegex.test(fullText)) fullText = fullText.replace(emptyTagRegex, '');
 
             const isSSML = /<speak|<break|<prosody|<emphasis|<phoneme|<sub|<voice|<lexicon|<say-as|<mark/.test(fullText);
-            
-            // Split into chunks if long (approx 4500 bytes limit)
-            const maxChars = 4500;
-            const textChunks = fullText.length > maxChars ? splitTextIntoChunks(fullText, maxChars) : [fullText];
-            
-            if (textChunks.length > 1) {
+            const chunks = fullText.length > 4500 ? splitTextIntoChunks(fullText, 4500) : [fullText];
+
+            if (chunks.length > 1) {
                 setIsProcessingBatch(true);
-                setBatchProgress({ current: 0, total: textChunks.length });
-                setStatus({ type: 'loading', message: `Processando parte 1 de ${textChunks.length}...` });
+                setBatchProgress({ current: 0, total: chunks.length });
             }
 
             const audioChunks: Blob[] = [];
 
-            for (let i = 0; i < textChunks.length; i++) {
-                if (textChunks.length > 1) {
+            for (let i = 0; i < chunks.length; i++) {
+                if (chunks.length > 1) {
                     setBatchProgress(prev => ({ ...prev, current: i + 1 }));
-                    setStatus({ type: 'loading', message: `Gerando áudio: Parte ${i + 1} de ${textChunks.length}...` });
+                    setStatus({ type: 'loading', message: `Gerando áudio: parte ${i + 1} de ${chunks.length}...` });
                 }
 
-                const chunk = textChunks[i];
-                const requestBody: any = {
-                    voice: selectedVoice,
-                    languageCode: selectedLanguage,
-                    pitch: pitch,
-                    speakingRate: speakingRate,
-                    volumeGainDb: volumeGain
-                };
+                const body: any = { voice: selectedVoice, languageCode: selectedLanguage, pitch, speakingRate, volumeGainDb: volumeGain };
+                if (isSSML) body.ssml = chunks[i].startsWith('<speak') ? chunks[i] : `<speak>${chunks[i]}</speak>`;
+                else body.text = chunks[i];
 
-                if (isSSML) {
-                    requestBody.ssml = chunk.startsWith('<speak') ? chunk : `<speak>${chunk}</speak>`;
-                } else {
-                    requestBody.text = chunk;
-                }
+                const { data, error } = await supabase.functions.invoke('google-tts', { body });
+                if (error || !data?.audioContent) throw new Error(error?.message || `Falha na parte ${i + 1}`);
 
-                const { data, error: invokeError } = await supabase.functions.invoke('google-tts', {
-                    body: requestBody
-                });
-
-                if (invokeError || !data?.audioContent) {
-                    throw new Error(invokeError?.message || 'Falha na resposta da função na parte ' + (i + 1));
-                }
-
-                // Decode base64 to binary
-                const binaryString = atob(data.audioContent);
-                const bytes = new Uint8Array(binaryString.length);
-                for (let j = 0; j < binaryString.length; j++) {
-                    bytes[j] = binaryString.charCodeAt(j);
-                }
-                
+                const bytes = new Uint8Array(atob(data.audioContent).split('').map(c => c.charCodeAt(0)));
                 audioChunks.push(new Blob([bytes], { type: 'audio/mp3' }));
             }
 
-            // Merge all blobs
             const finalBlob = new Blob(audioChunks, { type: 'audio/mp3' });
             const url = URL.createObjectURL(finalBlob);
             setAudioUrl(url);
-            setStatus({ type: 'success', message: textChunks.length > 1 ? `✅ Áudio completo gerado em ${textChunks.length} partes!` : '🚀 Áudio pronto!' });
-
-            // Record usage
-            setUsage(prev => {
-                const updated = { count: prev.count + 1, lastUsed: new Date().toISOString() };
-                localStorage.setItem(STORAGE_LIMIT_KEY, JSON.stringify(updated));
-                return updated;
-            });
-
-            setTimeout(() => {
-                if (audioRef.current) audioRef.current.play();
-            }, 300);
+            setStatus({ type: 'success', message: chunks.length > 1 ? `Áudio completo gerado em ${chunks.length} partes` : 'Áudio gerado com sucesso' });
+            setUsage(prev => ({ ...prev, count: prev.count + 1 }));
+            setTimeout(() => { if (audioRef.current) audioRef.current.play(); }, 300);
         } catch (err: any) {
-            console.error('TTS Error:', err);
-            setStatus({ type: 'error', message: `❌ ${err.message || 'Erro na sintetização'}` });
+            setStatus({ type: 'error', message: err.message || 'Erro na sintetização' });
         } finally {
             setIsGenerating(false);
             setIsProcessingBatch(false);
@@ -407,74 +274,81 @@ e revelou um <emphasis level="strong">segredo</emphasis>.
         const a = document.createElement('a');
         a.href = audioUrl;
         a.download = `umbra-audio-${selectedVoice}-${Date.now()}.mp3`;
-        document.body.appendChild(a);
         a.click();
-        document.body.removeChild(a);
     };
 
-    const getLanguageLabel = (code: string) => {
-        const info = LANGUAGE_NAMES[code];
-        return info ? `${info.flag} ${info.name}` : code;
-    };
-
-    const getVoiceCategory = (name: string) => {
-        if (name.includes('Neural2')) return 'Neural High-Fi';
-        if (name.includes('Studio')) return 'Studio (Premium)';
-        if (name.includes('Polyglot')) return 'Polyglot';
-        if (name.includes('Wavenet')) return 'WaveNet';
-        if (name.includes('Chirp')) return 'Chirp (v3)';
-        return 'Standard';
-    };
+    // ── style tokens ───────────────────────────────────────────────
+    const card = 'bg-white border border-gray-200 rounded-2xl overflow-hidden';
+    const cardHeader = 'px-6 py-5 border-b border-gray-200 bg-gray-50 flex items-center gap-3';
+    const inputClass = 'w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-black text-gray-900 focus:border-primary/40 focus:ring-2 focus:ring-primary/10 outline-none transition-all';
+    const btnPrimary = 'flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-black rounded-xl text-xs uppercase tracking-widest transition-all disabled:opacity-40 disabled:cursor-not-allowed';
 
     return (
-        <div className="font-rajdhani space-y-8 animate-in fade-in duration-700 pb-20 max-w-7xl mx-auto">
-            <header className="text-center">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-brand-purple/10 rounded-[28px] mb-6 shadow-2xl shadow-brand-purple/10 ring-1 ring-brand-purple/20">
-                    <Volume2 className="w-10 h-10 text-brand-purple" />
-                </div>
-                <h1 className="text-4xl font-black tracking-tighter mb-2 bg-gradient-to-r from-brand-purple via-brand-pink to-amber-500 bg-clip-text text-transparent uppercase">
-                    Umbra Audios (Global)
-                </h1>
-                <p className="text-gray-500 font-medium tracking-wide uppercase text-[10px]">Acesso total à biblioteca de vozes do Google Cloud TTS</p>
-                <div className="h-px w-32 bg-gradient-to-r from-transparent via-brand-purple/30 to-transparent mx-auto mt-6" />
-            </header>
+        <div className="font-rajdhani animate-in fade-in duration-500 pb-10 space-y-5">
 
-            <div className="grid grid-cols-1 gap-8">
-                {/* CONTROLS PANEL */}
-                <div className="bg-background-mid border border-white/5 rounded-[32px] p-8 shadow-xl space-y-8">
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                        {/* Language Selector */}
-                        <div className="space-y-3">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                <Globe className="w-3 h-3 text-brand-purple" /> Idioma
+            {/* ── PAGE HEADER ── */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20 shrink-0">
+                        <Volume2 className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-black tracking-tight text-gray-900">Umbra Audios</h1>
+                        <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest">Google Cloud TTS — +200 vozes em dezenas de idiomas</p>
+                    </div>
+                </div>
+
+                {/* Usage badge */}
+                <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border shrink-0 ${isLimitReached ? 'bg-red-50 border-red-200' : 'bg-white border-gray-200'}`}>
+                    <div className={`w-2 h-2 rounded-full ${isLimitReached ? 'bg-red-500' : 'bg-green-500 animate-pulse'}`} />
+                    <span className={`text-xs font-black uppercase tracking-widest ${isLimitReached ? 'text-red-600' : 'text-gray-700'}`}>
+                        {remaining} / {limit} {userTier === ToolTier.FREE ? 'áudios' : 'diários'}
+                    </span>
+                    {isLimitReached && <Lock className="w-3.5 h-3.5 text-red-500 ml-1" />}
+                </div>
+            </div>
+
+            {/* ── VOICE CONFIGURATION ── */}
+            <div className={card}>
+                <div className={cardHeader}>
+                    <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center border border-primary/20">
+                        <Mic className="w-4 h-4 text-primary" />
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-black text-gray-900">Configuração de Voz</h3>
+                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Idioma, gênero e modelo neural</p>
+                    </div>
+                </div>
+
+                <div className="p-5 space-y-5">
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                        {/* Language */}
+                        <div className="space-y-2">
+                            <label className="flex items-center gap-1.5 text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">
+                                <Globe className="w-3 h-3" /> Idioma
                             </label>
                             <select
                                 value={selectedLanguage}
                                 onChange={e => setSelectedLanguage(e.target.value)}
-                                className="w-full bg-background-light border border-white/10 rounded-2xl p-4 text-xs font-bold text-white focus:border-brand-purple/50 outline-none cursor-pointer hover:border-white/20 transition-all shadow-inner"
+                                className={inputClass}
                             >
                                 {availableLanguages.map(lang => (
-                                    <option key={lang} value={lang} className="bg-background-mid">
-                                        {getLanguageLabel(lang)}
-                                    </option>
+                                    <option key={lang} value={lang}>{getLanguageLabel(lang)}</option>
                                 ))}
                             </select>
                         </div>
 
-                        {/* Gender Filter */}
-                        <div className="space-y-3">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                <User className="w-3 h-3 text-brand-pink" /> Gênero
+                        {/* Gender */}
+                        <div className="space-y-2">
+                            <label className="flex items-center gap-1.5 text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">
+                                <User className="w-3 h-3" /> Gênero
                             </label>
-                            <div className="flex p-1 bg-background-light border border-white/10 rounded-2xl h-[52px]">
+                            <div className="flex bg-gray-100 border border-gray-200 p-1 rounded-xl h-[46px]">
                                 {(['ALL', 'MALE', 'FEMALE'] as const).map(g => (
                                     <button
                                         key={g}
                                         onClick={() => setSelectedGender(g)}
-                                        className={`flex-1 rounded-xl text-[10px] font-black transition-all uppercase tracking-tighter ${selectedGender === g
-                                            ? 'bg-brand-purple text-white shadow-lg shadow-brand-purple/20'
-                                            : 'text-gray-600 hover:text-gray-400'
-                                            }`}
+                                        className={`flex-1 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${selectedGender === g ? 'bg-white text-primary shadow-sm border border-gray-200' : 'text-gray-500 hover:text-gray-900'}`}
                                     >
                                         {g === 'ALL' ? 'Todos' : g === 'MALE' ? 'Masc' : 'Fem'}
                                     </button>
@@ -482,383 +356,323 @@ e revelou um <emphasis level="strong">segredo</emphasis>.
                             </div>
                         </div>
 
-                        {/* Voice Selector */}
-                        <div className="lg:col-span-2 space-y-3">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center justify-between">
-                                <span className="flex items-center gap-2">
-                                    <Volume2 className="w-3 h-3 text-amber-500" /> Seleção de Voz ({filteredVoices.length})
-                                </span>
-                                {isLoadingVoices && <RefreshCw className="w-3 h-3 animate-spin text-brand-purple" />}
+                        {/* Voice selector */}
+                        <div className="lg:col-span-2 space-y-2">
+                            <label className="flex items-center justify-between text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">
+                                <span className="flex items-center gap-1.5"><Volume2 className="w-3 h-3" /> Voz ({filteredVoices.length})</span>
+                                {isLoadingVoices && <RefreshCw className="w-3 h-3 animate-spin text-primary" />}
                             </label>
-                            <div className="flex gap-3">
-                                <div className="relative group flex-1">
-                                    <select
-                                        value={selectedVoice}
-                                        onChange={e => setSelectedVoice(e.target.value)}
-                                        className="w-full bg-background-light border border-white/10 rounded-2xl p-4 pl-12 text-xs font-bold text-white focus:border-brand-purple/50 outline-none appearance-none cursor-pointer hover:border-white/20 transition-all shadow-inner"
-                                    >
-                                        {filteredVoices.map(v => (
-                                            <option key={v.name} value={v.name} className="bg-background-mid">
-                                                {v.name.replace(selectedLanguage + '-', '')} - {getVoiceCategory(v.name)}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600 group-hover:text-brand-purple transition-colors" />
-                                </div>
+                            <div className="flex gap-2">
+                                <select
+                                    value={selectedVoice}
+                                    onChange={e => setSelectedVoice(e.target.value)}
+                                    className={`${inputClass} flex-1`}
+                                >
+                                    {filteredVoices.map(v => (
+                                        <option key={v.name} value={v.name}>
+                                            {v.name.replace(selectedLanguage + '-', '')} — {getVoiceCategory(v.name)}
+                                        </option>
+                                    ))}
+                                </select>
                                 <button
                                     onClick={handlePreview}
                                     disabled={!selectedVoice || isPreviewing}
-                                    className="px-4 bg-white/5 border border-white/10 rounded-2xl text-gray-400 hover:text-brand-purple hover:border-brand-purple/30 transition-all flex items-center justify-center disabled:opacity-30 group"
-                                    title="Escutar Prévia"
+                                    className="flex items-center justify-center gap-1.5 px-4 bg-white border border-gray-200 hover:border-primary/40 hover:bg-primary/5 text-gray-500 hover:text-primary rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed shrink-0 text-xs font-black uppercase tracking-widest"
+                                    title="Ouvir prévia"
                                 >
-                                    {isPreviewing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 group-hover:scale-110 transition-transform" />}
+                                    {isPreviewing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                                    <span className="hidden sm:inline">Prévia</span>
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    {/* AUDIO FILTERS */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4 border-t border-white/5">
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                    <AudioLines className="w-3 h-3 text-brand-purple" /> Pitch (Tom)
-                                </label>
-                                <span className={`text-[10px] font-black ${pitch === 0 ? 'text-gray-500' : 'text-brand-purple'}`}>{pitch > 0 ? `+${pitch}` : pitch}</span>
-                            </div>
-                            <input 
-                                type="range" 
-                                min="-5" max="5" step="1" 
-                                value={pitch} 
-                                onChange={e => setPitch(parseInt(e.target.value))}
-                                className="w-full h-1.5 bg-background-light rounded-lg appearance-none cursor-pointer accent-brand-purple"
-                            />
-                            {isStudioVoice && hasPitchAdjustment && (
-                                <p className="text-[8px] font-medium text-amber-500/80 flex items-center gap-1 italic animate-pulse">
-                                    ⚠️ Voz {selectedVoice.split('-').pop()} ignora ajuste de Pitch.
-                                </p>
-                            )}
-                            <div className="flex justify-between text-[8px] font-black text-gray-700 uppercase tracking-tighter">
-                                <span>Grave</span>
-                                <span>Normal</span>
-                                <span>Agudo</span>
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                    <RefreshCw className="w-3 h-3 text-brand-pink" /> Velocidade
-                                </label>
-                                <span className={`text-[10px] font-black ${speakingRate === 1.0 ? 'text-gray-500' : 'text-brand-pink'}`}>{speakingRate.toFixed(2)}x</span>
-                            </div>
-                            <input 
-                                type="range" 
-                                min="0.8" max="1.2" step="0.05" 
-                                value={speakingRate} 
-                                onChange={e => setSpeakingRate(parseFloat(e.target.value))}
-                                className="w-full h-1.5 bg-background-light rounded-lg appearance-none cursor-pointer accent-brand-pink"
-                            />
-                            <div className="flex justify-between text-[8px] font-black text-gray-700 uppercase tracking-tighter">
-                                <span>Lenta</span>
-                                <span>Normal</span>
-                                <span>Rápida</span>
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                    <Volume2 className="w-3 h-3 text-amber-500" /> Volume Gain
-                                </label>
-                                <span className={`text-[10px] font-black ${volumeGain === 0 ? 'text-gray-500' : 'text-amber-500'}`}>{volumeGain > 0 ? `+${volumeGain}` : volumeGain} dB</span>
-                            </div>
-                            <input 
-                                type="range" 
-                                min="-5" max="5" step="1" 
-                                value={volumeGain} 
-                                onChange={e => setVolumeGain(parseInt(e.target.value))}
-                                className="w-full h-1.5 bg-background-light rounded-lg appearance-none cursor-pointer accent-amber-500"
-                            />
-                            <div className="flex justify-between text-[8px] font-black text-gray-700 uppercase tracking-tighter">
-                                <span>Baixo</span>
-                                <span>Normal</span>
-                                <span>Alto</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                <Mic className="w-3 h-3 text-brand-purple" /> Texto para Narração
-                            </label>
-                            <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full bg-white/5 ${textInput.length > 95000 ? 'text-brand-pink' : 'text-gray-500'}`}>
-                                <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter mr-4 ${usage.count >= (userTier === ToolTier.FREE ? 3 : userTier === ToolTier.PRO ? 10 : 30) ? 'bg-brand-pink/20 text-brand-pink border border-brand-pink/30' : 'bg-brand-green/20 text-brand-green border border-brand-green/30'}`}>
-                                    {Math.max(0, (userTier === ToolTier.FREE ? 3 : userTier === ToolTier.PRO ? 10 : 30) - usage.count)} / {userTier === ToolTier.FREE ? 3 : userTier === ToolTier.PRO ? 10 : 30} {userTier === ToolTier.FREE ? 'Áudios' : 'Destaque'} {userTier === ToolTier.FREE ? 'Restantes' : '/ Dia'}
-                                </span>
-                                {textInput.length.toLocaleString()} / 100.000 chars
-                            </span>
-                        </div>
-                        
-                        {/* SSML SHORTCUTS - ADVANCED TRICKS */}
-                        <div className="space-y-4">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2">
-                                <Sparkles className="w-3 h-3 text-brand-purple" /> Truques de Narrador (SSML)
-                            </label>
-                            
-                            <div className="flex flex-wrap gap-2">
-                                {/* Pausas */}
-                                <div className="flex bg-background-light p-1 rounded-xl border border-white/5">
-                                    <button 
-                                        onClick={() => insertSSML('<break time="200ms"/>')}
-                                        className="px-2 py-1 text-[8px] font-black text-gray-500 hover:text-white transition-all uppercase"
-                                        title="Pausa Curta"
-                                    >
-                                        200ms
-                                    </button>
-                                    <button 
-                                        onClick={() => insertSSML('<break time="400ms"/>')}
-                                        className="px-2 py-1 text-[8px] font-black text-gray-500 hover:text-white transition-all uppercase border-l border-white/5"
-                                        title="Pausa Natural"
-                                    >
-                                        400ms
-                                    </button>
-                                    <button 
-                                        onClick={() => insertSSML('<break time="600ms"/>')}
-                                        className="px-2 py-1 text-[8px] font-black text-gray-500 hover:text-white transition-all uppercase border-l border-white/5"
-                                        title="Pausa Dramática"
-                                    >
-                                        600ms
-                                    </button>
-                                </div>
-
-                                {/* Ritmo */}
-                                <div className="flex bg-background-light p-1 rounded-xl border border-white/5">
-                                    <button 
-                                        onClick={() => insertSSML('<prosody rate="90%">', '</prosody>')}
-                                        className="px-2 py-1 text-[8px] font-black text-gray-500 hover:text-brand-pink transition-all uppercase"
-                                        title="Falar Lento"
-                                    >
-                                        Lento (90%)
-                                    </button>
-                                    <button 
-                                        onClick={() => insertSSML('<prosody rate="110%">', '</prosody>')}
-                                        className="px-2 py-1 text-[8px] font-black text-gray-500 hover:text-brand-pink transition-all uppercase border-l border-white/5"
-                                        title="Falar Rápido"
-                                    >
-                                        Rápido (110%)
-                                    </button>
-                                </div>
-
-                                {/* Ênfase */}
-                                <div className="flex bg-background-light p-1 rounded-xl border border-white/5">
-                                    <button 
-                                        onClick={() => insertSSML('<emphasis level="weak">', '</emphasis>')}
-                                        className="px-2 py-1 text-[8px] font-black text-gray-500 hover:text-amber-500 transition-all uppercase"
-                                    >
-                                        Fraca
-                                    </button>
-                                    <button 
-                                        onClick={() => insertSSML('<emphasis level="moderate">', '</emphasis>')}
-                                        className="px-2 py-1 text-[8px] font-black text-gray-500 hover:text-amber-500 transition-all uppercase border-l border-white/5"
-                                    >
-                                        Média
-                                    </button>
-                                    <button 
-                                        onClick={() => insertSSML('<emphasis level="strong">', '</emphasis>')}
-                                        className="px-2 py-1 text-[8px] font-black text-gray-500 hover:text-amber-500 transition-all uppercase border-l border-white/5"
-                                    >
-                                        Forte
-                                    </button>
-                                </div>
-
-                                <button 
-                                    onClick={applyDarkChannelPreset}
-                                    className="px-3 py-1.5 bg-brand-purple/10 border border-brand-purple/30 rounded-xl text-[8px] font-black text-brand-purple hover:bg-brand-purple hover:text-white transition-all uppercase tracking-widest flex items-center gap-1 shadow-lg shadow-brand-purple/10"
+                    {/* Voice type chips */}
+                    <div className="flex flex-wrap gap-2 pt-1">
+                        {VOICE_TYPES.map(vt => {
+                            const isSelected = selectedVoice.includes(vt.key);
+                            return (
+                                <div
+                                    key={vt.key}
+                                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-[10px] font-black uppercase tracking-widest transition-all ${isSelected ? 'bg-primary/10 border-primary text-primary' : 'bg-gray-50 border-gray-200 text-gray-400'}`}
                                 >
-                                    🎭 Dark Preset
-                                </button>
-
-                                <button 
-                                    onClick={loadStorytellingExample}
-                                    className="px-3 py-1.5 bg-brand-pink/10 border border-brand-pink/30 rounded-xl text-[8px] font-black text-brand-pink hover:bg-brand-pink hover:text-white transition-all uppercase tracking-widest flex items-center gap-1 shadow-lg shadow-brand-pink/10"
-                                >
-                                    🧠 Storytelling Example
-                                </button>
-                            </div>
-                        </div>
-
-                        <textarea
-                            ref={textareaRef}
-                            value={textInput}
-                            onChange={e => setTextInput(e.target.value)}
-                            placeholder="Cole o roteiro que deseja converter em voz neural de alta qualidade..."
-                            className="w-full h-64 bg-background-deep/50 border border-white/10 rounded-[28px] p-6 text-sm leading-relaxed text-gray-300 focus:border-brand-purple/40 outline-none resize-none custom-scrollbar shadow-inner"
-                            maxLength={100000}
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <button
-                            onClick={handleGenerate}
-                            disabled={isGenerating || !textInput.trim() || textInput.length > 100000 || isLoadingVoices || usage.count >= (userTier === ToolTier.FREE ? 3 : userTier === ToolTier.PRO ? 10 : 30)}
-                            className={`py-5 text-white font-orbitron text-xs font-black tracking-[0.3em] rounded-2xl transition-all disabled:opacity-30 uppercase flex items-center justify-center gap-3 active:scale-95 group shadow-xl ${usage.count >= (userTier === ToolTier.FREE ? 3 : userTier === ToolTier.PRO ? 10 : 30)
-                                ? 'bg-gray-800 border border-white/10 cursor-not-allowed'
-                                : 'bg-gradient-to-r from-brand-purple to-brand-pink hover:shadow-[0_0_30px_rgba(168,85,247,0.3)]'
-                                }`}
-                        >
-                            {isGenerating ? <RefreshCw className="w-5 h-5 animate-spin" /> : usage.count >= (userTier === ToolTier.FREE ? 3 : userTier === ToolTier.PRO ? 10 : 30) ? <Lock className="w-5 h-5" /> : <Play className="w-5 h-5 group-hover:scale-110 transition-transform" />}
-                            {usage.count >= (userTier === ToolTier.FREE ? 3 : userTier === ToolTier.PRO ? 10 : 30) ? 'Limite Atingido' : 'Gerar Áudio Global'}
-                        </button>
-                        <button
-                            onClick={() => { setTextInput(''); setAudioUrl(null); setStatus({ type: null, message: '' }); }}
-                            className="py-5 bg-white/5 border border-white/10 text-gray-500 font-orbitron text-xs font-black tracking-[0.3em] rounded-2xl hover:text-brand-pink hover:bg-brand-pink/10 transition-all uppercase flex items-center justify-center gap-3"
-                        >
-                            <Trash2 className="w-5 h-5" /> Limpar
-                        </button>
-                    </div>
-                </div>
-
-                {/* STATUS BAR */}
-                {status.type && (
-                    <div className="space-y-4 animate-in slide-in-from-top-2 duration-300">
-                        <div className={`p-5 rounded-2xl border flex items-center gap-4 shadow-lg ${status.type === 'loading' ? 'bg-brand-purple/5 border-brand-purple/20 text-brand-purple' :
-                            status.type === 'success' ? 'bg-brand-green/10 border-brand-green/20 text-brand-green' :
-                                'bg-brand-pink/10 border-brand-pink/20 text-brand-pink'
-                            }`}>
-                            {status.type === 'loading' ? <RefreshCw className="w-5 h-5 animate-spin" /> :
-                                status.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
-                            <span className="text-xs font-bold uppercase tracking-widest flex-1">{status.message}</span>
-                        </div>
-                        
-                        {isProcessingBatch && (
-                            <div className="bg-background-mid border border-white/5 rounded-2xl p-4 space-y-2">
-                                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
-                                    <span className="text-gray-500">Progresso do Lote</span>
-                                    <span className="text-brand-purple">{Math.round((batchProgress.current / batchProgress.total) * 100)}%</span>
+                                    <span className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-primary' : 'bg-gray-300'}`} />
+                                    {vt.label}
+                                    <span className="opacity-60 normal-case font-black hidden sm:inline">· {vt.desc}</span>
                                 </div>
-                                <div className="w-full h-2 bg-background-light rounded-full overflow-hidden">
-                                    <div 
-                                        className="h-full bg-gradient-to-r from-brand-purple to-brand-pink transition-all duration-500" 
-                                        style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }}
-                                    />
-                                </div>
-                                <div className="text-center text-[8px] font-bold text-gray-600 uppercase tracking-tighter">
-                                    Parte {batchProgress.current} de {batchProgress.total} processada
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* PLAYER PANEL */}
-                {audioUrl && (
-                    <div className="bg-background-mid border border-brand-purple/30 rounded-[40px] p-8 shadow-2xl animate-in zoom-in-95 duration-500 overflow-hidden relative group">
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-brand-purple via-brand-pink to-amber-500 opacity-50" />
-
-                        <div className="absolute top-4 right-8 flex gap-2">
-                            <div className="px-3 py-1 bg-brand-purple/10 rounded-full border border-brand-purple/20">
-                                <span className="text-[9px] font-black text-brand-purple uppercase tracking-tighter">Premium Neural Output</span>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col md:flex-row items-center gap-8 mt-4">
-                            <div className="flex-1 w-full space-y-4">
-                                <div className="flex justify-between items-center px-1">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-brand-purple/20 rounded-xl flex items-center justify-center">
-                                            <AudioLines className="w-6 h-6 text-brand-purple" />
-                                        </div>
-                                        <div>
-                                            <span className="block text-[10px] font-black text-white/50 uppercase tracking-widest leading-none mb-1">Modelo Selecionado</span>
-                                            <span className="text-xs font-bold text-white uppercase">{selectedVoice.replace(selectedLanguage + '-', '')}</span>
-                                        </div>
-                                    </div>
-                                    <span className="text-[9px] font-bold text-gray-700 uppercase">{selectedLanguage} · 48khz · MP3</span>
-                                </div>
-                                <audio ref={audioRef} src={audioUrl} controls className="w-full h-12 filter invert hue-rotate-180 opacity-80 hover:opacity-100 transition-opacity" />
-                            </div>
-
-                            <button
-                                onClick={downloadAudio}
-                                className="w-full md:w-auto px-10 py-5 bg-brand-green text-background-deep font-orbitron text-xs font-black tracking-[0.3em] rounded-2xl shadow-xl shadow-brand-green/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 uppercase group"
-                            >
-                                <Download className="w-5 h-5 group-hover:translate-y-1 transition-transform" /> Download MP3
-                            </button>
-                        </div>
-                    </div>
-                )}
-
-                <div className="bg-brand-purple/5 border border-brand-purple/10 rounded-[32px] p-8 space-y-4 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                    <div>
-                        <div className="flex items-center gap-3 mb-4">
-                            <Sparkles className="w-5 h-5 text-brand-purple" />
-                            <h4 className="font-orbitron text-[10px] font-black uppercase text-white tracking-widest">Tecnologia Global Google Cloud</h4>
-                        </div>
-                        <p className="text-xs text-gray-500 leading-relaxed font-medium">
-                            Você tem acesso a mais de 200 vozes em dezenas de idiomas.
-                            <span className="block mt-2 font-bold text-amber-500/80 uppercase text-[9px]">⚠️ Textos longos podem levar alguns minutos para processar.</span>
-                        </p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        {[
-                            { label: 'Studio', desc: 'Podcast/News' },
-                            { label: 'Neural2', desc: 'Deep Learning' },
-                            { label: 'WaveNet', desc: 'Google Assistant' },
-                            { label: 'Standard', desc: 'High Efficiency' }
-                        ].map(item => (
-                            <div key={item.label} className="p-3 bg-white/5 border border-white/5 rounded-2xl text-center">
-                                <span className="block text-[10px] font-black text-white tracking-widest uppercase mb-1">{item.label}</span>
-                                <span className="text-[8px] text-gray-600 font-bold uppercase tracking-tighter">{item.desc}</span>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
             </div>
 
-            {/* UPGRADE MODAL */}
+            {/* ── AUDIO PARAMETERS ── */}
+            <div className={card}>
+                <div className={cardHeader}>
+                    <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center border border-primary/20">
+                        <SlidersHorizontal className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                        <h3 className="text-sm font-black text-gray-900">Parâmetros de Áudio</h3>
+                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Tom, velocidade e volume</p>
+                    </div>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={applyDarkPreset}
+                            className="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 hover:border-primary/40 hover:bg-primary/5 hover:text-primary text-gray-500 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
+                        >
+                            🎭 Dark Preset
+                        </button>
+                        <button
+                            onClick={() => { setPitch(0); setSpeakingRate(1.0); setVolumeGain(0); }}
+                            className="px-3 py-2 bg-white border border-gray-200 hover:border-red-200 hover:text-red-500 hover:bg-red-50 text-gray-400 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
+                            title="Resetar"
+                        >
+                            Reset
+                        </button>
+                    </div>
+                </div>
+
+                <div className="p-5">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {[
+                            { label: 'Tom (Pitch)', icon: AudioLines, val: pitch > 0 ? `+${pitch}` : String(pitch), min: -5, max: 5, step: 1, value: pitch, onChange: (v: number) => setPitch(v), legends: ['Grave', 'Normal', 'Agudo'], changed: pitch !== 0 },
+                            { label: 'Velocidade', icon: RefreshCw, val: `${speakingRate.toFixed(2)}x`, min: 0.8, max: 1.2, step: 0.05, value: speakingRate, onChange: (v: number) => setSpeakingRate(v), legends: ['Lenta', 'Normal', 'Rápida'], changed: speakingRate !== 1.0 },
+                            { label: 'Volume Gain', icon: Volume2, val: `${volumeGain > 0 ? '+' : ''}${volumeGain} dB`, min: -5, max: 5, step: 1, value: volumeGain, onChange: (v: number) => setVolumeGain(v), legends: ['Baixo', 'Normal', 'Alto'], changed: volumeGain !== 0 },
+                        ].map(slider => (
+                            <div key={slider.label} className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                    <label className="flex items-center gap-1.5 text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">
+                                        <slider.icon className="w-3 h-3" /> {slider.label}
+                                    </label>
+                                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-md ${slider.changed ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-400'}`}>
+                                        {slider.val}
+                                    </span>
+                                </div>
+                                <input
+                                    type="range"
+                                    min={slider.min} max={slider.max} step={slider.step}
+                                    value={slider.value}
+                                    onChange={e => slider.onChange(parseFloat(e.target.value))}
+                                    className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-primary"
+                                />
+                                <div className="flex justify-between text-[8px] font-black text-gray-400 uppercase tracking-wider">
+                                    {slider.legends.map(l => <span key={l}>{l}</span>)}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {isStudioVoice && hasPitchAdjustment && (
+                        <div className="mt-4 flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-xl">
+                            <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
+                            <p className="text-[10px] font-black text-amber-700">Vozes Studio e Neural2 ignoram o ajuste de Pitch.</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* ── TEXT INPUT ── */}
+            <div className={card}>
+                <div className={cardHeader}>
+                    <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center border border-primary/20">
+                        <Sparkles className="w-4 h-4 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                        <h3 className="text-sm font-black text-gray-900">Texto para Narração</h3>
+                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Suporte a texto simples e SSML</p>
+                    </div>
+                    <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${textInput.length > 95000 ? 'bg-red-50 border border-red-200 text-red-600' : 'bg-gray-100 text-gray-500'}`}>
+                        {textInput.length.toLocaleString()} / 100.000
+                    </span>
+                </div>
+
+                <div className="p-5 space-y-4">
+                    {/* SSML shortcuts */}
+                    <div className="space-y-2">
+                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Atalhos SSML</span>
+                        <div className="flex flex-wrap gap-2">
+                            {/* Pausas */}
+                            <div className="flex bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+                                {[
+                                    { label: '200ms', tag: '<break time="200ms"/>' },
+                                    { label: '400ms', tag: '<break time="400ms"/>' },
+                                    { label: '600ms', tag: '<break time="600ms"/>' },
+                                ].map((b, i) => (
+                                    <button
+                                        key={b.label}
+                                        onClick={() => insertSSML(b.tag)}
+                                        className={`px-3 py-2 text-[10px] font-black text-gray-600 hover:text-primary hover:bg-primary/5 uppercase transition-all ${i > 0 ? 'border-l border-gray-200' : ''}`}
+                                    >
+                                        {b.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Ritmo */}
+                            <div className="flex bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+                                <button onClick={() => insertSSML('<prosody rate="90%">', '</prosody>')} className="px-3 py-2 text-[10px] font-black text-gray-600 hover:text-primary hover:bg-primary/5 uppercase transition-all">Lento</button>
+                                <button onClick={() => insertSSML('<prosody rate="110%">', '</prosody>')} className="px-3 py-2 text-[10px] font-black text-gray-600 hover:text-primary hover:bg-primary/5 uppercase transition-all border-l border-gray-200">Rápido</button>
+                            </div>
+
+                            {/* Ênfase */}
+                            <div className="flex bg-gray-50 border border-gray-200 rounded-lg overflow-hidden">
+                                {['weak', 'moderate', 'strong'].map((level, i) => (
+                                    <button
+                                        key={level}
+                                        onClick={() => insertSSML(`<emphasis level="${level}">`, '</emphasis>')}
+                                        className={`px-3 py-2 text-[10px] font-black text-gray-600 hover:text-primary hover:bg-primary/5 uppercase transition-all ${i > 0 ? 'border-l border-gray-200' : ''}`}
+                                    >
+                                        {level === 'weak' ? 'Fraca' : level === 'moderate' ? 'Média' : 'Forte'}
+                                    </button>
+                                ))}
+                            </div>
+
+                            <button
+                                onClick={loadStorytellingExample}
+                                className="flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-200 hover:border-primary/40 hover:bg-primary/5 hover:text-primary text-gray-500 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
+                            >
+                                🧠 Storytelling
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Textarea */}
+                    <textarea
+                        ref={textareaRef}
+                        value={textInput}
+                        onChange={e => setTextInput(e.target.value)}
+                        placeholder="Cole o roteiro que deseja converter em voz neural..."
+                        className="w-full h-64 bg-gray-50 border border-gray-200 rounded-xl px-5 py-4 text-sm text-gray-900 leading-relaxed focus:border-primary/40 focus:ring-2 focus:ring-primary/10 outline-none resize-none transition-all custom-scrollbar"
+                        maxLength={100000}
+                    />
+
+                    {/* Action buttons */}
+                    <div className="flex gap-3">
+                        <button
+                            onClick={handleGenerate}
+                            disabled={isGenerating || !textInput.trim() || textInput.length > 100000 || isLoadingVoices || isLimitReached}
+                            className={`${btnPrimary} flex-1 py-4`}
+                        >
+                            {isGenerating
+                                ? <RefreshCw className="w-4 h-4 animate-spin" />
+                                : isLimitReached
+                                    ? <Lock className="w-4 h-4" />
+                                    : <Zap className="w-4 h-4" />}
+                            {isGenerating ? 'Gerando...' : isLimitReached ? 'Limite Atingido' : 'Gerar Áudio'}
+                        </button>
+                        <button
+                            onClick={() => { setTextInput(''); setAudioUrl(null); setStatus({ type: null, message: '' }); }}
+                            className="p-4 bg-white hover:bg-red-50 border border-gray-200 hover:border-red-200 rounded-xl text-gray-400 hover:text-red-500 transition-all"
+                            title="Limpar"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* ── STATUS ── */}
+            {status.type && (
+                <div className="space-y-3 animate-in slide-in-from-top-2 duration-300">
+                    <div className={`flex items-center gap-3 p-4 rounded-xl border ${
+                        status.type === 'loading' ? 'bg-blue-50 border-blue-200 text-blue-700'
+                        : status.type === 'success' ? 'bg-green-50 border-green-200 text-green-700'
+                        : 'bg-red-50 border-red-200 text-red-700'
+                    }`}>
+                        {status.type === 'loading' ? <RefreshCw className="w-4 h-4 animate-spin shrink-0" />
+                            : status.type === 'success' ? <CheckCircle2 className="w-4 h-4 shrink-0" />
+                            : <AlertCircle className="w-4 h-4 shrink-0" />}
+                        <span className="text-xs font-black uppercase tracking-widest">{status.message}</span>
+                    </div>
+
+                    {isProcessingBatch && batchProgress.total > 0 && (
+                        <div className={`${card} p-4 space-y-2`}>
+                            <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Progresso do Lote</span>
+                                <span className="text-[10px] font-black text-primary">{Math.round((batchProgress.current / batchProgress.total) * 100)}%</span>
+                            </div>
+                            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-primary transition-all duration-500 rounded-full" style={{ width: `${(batchProgress.current / batchProgress.total) * 100}%` }} />
+                            </div>
+                            <p className="text-center text-[9px] font-black text-gray-400 uppercase tracking-wider">
+                                Parte {batchProgress.current} de {batchProgress.total}
+                            </p>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* ── AUDIO PLAYER ── */}
+            {audioUrl && (
+                <div className={`${card} animate-in zoom-in-95 duration-400`}>
+                    <div className="px-6 py-5 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center border border-primary/20">
+                                <AudioLines className="w-4 h-4 text-primary" />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-black text-gray-900">Áudio Gerado</h3>
+                                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                                    {selectedVoice.replace(selectedLanguage + '-', '')} · {selectedLanguage} · MP3
+                                </p>
+                            </div>
+                        </div>
+                        <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 border border-green-200 text-[10px] font-black text-green-700 uppercase tracking-widest">
+                            <CheckCircle2 className="w-3 h-3" /> Pronto
+                        </span>
+                    </div>
+
+                    <div className="p-5 flex flex-col sm:flex-row items-center gap-4">
+                        <audio
+                            ref={audioRef}
+                            src={audioUrl}
+                            controls
+                            className="flex-1 w-full h-11 rounded-xl"
+                        />
+                        <button
+                            onClick={downloadAudio}
+                            className={`${btnPrimary} px-6 py-3 shrink-0 w-full sm:w-auto`}
+                        >
+                            <Download className="w-4 h-4" /> Download MP3
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* ── UPGRADE MODAL ── */}
             {showUpgradeModal && (
-                <div className="fixed inset-0 z-[300] flex items-center justify-center p-6 animate-in fade-in duration-300">
-                    <div className="absolute inset-0 bg-background-deep/95 backdrop-blur-xl" onClick={() => setShowUpgradeModal(false)} />
-                    <div className="relative bg-background-mid border border-white/10 rounded-[48px] p-10 w-full max-w-lg shadow-2xl animate-in zoom-in-95 duration-300 text-center space-y-8">
-                        <div className="w-24 h-24 bg-brand-purple/10 rounded-[32px] flex items-center justify-center mx-auto shadow-2xl shadow-brand-purple/20 ring-1 ring-brand-purple/30">
-                            <Lock className="w-12 h-12 text-brand-purple" />
+                <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="absolute inset-0 bg-black/60" onClick={() => setShowUpgradeModal(false)} />
+                    <div className="relative bg-white border border-gray-200 rounded-2xl p-8 w-full max-w-md shadow-2xl animate-in zoom-in-95 duration-200 text-center space-y-6">
+                        <button onClick={() => setShowUpgradeModal(false)} className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all">
+                            <X className="w-5 h-5" />
+                        </button>
+
+                        <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto border border-primary/20">
+                            <Lock className="w-8 h-8 text-primary" />
                         </div>
 
-                        <div className="space-y-4">
-                            <h2 className="text-3xl font-black tracking-tight uppercase font-orbitron">Limite do Plano <span className="text-brand-purple">{userTier}</span> Atingido</h2>
-                            <p className="text-gray-500 font-medium leading-relaxed">
-                                Você já atingiu seu limite de {userTier === ToolTier.FREE ? '3 áudios gratuitos' : userTier === ToolTier.PRO ? '10 áudios diários' : '30 áudios diários'}. <br />
-                                Para continuar criando com vozes de cinema e sem limites, faça o upgrade para o próximo nível.
+                        <div>
+                            <h2 className="text-2xl font-black tracking-tight text-gray-900 mb-2">
+                                Limite Atingido
+                            </h2>
+                            <p className="text-sm font-black text-gray-600 leading-relaxed">
+                                Você atingiu seu limite de <span className="text-gray-900">{userTier === ToolTier.FREE ? '3 áudios gratuitos' : '30 áudios diários'}</span>. Faça upgrade para continuar criando com vozes premium.
                             </p>
                         </div>
 
-                        <div className="space-y-4 pt-4">
+                        <div className="space-y-3 pt-2">
                             <button
                                 onClick={() => window.open('https://pay.cakto.com.br/3dko6xr_769683', '_blank')}
-                                className="w-full py-5 bg-gradient-to-r from-brand-purple to-brand-pink text-white font-black rounded-2xl hover:scale-[1.02] transition-all uppercase tracking-[0.2em] text-xs shadow-xl shadow-brand-purple/20 flex items-center justify-center gap-3"
+                                className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white font-black py-4 rounded-xl text-xs uppercase tracking-widest transition-all"
                             >
-                                <ArrowUpCircle className="w-5 h-5" /> Liberar Uso Ilimitado
+                                <ArrowUpCircle className="w-4 h-4" /> Fazer Upgrade
                             </button>
-                            <button
-                                onClick={() => setShowUpgradeModal(false)}
-                                className="w-full py-4 text-gray-600 font-bold hover:text-white transition-all uppercase text-[10px] tracking-widest"
-                            >
-                                Continuar Navegando
+                            <button onClick={() => setShowUpgradeModal(false)} className="w-full py-3 text-gray-400 hover:text-gray-700 font-black text-xs uppercase tracking-widest transition-all">
+                                Continuar navegando
                             </button>
                         </div>
-
-                        <div className="flex items-center justify-center gap-6 pt-4 border-t border-white/5 opacity-50 grayscale hover:grayscale-0 transition-all">
-                            <div className="text-[10px] font-black uppercase text-gray-500 tracking-widest">Acesso Vitalício Garantido</div>
-                        </div>
-
-                        <button
-                            onClick={() => setShowUpgradeModal(false)}
-                            className="absolute top-6 right-6 p-3 text-gray-600 hover:text-white transition-all"
-                        >
-                            <X className="w-6 h-6" />
-                        </button>
                     </div>
                 </div>
             )}

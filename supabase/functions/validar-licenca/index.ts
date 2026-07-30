@@ -124,16 +124,18 @@ Deno.serve(async (req: Request) => {
 
             console.log(`[SDK] Check Limit: Count=${count} | Max=${lic.max_dispositivos} | Already exists=${!!devExist}`)
 
-            // Se for novo e já atingiu o limite, bloqueia
+            /* 
+            // Bloqueio de limite removido por solicitação (Uso Ilimitado)
             if (!devExist && count !== null && count >= lic.max_dispositivos) {
                 return new Response(JSON.stringify({ valido: false, motivo: `Limite de ${lic.max_dispositivos} dispositivos atingido.` }),
                     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
             }
+            */
 
-            // Gera e salva Session Token (24h)
+            // Gera e salva Session Token (30 dias)
             const newToken = crypto.randomUUID()
             const expiry = new Date()
-            expiry.setHours(expiry.getHours() + 24)
+            expiry.setHours(expiry.getHours() + 720) // 30 dias
 
             // Gerencia lista de extensões ativas
             let extensoesAtivas = devExist?.extensoes_ativas || [];
@@ -171,7 +173,7 @@ Deno.serve(async (req: Request) => {
             return new Response(JSON.stringify({
                 valido: true,
                 token: newToken,
-                token_duration: 86400,
+                token_duration: 2592000, // 30 dias
                 plano: lic.plano
             }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
         }

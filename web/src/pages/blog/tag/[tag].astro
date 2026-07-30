@@ -1,0 +1,83 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Header from '../../../components/Header.astro';
+import Footer from '../../../components/Footer.astro';
+import BlogCard from '../../../components/BlogCard.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('blog', ({ data }) =>
+    import.meta.env.PROD ? !data.draft : true
+  );
+  const tags = [...new Set(posts.flatMap(p => p.data.tags ?? []))];
+
+  return tags.map(tag => ({
+    params: { tag },
+    props: {
+      tag,
+      posts: posts
+        .filter(p => p.data.tags?.includes(tag))
+        .sort((a, b) => new Date(b.data.pubDate).getTime() - new Date(a.data.pubDate).getTime()),
+      allTags: tags,
+    },
+  }));
+}
+
+const { tag, posts, allTags } = Astro.props;
+---
+
+<BaseLayout
+  title={`#${tag} | Blog UmbraHub`}
+  description={`Todos os artigos sobre ${tag} para criadores de canais faceless no YouTube.`}
+>
+  <Header />
+
+  <main class="max-w-6xl mx-auto px-4 py-16">
+    <!-- Breadcrumb -->
+    <nav class="text-sm text-gray-500 dark:text-gray-400 mb-10" aria-label="Breadcrumb">
+      <a href="/blog" class="hover:text-primary transition-colors">Blog</a>
+      <span class="mx-2">›</span>
+      <span class="text-gray-700 dark:text-gray-300">#{tag}</span>
+    </nav>
+
+    <!-- Cabeçalho -->
+    <div class="mb-10">
+      <h1 class="text-4xl font-black text-gray-900 dark:text-white mb-2">
+        Artigos sobre <span class="text-primary">#{tag}</span>
+      </h1>
+      <p class="text-gray-500 dark:text-gray-400">
+        {posts.length} artigo{posts.length !== 1 ? 's' : ''} encontrado{posts.length !== 1 ? 's' : ''}
+      </p>
+    </div>
+
+    <!-- Todas as tags (filtro) -->
+    <div class="flex flex-wrap gap-2 mb-10">
+      <a href="/blog" class="text-sm font-semibold px-4 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 rounded-full hover:bg-primary-pale dark:hover:bg-primary/20 hover:text-primary dark:hover:text-primary-light transition-colors">
+        Todos
+      </a>
+      {allTags.map(t => (
+        <a
+          href={`/blog/tag/${t}`}
+          class={`text-sm font-semibold px-4 py-1.5 rounded-full transition-colors ${
+            t === tag
+              ? 'bg-primary text-white'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-primary-pale dark:hover:bg-primary/20 hover:text-primary dark:hover:text-primary-light'
+          }`}
+        >
+          {t}
+        </a>
+      ))}
+    </div>
+
+    <!-- Grid de posts -->
+    {posts.length > 0 ? (
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {posts.map(post => <BlogCard post={post} />)}
+      </div>
+    ) : (
+      <p class="text-center text-gray-400 dark:text-gray-500 py-20">Nenhum artigo encontrado para esta tag.</p>
+    )}
+  </main>
+
+  <Footer />
+</BaseLayout>

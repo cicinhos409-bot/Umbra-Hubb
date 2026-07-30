@@ -79,33 +79,47 @@ async function callSDK(action, extra = {}) {
   }
 }
 
-// Verifica status (Kill Switch + Session)
+// Verifica status (Resiliência Aprimorada)
 async function checkStatus() {
-  const data = await chrome.storage.local.get(['umbra_token', 'umbra_expiry']);
+  const data = await chrome.storage.local.get(['umbra_token', 'umbra_expiry', 'umbra_plano', 'umbra_blocked', 'umbra_motivo']);
   
-  // 1. Verifica Kill Switch primeiro
-  const info = await callSDK('verify');
-  
-  if (info.blocked) {
-    await chrome.storage.local.set({ umbra_blocked: true, umbra_motivo: info.motivo });
-    return { blocked: true, motivo: info.motivo };
+  if (data.umbra_blocked) {
+    return { blocked: true, motivo: data.umbra_motivo };
   }
 
-  // 2. Verifica se a sessão local é válida (Fallback Offline)
-  const isExpired = data.umbra_expiry && Date.now() > data.umbra_expiry;
-  
-  if (info.error === 'offline') {
-    return { valido: !isExpired, offline: true };
+  const now = Date.now();
+  // Verifica se a sessão local ainda é válida (Cache-First)
+  const isLocalValid = data.umbra_token && data.umbra_expiry && now < data.umbra_expiry;
+
+  // Tenta validar com o servidor de forma silenciosa
+  try {
+    const info = await callSDK('verify');
+    
+    if (info.blocked) {
+      await chrome.storage.local.set({ umbra_blocked: true, umbra_motivo: info.motivo });
+      return { blocked: true, motivo: info.motivo };
+    }
+
+    if (info.valido) {
+      // Sucesso: Atualiza cache e estende validade local
+      await chrome.storage.local.set({ 
+        umbra_blocked: false, 
+        umbra_expiry: now + (SDK_CONFIG.session_days * 86400000) 
+      });
+      return { valido: true, plano: info.plano };
+    }
+
+    if (info.valido === false) {
+      // Servidor negou explicitamente (Chave cancelada ou expirada)
+      await chrome.storage.local.remove(['umbra_token', 'umbra_expiry']);
+      return { valido: false, motivo: 'Chave inválida ou expirada' };
+    }
+  } catch (e) {
+    // Erro de rede/servidor: Confia no cache local para não travar o usuário
+    console.warn("Umbra SDK: Servidor inacessível, operando em modo offline.");
   }
 
-  if (info.valido) {
-    await chrome.storage.local.set({ umbra_blocked: false });
-    return { valido: true, plano: info.plano };
-  } else {
-    // Sessão inválida no servidor
-    await chrome.storage.local.remove(['umbra_token', 'umbra_expiry']);
-    return { valido: false, motivo: info.motivo };
-  }
+  return { valido: isLocalValid, plano: data.umbra_plano || 'FREE' };
 }
 
 // Ativação da Chave

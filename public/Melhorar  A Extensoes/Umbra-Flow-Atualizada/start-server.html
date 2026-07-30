@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Umbra Flow - Iniciar Servidor</title>
+  <style>
+    :root {
+      --bg-main: #0a1214;
+      --bg-card: #0d1a1f;
+      --primary: #00e5cc;
+      --cyan-glow: rgba(0, 229, 204, 0.3);
+      --text-primary: #e0f7f4;
+      --text-secondary: #8fbab4;
+      --text-muted: #4a7a7a;
+      --border: #1a3a42;
+      --green: #00ff88;
+      --red: #ff4757;
+      --orange: #ffaa00;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      background: var(--bg-main);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container { max-width: 700px; margin: 0 auto; }
+
+    .header { text-align: center; margin-bottom: 25px; }
+    .header-logo { font-size: 28px; font-weight: bold; color: var(--primary); text-shadow: 0 0 20px var(--cyan-glow); }
+    .header-subtitle { color: var(--text-muted); font-size: 13px; margin-top: 5px; }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 15px;
+    }
+
+    .card-title {
+      color: var(--primary);
+      font-size: 13px;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .step { display: flex; gap: 12px; margin-bottom: 20px; }
+    .step:last-child { margin-bottom: 0; }
+
+    .step-number {
+      width: 28px; height: 28px;
+      background: var(--primary);
+      color: var(--bg-main);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: bold; font-size: 14px; flex-shrink: 0;
+    }
+
+    .step-content { flex: 1; }
+    .step-content h3 { color: var(--text-primary); font-size: 14px; margin-bottom: 8px; }
+    .step-content p { color: var(--text-secondary); font-size: 12px; line-height: 1.5; }
+
+    .command-box {
+      background: var(--bg-main);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .command-box code {
+      flex: 1;
+      color: var(--primary);
+      font-size: 11px;
+      word-break: break-all;
+    }
+
+    .copy-btn {
+      padding: 6px 12px;
+      background: var(--primary);
+      color: var(--bg-main);
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .copy-btn:hover { box-shadow: 0 0 10px var(--cyan-glow); }
+    .copy-btn.copied { background: var(--green); }
+
+    .os-tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+
+    .os-tab {
+      padding: 5px 14px;
+      background: var(--bg-main);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 11px;
+    }
+
+    .os-tab:hover { border-color: var(--primary); color: var(--text-primary); }
+    .os-tab.active { background: var(--primary); color: var(--bg-main); border-color: var(--primary); }
+
+    .status-box {
+      background: var(--bg-main);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .status-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: var(--red);
+    }
+
+    .status-dot.checking { background: var(--orange); animation: pulse 1s infinite; }
+    .status-dot.connected { background: var(--green); box-shadow: 0 0 8px var(--green); }
+
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+    .status-text { flex: 1; color: var(--text-secondary); font-size: 13px; }
+    .status-text.connected { color: var(--green); }
+
+    .instructions { display: none; }
+    .instructions.active { display: block; }
+
+    .note {
+      background: rgba(255, 170, 0, 0.1);
+      border: 1px solid var(--orange);
+      border-radius: 4px;
+      padding: 10px 12px;
+      margin-top: 12px;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .note strong { color: var(--orange); }
+    .note code { color: var(--primary); background: var(--bg-main); padding: 2px 5px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-logo">UMBRA_</div>
+      <div class="header-subtitle">// INICIAR SERVIDOR PYTHON</div>
+    </div>
+
+    <!-- OS Selection -->
+    <div class="card">
+      <div class="card-title">// SELECIONE SEU SISTEMA</div>
+      <div class="os-tabs">
+        <button class="os-tab active" data-os="mac">Mac / Linux</button>
+        <button class="os-tab" data-os="windows">Windows</button>
+      </div>
+    </div>
+
+    <!-- MAC Instructions -->
+    <div id="mac-instructions" class="instructions active">
+      <div class="card">
+        <div class="card-title">// INSTALACAO (APENAS 1x)</div>
+
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3>Instale o Python (se nao tiver)</h3>
+            <p>Abra o Terminal e digite:</p>
+            <div class="command-box">
+              <code>python3 --version</code>
+              <button class="copy-btn" data-cmd="python3 --version">Copiar</button>
+            </div>
+            <p style="margin-top: 8px; color: var(--text-muted);">Se aparecer "command not found", instale pelo site <a href="https://python.org" style="color: var(--primary)">python.org</a></p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3>Instale a biblioteca websockets</h3>
+            <div class="command-box">
+              <code>pip3 install websockets</code>
+              <button class="copy-btn" data-cmd="pip3 install websockets">Copiar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">// INICIAR SERVIDOR</div>
+
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3>Cole este comando no Terminal:</h3>
+            <div class="command-box">
+              <code id="cmdMac">cd "$(find /Volumes ~ -name 'ff-robust-server' -type d 2>/dev/null | head -1)" && python3 server.py</code>
+              <button class="copy-btn" id="copyMac">Copiar</button>
+            </div>
+            <div class="note">
+              <strong>O que este comando faz:</strong> Encontra automaticamente a pasta ff-robust-server em qualquer disco e inicia o servidor.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WINDOWS Instructions -->
+    <div id="windows-instructions" class="instructions">
+      <div class="card">
+        <div class="card-title">// INSTALACAO (APENAS 1x)</div>
+
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3>Instale o Python</h3>
+            <p>Baixe e instale do site oficial:</p>
+            <div class="command-box">
+              <code>https://python.org/downloads</code>
+              <button class="copy-btn" data-cmd="https://python.org/downloads">Copiar</button>
+            </div>
+            <div class="note">
+              <strong>IMPORTANTE:</strong> Durante a instalacao, marque a opcao <code>Add Python to PATH</code>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3>Instale a biblioteca websockets</h3>
+            <p>Abra o CMD (Prompt de Comando) e digite:</p>
+            <div class="command-box">
+              <code>pip install websockets</code>
+              <button class="copy-btn" data-cmd="pip install websockets">Copiar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">// INICIAR SERVIDOR</div>
+
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3>Cole este comando no CMD:</h3>
+            <div class="command-box">
+              <code id="cmdWin">for /r C:\ %i in (ff-robust-server) do @if exist "%i\server.py" (cd /d "%i" && python server.py)</code>
+              <button class="copy-btn" id="copyWin">Copiar</button>
+            </div>
+            <div class="note">
+              <strong>Alternativa:</strong> Navegue manualmente ate a pasta <code>ff-robust-server</code> e execute: <code>python server.py</code>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status -->
+    <div class="card">
+      <div class="card-title">// STATUS DA CONEXAO</div>
+      <div class="status-box">
+        <div class="status-dot" id="statusDot"></div>
+        <span class="status-text" id="statusText">Aguardando servidor...</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="start-server.js"></script>
+</body>
+</html>

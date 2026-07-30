@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   Youtube, 
@@ -194,22 +194,22 @@ const UmbraReverseTool: React.FC = () => {
   return (
     <div className="font-rajdhani space-y-8 animate-in fade-in duration-700 pb-20 max-w-7xl mx-auto">
       <header className="text-center relative">
-        <div className="inline-flex items-center justify-center w-24 h-24 bg-brand-cyan/10 rounded-[32px] mb-6 shadow-2xl ring-1 ring-brand-cyan/20">
+        <div className="inline-flex items-center justify-center w-24 h-24 bg-brand-cyan/10 rounded-2xl mb-6 shadow-2xl ring-1 ring-brand-cyan/20">
           <RefreshCw className="w-12 h-12 text-brand-cyan" />
         </div>
         <h1 className="text-5xl font-black tracking-tighter mb-2 bg-gradient-to-r from-brand-cyan via-brand-purple to-brand-pink bg-clip-text text-transparent uppercase font-bebas">
           Umbra Reverse
         </h1>
-        <p className="text-gray-500 font-medium">Engenharia Reversa de Viralidade • Insights Algorítmicos</p>
+        <p className="text-gray-900 font-black">Engenharia Reversa de Viralidade • Insights Algorítmicos</p>
       </header>
 
       {/* INPUT PANEL */}
-      <div className="bg-background-mid border border-white/5 rounded-[40px] p-8 shadow-xl space-y-8 relative overflow-hidden backdrop-blur-xl">
+      <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-xl space-y-8 relative overflow-hidden ">
         <div className="absolute top-0 right-0 w-64 h-64 bg-brand-cyan/5 blur-[100px] -z-10" />
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-3">
-             <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2 px-1">
+             <label className="text-[10px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2 px-1">
                <Key className="w-4 h-4 text-brand-cyan" /> YouTube API Key
              </label>
              <input 
@@ -217,11 +217,11 @@ const UmbraReverseTool: React.FC = () => {
               value={apiKey}
               onChange={e => saveKey(e.target.value)}
               placeholder="AIzaSy..."
-              className="w-full bg-background-deep border border-white/10 rounded-2xl p-5 text-xs font-space text-brand-cyan focus:border-brand-cyan outline-none"
+              className="w-full bg-white border border-gray-200 rounded-2xl p-5 text-xs font-space text-brand-cyan focus:border-brand-cyan outline-none"
              />
           </div>
           <div className="space-y-3">
-             <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest flex items-center gap-2 px-1">
+             <label className="text-[10px] font-black text-gray-900 uppercase tracking-widest flex items-center gap-2 px-1">
                <Search className="w-4 h-4 text-brand-purple" /> Link do Vídeo
              </label>
              <input 
@@ -230,7 +230,7 @@ const UmbraReverseTool: React.FC = () => {
               onChange={e => setVideoUrl(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && analyzeVideo()}
               placeholder="URL ou ID do YouTube..."
-              className="w-full bg-background-deep border border-white/10 rounded-2xl p-5 text-sm font-bold text-white focus:border-brand-purple outline-none"
+              className="w-full bg-white border border-gray-200 rounded-2xl p-5 text-sm font-black text-gray-900 focus:border-brand-purple outline-none"
              />
           </div>
         </div>
@@ -247,7 +247,7 @@ const UmbraReverseTool: React.FC = () => {
         {error && (
           <div className="p-5 bg-brand-pink/10 border border-brand-pink/20 rounded-2xl flex items-center gap-4 text-brand-pink animate-in slide-in-from-top-2">
             <AlertCircle className="w-5 h-5" />
-            <span className="text-xs font-bold uppercase tracking-widest">{error}</span>
+            <span className="text-xs font-black uppercase tracking-widest">{error}</span>
           </div>
         )}
       </div>
@@ -262,16 +262,16 @@ const UmbraReverseTool: React.FC = () => {
       {analysis && (
         <div className="space-y-12 animate-in slide-in-from-bottom-8 duration-700">
            {/* VIDEO HEADER CARD */}
-           <div className="bg-background-mid border border-white/5 rounded-[48px] p-10 shadow-2xl relative overflow-hidden">
+           <div className="bg-white border border-gray-200 rounded-2xl p-10 shadow-2xl relative overflow-hidden">
              <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-brand-cyan/5 via-transparent to-transparent -z-10" />
              <div className="flex flex-col lg:flex-row gap-10">
-                <div className="w-full lg:w-1/3 aspect-video bg-background-deep rounded-[32px] overflow-hidden border border-white/5 shadow-2xl">
+                <div className="w-full lg:w-1/3 aspect-video bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-2xl">
                    <img src={analysis.video.snippet.thumbnails.maxres?.url || analysis.video.snippet.thumbnails.high?.url} className="w-full h-full object-cover" alt="Thumbnail" />
                 </div>
                 <div className="flex-1 space-y-6">
                    <div>
                      <h2 className="text-3xl font-black tracking-tight leading-tight mb-2">{analysis.video.snippet.title}</h2>
-                     <a href={`https://youtube.com/channel/${analysis.channel.id}`} target="_blank" className="text-brand-cyan font-bold text-sm hover:underline flex items-center gap-2">
+                     <a href={`https://youtube.com/channel/${analysis.channel.id}`} target="_blank" className="text-brand-cyan font-black text-sm hover:underline flex items-center gap-2">
                        {analysis.channel.snippet.title} <ExternalLink className="w-3 h-3" />
                      </a>
                    </div>
@@ -280,11 +280,11 @@ const UmbraReverseTool: React.FC = () => {
                         { label: 'Views', val: fmtNum(analysis.video.statistics.viewCount), color: 'text-brand-cyan' },
                         { label: 'Likes', val: fmtNum(analysis.video.statistics.likeCount), color: 'text-brand-pink' },
                         { label: 'Comments', val: fmtNum(analysis.video.statistics.commentCount), color: 'text-brand-purple' },
-                        { label: 'Subs', val: fmtNum(analysis.channel.statistics.subscriberCount), color: 'text-white' },
+                        { label: 'Subs', val: fmtNum(analysis.channel.statistics.subscriberCount), color: 'text-gray-900' },
                       ].map(s => (
-                        <div key={s.label} className="bg-background-deep/50 border border-white/5 p-4 rounded-2xl text-center">
+                        <div key={s.label} className="bg-white/50 border border-gray-200 p-4 rounded-2xl text-center">
                            <div className={`text-xl font-black ${s.color}`}>{s.val}</div>
-                           <div className="text-[9px] font-bold text-gray-600 uppercase tracking-widest">{s.label}</div>
+                           <div className="text-[9px] font-black text-gray-900 uppercase tracking-widest">{s.label}</div>
                         </div>
                       ))}
                    </div>
@@ -294,19 +294,19 @@ const UmbraReverseTool: React.FC = () => {
 
            {/* VIRAL SCORE & GROWTH */}
            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              <div className="lg:col-span-4 bg-gradient-to-br from-brand-purple/20 to-brand-pink/20 border border-white/10 rounded-[48px] p-10 text-center shadow-2xl relative overflow-hidden">
+              <div className="lg:col-span-4 bg-gradient-to-br from-brand-purple/20 to-brand-pink/20 border border-gray-200 rounded-2xl p-10 text-center shadow-2xl relative overflow-hidden">
                  <div className="absolute inset-0 bg-grid opacity-10" />
-                 <h4 className="font-orbitron text-[10px] font-black uppercase text-white tracking-[0.2em] mb-8">Viral Score Hub</h4>
+                 <h4 className="font-orbitron text-[10px] font-black uppercase text-gray-900 tracking-[0.2em] mb-8">Viral Score Hub</h4>
                  <div className="text-8xl font-bebas tracking-tighter bg-gradient-to-r from-brand-cyan via-brand-purple to-brand-pink bg-clip-text text-transparent mb-4">
                    {analysis.viralScore.score}
                  </div>
-                 <p className="text-sm font-black text-white uppercase tracking-widest mb-2">{analysis.viralScore.description}</p>
-                 <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+                 <p className="text-sm font-black text-gray-900 uppercase tracking-widest mb-2">{analysis.viralScore.description}</p>
+                 <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
                     <div className="h-full bg-gradient-to-r from-brand-cyan to-brand-pink" style={{ width: `${analysis.viralScore.score}%` }} />
                  </div>
               </div>
 
-              <div className="lg:col-span-8 bg-background-mid border border-white/5 rounded-[48px] p-10 shadow-xl space-y-8">
+              <div className="lg:col-span-8 bg-white border border-gray-200 rounded-2xl p-10 shadow-xl space-y-8">
                  <div className="flex items-center gap-4">
                     <TrendingUp className="w-6 h-6 text-brand-cyan" />
                     <h3 className="text-xl font-black uppercase tracking-tight">Crescimento Estimado</h3>
@@ -319,8 +319,8 @@ const UmbraReverseTool: React.FC = () => {
                       { label: 'Views/Sub', val: analysis.growthMetrics.viewsPerSub + 'x', color: 'text-brand-green' },
                     ].map(m => (
                       <div key={m.label} className="space-y-1">
-                        <div className={`text-2xl font-black ${m.color || 'text-white'}`}>{m.val}</div>
-                        <div className="text-[9px] font-bold text-gray-600 uppercase tracking-widest">{m.label}</div>
+                        <div className={`text-2xl font-black ${m.color || 'text-gray-900'}`}>{m.val}</div>
+                        <div className="text-[9px] font-black text-gray-900 uppercase tracking-widest">{m.label}</div>
                       </div>
                     ))}
                  </div>
@@ -329,32 +329,32 @@ const UmbraReverseTool: React.FC = () => {
 
            {/* TITLE & NICHES */}
            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="bg-background-mid border border-white/5 rounded-[40px] p-8 shadow-xl space-y-8">
+              <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-xl space-y-8">
                  <div className="flex items-center gap-4">
                     <Target className="w-6 h-6 text-brand-pink" />
                     <h3 className="text-xl font-black uppercase tracking-tight">Analítica do Título</h3>
                  </div>
                  <div className="grid grid-cols-2 gap-4">
-                    <div className="p-5 bg-background-deep/50 rounded-3xl border border-white/5">
+                    <div className="p-5 bg-white/50 rounded-3xl border border-gray-200">
                        <div className="text-xs font-black text-brand-pink uppercase mb-1">Tamanho</div>
-                       <div className="text-xl font-black text-white">{analysis.titleAnalysis.length} Chars</div>
+                       <div className="text-xl font-black text-gray-900">{analysis.titleAnalysis.length} Chars</div>
                     </div>
-                    <div className="p-5 bg-background-deep/50 rounded-3xl border border-white/5">
+                    <div className="p-5 bg-white/50 rounded-3xl border border-gray-200">
                        <div className="text-xs font-black text-brand-pink uppercase mb-1">Status</div>
                        <div className="text-xl font-black text-brand-green">{analysis.titleAnalysis.optimization}</div>
                     </div>
                  </div>
-                 <div className="p-5 bg-background-deep/50 rounded-3xl border border-white/5">
-                    <div className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-4">Ganchos Emocionais Detectados</div>
+                 <div className="p-5 bg-white/50 rounded-3xl border border-gray-200">
+                    <div className="text-[10px] font-black text-gray-900 uppercase tracking-widest mb-4">Ganchos Emocionais Detectados</div>
                     <div className="flex flex-wrap gap-2">
                        {analysis.titleAnalysis.emotionalWords.length ? analysis.titleAnalysis.emotionalWords.map((w: string) => (
-                         <span key={w} className="px-3 py-1.5 bg-brand-pink/10 border border-brand-pink/20 rounded-lg text-[10px] font-bold text-brand-pink uppercase">{w}</span>
-                       )) : <span className="text-[10px] text-gray-700 italic font-bold uppercase">Nenhum gatilho detectado</span>}
+                         <span key={w} className="px-3 py-1.5 bg-brand-pink/10 border border-brand-pink/20 rounded-lg text-[10px] font-black text-brand-pink uppercase">{w}</span>
+                       )) : <span className="text-[10px] text-gray-700 italic font-black uppercase">Nenhum gatilho detectado</span>}
                     </div>
                  </div>
               </div>
 
-              <div className="bg-background-mid border border-white/5 rounded-[40px] p-8 shadow-xl space-y-8">
+              <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-xl space-y-8">
                  <div className="flex items-center gap-4">
                     <DollarSign className="w-6 h-6 text-brand-green" />
                     <h3 className="text-xl font-black uppercase tracking-tight">Monetização & Benchmark</h3>
@@ -362,35 +362,35 @@ const UmbraReverseTool: React.FC = () => {
                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="p-6 bg-brand-green/5 border border-brand-green/10 rounded-3xl">
                        <div className="text-[10px] font-black text-brand-green uppercase tracking-widest mb-2">AdSense Estimado</div>
-                       <div className="text-3xl font-black text-white">${analysis.monetization.revenue.toFixed(2)}</div>
-                       <p className="text-[9px] text-gray-600 font-bold uppercase mt-2">Base: 55% share revenue</p>
+                       <div className="text-3xl font-black text-gray-900">${analysis.monetization.revenue.toFixed(2)}</div>
+                       <p className="text-[9px] text-gray-900 font-black uppercase mt-2">Base: 55% share revenue</p>
                     </div>
                     <div className={`p-6 border rounded-3xl ${Number(analysis.benchmark.performance) > 0 ? 'bg-brand-cyan/5 border-brand-cyan/20' : 'bg-brand-pink/5 border-brand-pink/20'}`}>
                        <div className="text-[10px] font-black uppercase tracking-widest mb-2 opacity-60">Vs Média do Canal</div>
                        <div className={`text-3xl font-black ${Number(analysis.benchmark.performance) > 0 ? 'text-brand-cyan' : 'text-brand-pink'}`}>{analysis.benchmark.performance}%</div>
-                       <p className="text-[9px] text-gray-600 font-bold uppercase mt-2">Média: {fmtNum(analysis.benchmark.avg)} views</p>
+                       <p className="text-[9px] text-gray-900 font-black uppercase mt-2">Média: {fmtNum(analysis.benchmark.avg)} views</p>
                     </div>
                  </div>
               </div>
            </div>
 
            {/* TOP VIDEOS GALLERY */}
-           <section className="bg-background-mid border border-white/5 rounded-[48px] p-10 shadow-2xl">
-              <div className="flex items-center gap-4 mb-10 pb-6 border-b border-white/5">
+           <section className="bg-white border border-gray-200 rounded-2xl p-10 shadow-2xl">
+              <div className="flex items-center gap-4 mb-10 pb-6 border-b border-gray-200">
                 <Trophy className="w-8 h-8 text-brand-cyan" />
                 <h3 className="text-2xl font-black tracking-tight uppercase">Melhor Performance do Canal</h3>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                  {analysis.topVideos.map((v: any, i: number) => (
-                   <a key={v.id} href={`https://youtube.com/watch?v=${v.id}`} target="_blank" className="group bg-background-deep border border-white/5 rounded-[32px] overflow-hidden hover:border-brand-cyan transition-all shadow-xl">
+                   <a key={v.id} href={`https://youtube.com/watch?v=${v.id}`} target="_blank" className="group bg-white border border-gray-200 rounded-2xl overflow-hidden hover:border-brand-cyan transition-all shadow-xl">
                       <div className="aspect-video relative">
                          <img src={v.snippet.thumbnails.medium.url} className="w-full h-full object-cover" />
                          <div className="absolute inset-0 bg-brand-cyan/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                         <div className="absolute top-4 left-4 px-3 py-1 bg-black/60 backdrop-blur-md rounded-lg text-[9px] font-black text-white border border-white/10 uppercase">#{i+1} TOP</div>
+                         <div className="absolute top-4 left-4 px-3 py-1 bg-gray-200  rounded-lg text-[9px] font-black text-gray-900 border border-gray-200 uppercase">#{i+1} TOP</div>
                       </div>
                       <div className="p-6 space-y-3">
-                         <h5 className="text-sm font-black text-white group-hover:text-brand-cyan transition-colors line-clamp-2">{v.snippet.title}</h5>
-                         <div className="flex justify-between items-center text-[10px] font-black text-gray-600 uppercase tracking-widest">
+                         <h5 className="text-sm font-black text-gray-900 group-hover:text-brand-cyan transition-colors line-clamp-2">{v.snippet.title}</h5>
+                         <div className="flex justify-between items-center text-[10px] font-black text-gray-900 uppercase tracking-widest">
                             <span className="flex items-center gap-2"><Flame className="w-3 h-3 text-brand-pink" /> {fmtNum(v.statistics.viewCount)}</span>
                             <span>{new Date(v.snippet.publishedAt).getFullYear()}</span>
                          </div>
@@ -401,18 +401,18 @@ const UmbraReverseTool: React.FC = () => {
            </section>
 
            {/* SIMILAR CHANNELS */}
-           <section className="bg-background-mid border border-white/5 rounded-[48px] p-10 shadow-2xl">
-              <div className="flex items-center gap-4 mb-10 pb-6 border-b border-white/5">
+           <section className="bg-white border border-gray-200 rounded-2xl p-10 shadow-2xl">
+              <div className="flex items-center gap-4 mb-10 pb-6 border-b border-gray-200">
                 <Users className="w-8 h-8 text-brand-purple" />
                 <h3 className="text-2xl font-black tracking-tight uppercase">Canais Similares para Estudo</h3>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                  {analysis.similarChannels.map((ch: any) => (
-                   <div key={ch.id} className="p-6 bg-background-deep border border-white/5 rounded-[32px] flex items-center gap-6 group hover:border-brand-purple/40 transition-all shadow-inner">
-                      <img src={ch.snippet.thumbnails.default.url} className="w-16 h-16 rounded-full border-2 border-white/5 group-hover:border-brand-purple transition-all" />
+                   <div key={ch.id} className="p-6 bg-white border border-gray-200 rounded-2xl flex items-center gap-6 group hover:border-brand-purple/40 transition-all shadow-inner">
+                      <img src={ch.snippet.thumbnails.default.url} className="w-16 h-16 rounded-full border-2 border-gray-200 group-hover:border-brand-purple transition-all" />
                       <div className="overflow-hidden">
-                        <h5 className="text-base font-black text-white group-hover:text-brand-cyan transition-all truncate">{ch.snippet.title}</h5>
-                        <div className="text-[10px] font-black text-gray-600 uppercase tracking-widest mt-1">
+                        <h5 className="text-base font-black text-gray-900 group-hover:text-brand-cyan transition-all truncate">{ch.snippet.title}</h5>
+                        <div className="text-[10px] font-black text-gray-900 uppercase tracking-widest mt-1">
                            {fmtNum(ch.statistics.subscriberCount)} Inscritos
                         </div>
                       </div>
@@ -422,26 +422,26 @@ const UmbraReverseTool: React.FC = () => {
            </section>
 
            {/* TAGS */}
-           <section className="bg-background-mid border border-white/5 rounded-[40px] p-10 shadow-xl">
+           <section className="bg-white border border-gray-200 rounded-2xl p-10 shadow-xl">
               <div className="flex items-center gap-4 mb-8">
                  <Tag className="w-6 h-6 text-brand-pink" />
                  <h3 className="text-xl font-black uppercase tracking-tight">Cofre de Tags Detectadas</h3>
               </div>
               <div className="flex flex-wrap gap-2">
                  {(analysis.video.snippet.tags || []).length ? analysis.video.snippet.tags.map((t: string) => (
-                   <button key={t} onClick={() => { navigator.clipboard.writeText(t); alert('Tag copiada!'); }} className="px-4 py-2 bg-background-deep border border-white/10 rounded-xl text-[11px] font-bold text-gray-400 hover:text-brand-cyan hover:border-brand-cyan/40 transition-all">{t}</button>
-                 )) : <span className="text-gray-700 italic font-bold uppercase">Nenhuma tag oculta detectada</span>}
+                   <button key={t} onClick={() => { navigator.clipboard.writeText(t); alert('Tag copiada!'); }} className="px-4 py-2 bg-white border border-gray-200 rounded-xl text-[11px] font-black text-gray-900 hover:text-brand-cyan hover:border-brand-cyan/40 transition-all">{t}</button>
+                 )) : <span className="text-gray-700 italic font-black uppercase">Nenhuma tag oculta detectada</span>}
               </div>
            </section>
         </div>
       )}
 
-      <footer className="mt-20 p-12 bg-background-mid border border-white/5 rounded-[56px] text-center max-w-4xl mx-auto shadow-2xl relative overflow-hidden">
+      <footer className="mt-20 p-12 bg-white border border-gray-200 rounded-2xl text-center max-w-4xl mx-auto shadow-2xl relative overflow-hidden">
          <div className="absolute inset-0 bg-gradient-to-br from-brand-cyan/5 via-transparent to-brand-pink/5 opacity-50" />
          <div className="relative z-10 space-y-6">
-            <div className="w-16 h-16 bg-white/5 rounded-[24px] flex items-center justify-center mx-auto text-brand-cyan shadow-xl"><Activity className="w-8 h-8" /></div>
+            <div className="w-16 h-16 bg-gray-50 rounded-[24px] flex items-center justify-center mx-auto text-brand-cyan shadow-xl"><Activity className="w-8 h-8" /></div>
             <h4 className="text-xl font-black tracking-tighter uppercase">Protocolo Umbra Reverse v1.5</h4>
-            <p className="text-gray-500 text-xs max-w-xl mx-auto leading-relaxed">Analise a estrutura de sucesso dos seus concorrentes. Descubra ganchos, taxa de engajamento real e o potencial de monetização de qualquer vídeo no nicho Dark.</p>
+            <p className="text-gray-900 text-xs max-w-xl mx-auto leading-relaxed">Analise a estrutura de sucesso dos seus concorrentes. Descubra ganchos, taxa de engajamento real e o potencial de monetização de qualquer vídeo no nicho Dark.</p>
          </div>
       </footer>
     </div>

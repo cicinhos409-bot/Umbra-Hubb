@@ -1,0 +1,63 @@
+---
+import { getCollection } from 'astro:content';
+
+const allPosts = await getCollection('blog', ({ data }) => !data.draft);
+const latestPosts = allPosts
+  .sort((a, b) => new Date(b.data.pubDate).getTime() - new Date(a.data.pubDate).getTime())
+  .slice(0, 3);
+---
+
+<footer class="bg-gray-900 text-gray-300 pt-16 pb-8 mt-20">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-10 mb-12">
+      <!-- Brand -->
+      <div>
+        <a href="/blog" class="flex items-center gap-2 font-black text-xl text-white mb-3">
+          <div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+            <span class="text-white text-sm font-black">U</span>
+          </div>
+          UmbraHub
+        </a>
+        <p class="text-sm text-gray-400 leading-relaxed">
+          20+ ferramentas de IA para criadores de canais faceless escalarem no YouTube.
+        </p>
+        <div class="flex gap-4 mt-4">
+          <a href="https://youtube.com/@umbrahub" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-white transition-colors text-sm">YouTube</a>
+          <a href="https://instagram.com/umbrahub" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-white transition-colors text-sm">Instagram</a>
+        </div>
+        <a
+          href="https://umbrahubb.vercel.app"
+          class="inline-block mt-6 bg-primary text-white text-sm font-bold px-5 py-2.5 rounded-lg hover:bg-primary-dark transition-colors"
+        >
+          Acessar o Dashboard →
+        </a>
+      </div>
+
+      <!-- Últimos posts -->
+      <div>
+        <h4 class="font-bold text-white mb-4 text-sm uppercase tracking-wide">Últimos Posts</h4>
+        <ul class="space-y-4">
+          {latestPosts.map(post => (
+            <li>
+              <a href={`/blog/${post.slug}`} class="group">
+                <p class="text-sm text-gray-400 group-hover:text-white transition-colors leading-snug">
+                  {post.data.title}
+                </p>
+                <time class="text-xs text-gray-600 mt-1 block">
+                  {post.data.pubDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                </time>
+              </a>
+            </li>
+          ))}
+        </ul>
+        <a href="/blog" class="text-sm text-primary hover:text-primary-light transition-colors mt-4 block font-semibold">
+          Ver todos →
+        </a>
+      </div>
+    </div>
+
+    <div class="border-t border-gray-800 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <p class="text-sm text-gray-600">© 2026 UmbraHub. Todos os direitos reservados.</p>
+    </div>
+  </div>
+</footer>

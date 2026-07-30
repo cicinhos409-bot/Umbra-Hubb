@@ -1,0 +1,65 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  currentSlug: string;
+  currentTags: string[];
+  allPosts: CollectionEntry<'blog'>[];
+}
+
+const { currentSlug, currentTags, allPosts } = Astro.props;
+
+const related = allPosts
+  .filter(p =>
+    p.slug !== currentSlug &&
+    p.data.tags?.some(t => currentTags.includes(t))
+  )
+  .map(p => ({
+    post: p,
+    matches: p.data.tags?.filter(t => currentTags.includes(t)).length ?? 0,
+  }))
+  .sort((a, b) => b.matches - a.matches || new Date(b.post.data.pubDate).getTime() - new Date(a.post.data.pubDate).getTime())
+  .slice(0, 3)
+  .map(r => r.post);
+---
+
+{related.length > 0 && (
+  <section class="mt-6">
+    <h3 class="text-xl font-black text-gray-900 dark:text-white mb-5">Artigos relacionados</h3>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {related.map(post => (
+        <a
+          href={`/blog/${post.slug}`}
+          class="group block bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-xl overflow-hidden hover:border-primary dark:hover:border-primary hover:shadow-md transition-all"
+        >
+          {post.data.image && (
+            <div class="aspect-video overflow-hidden bg-gray-100 dark:bg-gray-700">
+              <img
+                src={post.data.image}
+                alt={post.data.title}
+                width="400"
+                height="225"
+                loading="lazy"
+                decoding="async"
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+            </div>
+          )}
+          <div class="p-4">
+            {post.data.tags && post.data.tags.length > 0 && (
+              <span class="text-xs font-bold uppercase tracking-wide text-primary bg-primary-pale dark:bg-primary/20 dark:text-primary-light px-2 py-0.5 rounded-full">
+                {post.data.tags[0]}
+              </span>
+            )}
+            <p class="font-bold text-gray-900 dark:text-white text-sm leading-snug mt-2 mb-1 group-hover:text-primary dark:group-hover:text-primary-light transition-colors line-clamp-2">
+              {post.data.title}
+            </p>
+            {post.data.readTime && (
+              <p class="text-xs text-gray-400 dark:text-gray-500">{post.data.readTime} de leitura</p>
+            )}
+          </div>
+        </a>
+      ))}
+    </div>
+  </section>
+)}

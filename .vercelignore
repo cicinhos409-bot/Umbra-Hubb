@@ -1,0 +1,35 @@
+# Vercel Deployment Exclusions
+node_modules/
+release/
+dist/
+dist-backend/
+build-py/
+electron/
+.git/
+.github/
+.vscode/
+
+# Build scripts and logs
+build-app.ps1
+build.log
+tsc_errors.txt
+*_out.txt
+*_check.txt
+*_analysis.txt
+*.spec
+*.pyc
+__pycache__/
+
+# Documentation and heavy data
+*.json
+!package.json
+!package-lock.json
+!vercel.json
+!tsconfig.json
+!metadata.json
+!supabase_report.txt
+
+# Environment and tokens
+.env*
+! .env.example
+youtube_cookies.txt

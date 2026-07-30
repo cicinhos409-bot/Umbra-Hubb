@@ -1,0 +1,202 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#030810"/>
+      <stop offset="50%" style="stop-color:#0a0f1e"/>
+      <stop offset="100%" style="stop-color:#100a24"/>
+    </linearGradient>
+    <linearGradient id="purple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6"/>
+      <stop offset="100%" style="stop-color:#6d28d9"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#f59e0b"/>
+      <stop offset="100%" style="stop-color:#fbbf24"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#8b5cf6"/>
+      <stop offset="50%" style="stop-color:#ec4899"/>
+      <stop offset="100%" style="stop-color:#f59e0b"/>
+    </linearGradient>
+    <filter id="glow-p">
+      <feGaussianBlur stdDeviation="16" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-g">
+      <feGaussianBlur stdDeviation="22" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="soft">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <clipPath id="browser-clip">
+      <rect x="620" y="85" width="530" height="460" rx="18"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Ambient glows -->
+  <circle cx="200"  cy="180" r="280" fill="#8b5cf6" opacity="0.07"/>
+  <circle cx="1050" cy="420" r="240" fill="#f59e0b" opacity="0.06"/>
+  <circle cx="700"  cy="600" r="200" fill="#ec4899" opacity="0.05"/>
+
+  <!-- Grid lines -->
+  <line x1="0" y1="210" x2="1200" y2="210" stroke="#ffffff" stroke-opacity="0.03" stroke-width="1"/>
+  <line x1="0" y1="420" x2="1200" y2="420" stroke="#ffffff" stroke-opacity="0.03" stroke-width="1"/>
+  <line x1="400" y1="0"  x2="400" y2="630" stroke="#ffffff" stroke-opacity="0.03" stroke-width="1"/>
+  <line x1="800" y1="0"  x2="800" y2="630" stroke="#ffffff" stroke-opacity="0.03" stroke-width="1"/>
+
+  <!-- Top accent -->
+  <rect x="0" y="0" width="1200" height="4" fill="url(#accent)"/>
+
+  <!-- ─── LEFT COLUMN ─── -->
+
+  <!-- Eyebrow badge -->
+  <rect x="70" y="95" width="260" height="36" rx="18" fill="#8b5cf6" fill-opacity="0.18" stroke="#8b5cf6" stroke-opacity="0.45" stroke-width="1"/>
+  <text x="200" y="118" font-family="system-ui,-apple-system,sans-serif" font-size="13" font-weight="700" fill="#c4b5fd" text-anchor="middle" letter-spacing="1">🔍 RESEARCH HACKING</text>
+
+  <!-- Main title line 1 -->
+  <text x="70" y="200" font-family="system-ui,-apple-system,sans-serif" font-size="48" font-weight="900" fill="white" letter-spacing="-2">Nicho Lucrativo</text>
+  <!-- Main title line 2 -->
+  <text x="70" y="254" font-family="system-ui,-apple-system,sans-serif" font-size="48" font-weight="900" fill="url(#purple)" letter-spacing="-2">em 3 Passos</text>
+  <!-- Subtitle -->
+  <text x="70" y="300" font-family="system-ui,-apple-system,sans-serif" font-size="22" font-weight="700" fill="#94a3b8" letter-spacing="-0.5">com a Aba Anônima do</text>
+  <text x="70" y="348" font-family="system-ui,-apple-system,sans-serif" font-size="58" font-weight="900" fill="url(#gold)" letter-spacing="-2" filter="url(#glow-g)">YouTube</text>
+
+  <text x="70" y="395" font-family="system-ui,sans-serif" font-size="17" fill="#64748b">Método secreto · sem pagar ferramentas</text>
+
+  <!-- 3 step pills -->
+  <!-- Step 1 -->
+  <rect x="70" y="425" width="160" height="52" rx="13" fill="#8b5cf6" fill-opacity="0.15" stroke="#8b5cf6" stroke-opacity="0.4" stroke-width="1"/>
+  <text x="150" y="446" font-family="system-ui,sans-serif" font-size="10" font-weight="700" fill="#a78bfa" text-anchor="middle" letter-spacing="1">PASSO 1</text>
+  <text x="150" y="466" font-family="system-ui,sans-serif" font-size="14" font-weight="800" fill="white" text-anchor="middle">Ambiente anônimo</text>
+
+  <!-- Step 2 -->
+  <rect x="242" y="425" width="160" height="52" rx="13" fill="#ec4899" fill-opacity="0.12" stroke="#ec4899" stroke-opacity="0.35" stroke-width="1"/>
+  <text x="322" y="446" font-family="system-ui,sans-serif" font-size="10" font-weight="700" fill="#f9a8d4" text-anchor="middle" letter-spacing="1">PASSO 2</text>
+  <text x="322" y="466" font-family="system-ui,sans-serif" font-size="14" font-weight="800" fill="white" text-anchor="middle">Leia os sinais</text>
+
+  <!-- Step 3 -->
+  <rect x="414" y="425" width="160" height="52" rx="13" fill="#f59e0b" fill-opacity="0.12" stroke="#f59e0b" stroke-opacity="0.35" stroke-width="1"/>
+  <text x="494" y="446" font-family="system-ui,sans-serif" font-size="10" font-weight="700" fill="#fcd34d" text-anchor="middle" letter-spacing="1">PASSO 3</text>
+  <text x="494" y="466" font-family="system-ui,sans-serif" font-size="14" font-weight="800" fill="white" text-anchor="middle">Valide e pontue</text>
+
+  <!-- Read time + branding -->
+  <rect x="70" y="498" width="110" height="42" rx="10" fill="#ffffff" fill-opacity="0.05" stroke="#475569" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="125" y="516" font-family="system-ui,sans-serif" font-size="10" fill="#64748b" text-anchor="middle">Leitura</text>
+  <text x="125" y="533" font-family="system-ui,sans-serif" font-size="16" font-weight="800" fill="#a78bfa" text-anchor="middle">9 min</text>
+
+  <rect x="195" y="498" width="130" height="42" rx="10" fill="#8b5cf6" fill-opacity="0.9"/>
+  <text x="260" y="524" font-family="system-ui,sans-serif" font-size="18" font-weight="900" fill="white" text-anchor="middle">UmbraHub</text>
+
+  <!-- ─── RIGHT COLUMN: Browser mockup ─── -->
+
+  <!-- Browser outer -->
+  <rect x="618" y="83" width="534" height="464" rx="19" fill="#0d1117" stroke="#8b5cf6" stroke-opacity="0.2" stroke-width="1.5"/>
+
+  <!-- Browser chrome / toolbar -->
+  <rect x="618" y="83" width="534" height="46" rx="19" fill="#161b22"/>
+  <rect x="618" y="109" width="534" height="20" fill="#161b22"/>
+
+  <!-- Traffic lights -->
+  <circle cx="650" cy="106" r="6" fill="#ff5f57"/>
+  <circle cx="670" cy="106" r="6" fill="#febc2e"/>
+  <circle cx="690" cy="106" r="6" fill="#28c840"/>
+
+  <!-- Address bar -->
+  <rect x="710" y="93" width="420" height="26" rx="8" fill="#21262d" stroke="#30363d" stroke-width="1"/>
+  <!-- Incognito icon (simple hat) -->
+  <circle cx="728" cy="106" r="7" fill="#6b7280"/>
+  <text x="728" y="110" font-size="9" fill="#0d1117" text-anchor="middle" font-weight="900">🕵</text>
+  <text x="920" y="111" font-family="system-ui,sans-serif" font-size="12" fill="#6b7280" text-anchor="middle">youtube.com — Modo anônimo</text>
+
+  <!-- Lock icon green -->
+  <rect x="714" y="98" width="10" height="8" rx="2" fill="none" stroke="#22c55e" stroke-width="1.2"/>
+  <circle cx="719" cy="97" r="3.5" fill="none" stroke="#22c55e" stroke-width="1.2"/>
+
+  <!-- YouTube Homepage mockup (anonymous) -->
+  <!-- YT Logo area -->
+  <rect x="630" y="132" width="510" height="40" rx="0" fill="#0d1117"/>
+  <rect x="645" y="144" width="90" height="20" rx="4" fill="#ff0000" fill-opacity="0.85"/>
+  <text x="690" y="158" font-family="system-ui,sans-serif" font-size="12" font-weight="900" fill="white" text-anchor="middle">▶ YouTube</text>
+  <!-- search bar -->
+  <rect x="760" y="142" width="250" height="24" rx="12" fill="#121212" stroke="#3f3f3f" stroke-width="1"/>
+  <text x="885" y="158" font-family="system-ui,sans-serif" font-size="10" fill="#6b7280" text-anchor="middle">Pesquisar</text>
+
+  <!-- Homepage grid — 6 video cards -->
+  <!-- Row 1 -->
+  <!-- Card 1: HIGH signal (glow) -->
+  <rect x="632" y="178" width="155" height="100" rx="8" fill="#1a1a2e" stroke="#8b5cf6" stroke-opacity="0.5" stroke-width="1.5"/>
+  <rect x="632" y="178" width="155" height="65" rx="8" fill="#8b5cf6" fill-opacity="0.25"/>
+  <text x="710" y="220" font-family="system-ui,sans-serif" font-size="22" text-anchor="middle">💰</text>
+  <text x="710" y="242" font-family="system-ui,sans-serif" font-size="9" font-weight="700" fill="#c4b5fd" text-anchor="middle">🔥 4.2M views · 3 dias</text>
+  <text x="644" y="262" font-family="system-ui,sans-serif" font-size="9" font-weight="700" fill="white">Renda passiva com IA</text>
+  <text x="644" y="274" font-family="system-ui,sans-serif" font-size="8" fill="#6b7280">32K inscritos · Alta velocidade</text>
+
+  <!-- Card 2 -->
+  <rect x="797" y="178" width="155" height="100" rx="8" fill="#1a1a2e" stroke="#333" stroke-width="1"/>
+  <rect x="797" y="178" width="155" height="65" rx="8" fill="#1e293b"/>
+  <text x="875" y="220" font-family="system-ui,sans-serif" font-size="22" text-anchor="middle">🧠</text>
+  <text x="809" y="262" font-family="system-ui,sans-serif" font-size="9" font-weight="700" fill="white">Saúde mental 2026</text>
+  <text x="809" y="274" font-family="system-ui,sans-serif" font-size="8" fill="#6b7280">890K views · 5 dias</text>
+
+  <!-- Card 3: HIGH signal -->
+  <rect x="962" y="178" width="168" height="100" rx="8" fill="#1a1a2e" stroke="#f59e0b" stroke-opacity="0.4" stroke-width="1.5"/>
+  <rect x="962" y="178" width="168" height="65" rx="8" fill="#f59e0b" fill-opacity="0.15"/>
+  <text x="1046" y="220" font-family="system-ui,sans-serif" font-size="22" text-anchor="middle">📈</text>
+  <text x="1046" y="242" font-family="system-ui,sans-serif" font-size="9" font-weight="700" fill="#fcd34d" text-anchor="middle">🔥 2.8M views · 2 dias</text>
+  <text x="974" y="262" font-family="system-ui,sans-serif" font-size="9" font-weight="700" fill="white">Finanças para MEI</text>
+  <text x="974" y="274" font-family="system-ui,sans-serif" font-size="8" fill="#6b7280">18K inscritos · Oportunidade!</text>
+
+  <!-- Row 2 -->
+  <!-- Card 4 -->
+  <rect x="632" y="288" width="155" height="100" rx="8" fill="#1a1a2e" stroke="#333" stroke-width="1"/>
+  <rect x="632" y="288" width="155" height="65" rx="8" fill="#1e293b"/>
+  <text x="710" y="330" font-family="system-ui,sans-serif" font-size="22" text-anchor="middle">🔍</text>
+  <text x="644" y="372" font-family="system-ui,sans-serif" font-size="9" font-weight="700" fill="white">True crime Brasil</text>
+  <text x="644" y="384" font-family="system-ui,sans-serif" font-size="8" fill="#6b7280">1.1M views · 8 dias</text>
+
+  <!-- Card 5: HIGH signal -->
+  <rect x="797" y="288" width="155" height="100" rx="8" fill="#1a1a2e" stroke="#8b5cf6" stroke-opacity="0.4" stroke-width="1.5"/>
+  <rect x="797" y="288" width="155" height="65" rx="8" fill="#8b5cf6" fill-opacity="0.18"/>
+  <text x="875" y="330" font-family="system-ui,sans-serif" font-size="22" text-anchor="middle">🤖</text>
+  <text x="875" y="352" font-family="system-ui,sans-serif" font-size="9" font-weight="700" fill="#c4b5fd" text-anchor="middle">🔥 3.6M views · 4 dias</text>
+  <text x="809" y="372" font-family="system-ui,sans-serif" font-size="9" font-weight="700" fill="white">IA para pequenos negócios</text>
+  <text x="809" y="384" font-family="system-ui,sans-serif" font-size="8" fill="#6b7280">41K inscritos · CPM alto</text>
+
+  <!-- Card 6 -->
+  <rect x="962" y="288" width="168" height="100" rx="8" fill="#1a1a2e" stroke="#333" stroke-width="1"/>
+  <rect x="962" y="288" width="168" height="65" rx="8" fill="#1e293b"/>
+  <text x="1046" y="330" font-family="system-ui,sans-serif" font-size="22" text-anchor="middle">🍳</text>
+  <text x="974" y="372" font-family="system-ui,sans-serif" font-size="9" font-weight="700" fill="white">Receitas rápidas</text>
+  <text x="974" y="384" font-family="system-ui,sans-serif" font-size="8" fill="#6b7280">560K views · 12 dias</text>
+
+  <!-- Analysis overlay arrow + label on card 1 -->
+  <line x1="706" y1="178" x2="706" y2="158" stroke="#8b5cf6" stroke-opacity="0.6" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <rect x="640" y="140" width="132" height="20" rx="6" fill="#8b5cf6" fill-opacity="0.9"/>
+  <text x="706" y="154" font-family="system-ui,sans-serif" font-size="10" font-weight="700" fill="white" text-anchor="middle">✅ CANAL PEQUENO = OPORTUNIDADE</text>
+
+  <!-- Analysis overlay on card 5 -->
+  <line x1="871" y1="288" x2="871" y2="268" stroke="#8b5cf6" stroke-opacity="0.6" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <rect x="800" y="250" width="145" height="20" rx="6" fill="#8b5cf6" fill-opacity="0.9"/>
+  <text x="872" y="264" font-family="system-ui,sans-serif" font-size="10" font-weight="700" fill="white" text-anchor="middle">🔥 DISTRIBUIÇÃO EXPLOSIVA</text>
+
+  <!-- Score badge floating -->
+  <rect x="640" y="398" width="490" height="62" rx="12" fill="#0d1117" stroke="#f59e0b" stroke-opacity="0.5" stroke-width="1.5"/>
+  <text x="660" y="422" font-family="system-ui,sans-serif" font-size="11" font-weight="700" fill="#fcd34d" letter-spacing="1">PONTUAÇÃO DO NICHO</text>
+  <text x="660" y="448" font-family="system-ui,sans-serif" font-size="12" fill="#94a3b8">Renda passiva com IA:</text>
+  <text x="816" y="448" font-family="system-ui,sans-serif" font-size="22" font-weight="900" fill="#f59e0b">10</text>
+  <text x="840" y="448" font-family="system-ui,sans-serif" font-size="12" fill="#94a3b8">/10  →  Prioridade máxima</text>
+
+  <!-- Score dots -->
+  <circle cx="1060" cy="420" r="8" fill="#22c55e" fill-opacity="0.9"/>
+  <circle cx="1078" cy="420" r="8" fill="#22c55e" fill-opacity="0.9"/>
+  <circle cx="1096" cy="420" r="8" fill="#22c55e" fill-opacity="0.9"/>
+  <text x="1078" y="450" font-family="system-ui,sans-serif" font-size="10" fill="#6b7280" text-anchor="middle">Demanda</text>
+
+  <!-- Bottom branding -->
+  <text x="600" y="600" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#475569" text-anchor="middle">umbrahubb-blog.vercel.app</text>
+</svg>

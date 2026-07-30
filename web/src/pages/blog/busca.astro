@@ -1,0 +1,69 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Header from '../../components/Header.astro';
+import Footer from '../../components/Footer.astro';
+---
+
+<BaseLayout
+  title="Buscar artigos | Blog UmbraHub"
+  description="Encontre artigos sobre canais faceless, IA e monetização no YouTube."
+  noIndex={true}
+>
+  <link slot="head" href="/pagefind/pagefind-ui.css" rel="stylesheet" />
+
+  <Header />
+
+  <main class="max-w-3xl mx-auto px-4 py-16">
+    <nav class="text-sm text-gray-500 dark:text-gray-400 mb-8" aria-label="Breadcrumb">
+      <a href="/blog" class="hover:text-primary transition-colors">Blog</a>
+      <span class="mx-2">›</span>
+      <span class="text-gray-700 dark:text-gray-300">Buscar</span>
+    </nav>
+
+    <h1 class="text-3xl font-black text-gray-900 dark:text-white mb-2">Buscar artigos</h1>
+    <p class="text-gray-500 dark:text-gray-400 mb-8">Encontre conteúdo sobre IA, YouTube e canais faceless.</p>
+
+    <div id="search"></div>
+
+    <noscript>
+      <p class="text-gray-500 dark:text-gray-400 mt-4">Habilite JavaScript para usar a busca.</p>
+    </noscript>
+  </main>
+
+  <Footer />
+</BaseLayout>
+
+<script src="/pagefind/pagefind-ui.js" is:inline></script>
+<script>
+  declare const PagefindUI: new (opts: object) => void;
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof PagefindUI !== 'undefined') {
+      new PagefindUI({
+        element: '#search',
+        showSubResults: true,
+        placeholder: 'Ex: ferramentas IA, monetização...',
+        translations: {
+          placeholder: 'Ex: ferramentas IA, monetização...',
+          zero_results: 'Nenhum resultado para "[QUERY]"',
+        },
+      });
+    }
+  });
+</script>
+
+<style is:global>
+  .pagefind-ui {
+    --pagefind-ui-font: 'Inter', system-ui, sans-serif;
+    --pagefind-ui-primary: #8b5cf6;
+    --pagefind-ui-text: #374151;
+    --pagefind-ui-background: #ffffff;
+    --pagefind-ui-border: #e5e7eb;
+    --pagefind-ui-border-radius: 12px;
+  }
+
+  .dark .pagefind-ui {
+    --pagefind-ui-text: #e5e7eb;
+    --pagefind-ui-background: #1f2937;
+    --pagefind-ui-border: #374151;
+  }
+</style>

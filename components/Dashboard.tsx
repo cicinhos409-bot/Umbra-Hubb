@@ -1,42 +1,31 @@
 
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import { TOOLS } from '../constants';
 import { ToolTier, ToolCategory, Tool } from '../types';
+import OnboardingGuide, { ONBOARDING_STORAGE_KEY } from './OnboardingGuide';
+import { trackToolOpened, trackSearch } from '../services/analytics';
 
-import UmbraTurboHub from './UmbraTurboHub';
-import MeusCanaisTool from './MeusCanaisTool';
+// React.lazy: cada ferramenta vira chunk separado — carregado só quando acessado.
+// Reduz bundle inicial de ~927KB para ~280KB.
+const UmbraTurboHub       = lazy(() => import('./UmbraTurboHub'));
+const MeusCanaisTool      = lazy(() => import('./MeusCanaisTool'));
+const EditingToolsTool    = lazy(() => import('./EditingToolsTool'));
+const ScreenshotTool      = lazy(() => import('./ScreenshotTool'));
+const PromptVaultTool     = lazy(() => import('./PromptVaultTool'));
+const UmbraMediaHub       = lazy(() => import('./UmbraMediaHub'));
+const UmbraYouTubeHub     = lazy(() => import('./UmbraYouTubeHub'));
+const UmbraAudiosTool     = lazy(() => import('./UmbraAudiosTool'));
+const AcademyTool         = lazy(() => import('./AcademyTool'));
+const ExtensionsDownloadTool = lazy(() => import('./ExtensionsDownloadTool'));
+const LicensesTool        = lazy(() => import('./LicensesTool'));
+const BonusMaterialTool   = lazy(() => import('./BonusMaterialTool'));
 
-import EditingToolsTool from './EditingToolsTool';
-
-import ScreenshotTool from './ScreenshotTool';
-import UmbraDownloaderHub from './UmbraDownloaderHub';
-
-
-
-
-
-
-import PromptVaultTool from './PromptVaultTool';
-import UmbraMediaHub from './UmbraMediaHub';
-import UmbraMotorHub from './UmbraMotorHub';
-import UmbraYouTubeHub from './UmbraYouTubeHub';
-import UmbraAudiosTool from './UmbraAudiosTool';
-import UmbraYouStorytelling from './UmbraYouStorytelling';
-import UmbraMultimodalAI from './UmbraMultimodalAI';
-import TikTokAnalyticsTool from './TikTokAnalyticsTool';
-import TikTokMoneyCalculator from './TikTokMoneyCalculator';
-import TikTokVideoCounter from './TikTokVideoCounter';
-import TikSongsTool from './TikSongsTool';
-import UmbraAgentUGCTool from './UmbraAgentUGCTool';
-import UmbraViralAITool from './UmbraViralAITool';
-
-
-import AcademyTool from './AcademyTool';
-import ExtensionsDownloadTool from './ExtensionsDownloadTool';
-import LicensesTool from './LicensesTool';
-import UmbraPrompterTool from './UmbraPrompterTool';
-import BonusMaterialTool from './BonusMaterialTool';
-import UmbraZTool from './UmbraZTool';
+// Fallback leve exibido enquanto o chunk carrega
+const ToolFallback = () => (
+  <div className="flex items-center justify-center py-24">
+    <div className="w-8 h-8 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin" />
+  </div>
+);
 
 import {
   LayoutDashboard,
@@ -68,7 +57,12 @@ import {
   FileText,
   Key,
   BarChart3,
-  Flame
+  Flame,
+  ExternalLink,
+  ShieldCheck,
+  Smartphone,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -83,7 +77,6 @@ interface DashboardProps {
 const TIER_LEVELS = {
   [ToolTier.FREE]: 0,
   [ToolTier.PRO]: 1,
-  [ToolTier.TURBO]: 2,
 };
 
 const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, userCreatedAt, onLogout, onUpgradeClick }) => {
@@ -91,24 +84,71 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, us
     return localStorage.getItem('umbra_active_tab') || 'home';
   });
 
-  // Persistir a aba ativa no localStorage
   React.useEffect(() => {
     localStorage.setItem('umbra_active_tab', activeTab);
+    // Rastreia abertura de ferramenta (ignora tabs de sistema)
+    const tool = TOOLS.find(t => t.id === activeTab);
+    if (tool) trackToolOpened(activeTab, tool.name, userTier);
   }, [activeTab]);
 
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    return localStorage.getItem('umbra_theme') === 'dark';
+  });
+
+  React.useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+      localStorage.setItem('umbra_theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.setItem('umbra_theme', 'light');
+    }
+  }, [isDark]);
+
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(false);
+
+  // Onboarding: exibe apenas para PRO que ainda não viram
+  const [showOnboarding, setShowOnboarding] = React.useState<boolean>(() => {
+    if (userTier === ToolTier.FREE) return false;
+    return !localStorage.getItem(ONBOARDING_STORAGE_KEY);
+  });
+
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [showSearch, setShowSearch] = React.useState(false);
+  const searchRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    if (showSearch) searchRef.current?.focus();
+  }, [showSearch]);
+
+  React.useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowSearch(v => !v);
+      }
+      if (e.key === 'Escape') { setShowSearch(false); setSearchQuery(''); }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, []);
+
+  const searchResults = React.useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase();
+    return TOOLS.filter(t => t.name.toLowerCase().includes(q) || t.id.toLowerCase().includes(q)).slice(0, 6);
+  }, [searchQuery]);
 
   React.useEffect(() => {
     const handleToggle = () => setIsSidebarOpen(true);
     window.addEventListener('toggleSidebar', handleToggle);
     return () => window.removeEventListener('toggleSidebar', handleToggle);
   }, []);
+
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
-    [ToolCategory.MOTOR_SUPREMO]: true,
     [ToolCategory.TOOLS_2IN1]: true,
     [ToolCategory.WEB]: true,
     [ToolCategory.CHATBOTS]: true,
-    [ToolCategory.UMBRA_TIKTOK]: true,
   });
 
   const toggleCategory = (cat: string) => {
@@ -131,26 +171,22 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, us
           if (!locked) {
             setActiveTab(tool.id);
             if (window.innerWidth < 768) setIsSidebarOpen(false);
-          } else {
-            // Optional: Show upgrade modal or alert
-            // alert(`Esta ferramenta é exclusiva para o plano ${tool.tier}`);
           }
         }}
         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs transition-all mb-1 group relative ${activeTab === tool.id
-          ? 'bg-brand-purple/20 text-brand-purple border-l-2 border-brand-purple shadow-lg shadow-brand-purple/5'
+          ? 'bg-primary/10 text-primary border-l-2 border-primary'
           : locked
-            ? 'text-gray-700 cursor-not-allowed opacity-60 hover:bg-transparent'
-            : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
+            ? 'text-gray-400 cursor-not-allowed opacity-60 hover:bg-transparent'
+            : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
           }`}
       >
         <span className={`text-lg transition-all ${locked ? 'grayscale opacity-50' : 'grayscale group-hover:grayscale-0'}`}>
           {tool.icon}
         </span>
-        <span className="flex-1 text-left truncate font-bold flex items-center gap-2">
+        <span className="flex-1 text-left truncate font-black flex items-center gap-2">
           {tool.name}
-          {locked && <Lock className="w-3 h-3 text-gray-600" />}
+          {locked && <Lock className="w-3 h-3 text-gray-400" />}
         </span>
-        {tool.tier === ToolTier.TURBO && !locked && <div className="w-1.5 h-1.5 rounded-full bg-brand-pink shrink-0 animate-pulse"></div>}
       </button>
     );
   };
@@ -163,7 +199,7 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, us
       <div className="mb-6">
         <button
           onClick={() => toggleCategory(category)}
-          className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] hover:text-gray-400 transition-colors"
+          className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-black text-gray-500 dark:text-gray-400 uppercase tracking-[0.2em] hover:text-gray-900 dark:hover:text-white transition-colors"
         >
           {title}
           <ChevronDown className={`w-3 h-3 transition-transform duration-300 ${isExpanded ? '' : '-rotate-90'}`} />
@@ -187,77 +223,146 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, us
   const getNextBilling = () => {
     if (userTier === ToolTier.FREE) return "Plano Gratuito (Sem vencimento)";
     if (!userCreatedAt) return "--";
-    
     const today = new Date();
     const creation = new Date(userCreatedAt);
-    
-    // Calculates next billing as the creation day in the next upcoming month
     let nextBilling = new Date(today.getFullYear(), today.getMonth(), creation.getDate());
     if (today > nextBilling) {
-        nextBilling = new Date(today.getFullYear(), today.getMonth() + 1, creation.getDate());
+      nextBilling = new Date(today.getFullYear(), today.getMonth() + 1, creation.getDate());
     }
-    
     const months = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
     return `${nextBilling.getDate()} de ${months[nextBilling.getMonth()]}, ${nextBilling.getFullYear()}`;
   };
 
   const renderProfile = () => (
-    <div className="max-w-4xl mx-auto py-8 animate-in fade-in duration-500">
-      <div className="flex items-center gap-6 mb-12">
-        <div className="w-24 h-24 bg-gradient-to-br from-brand-purple to-brand-pink rounded-[32px] flex items-center justify-center text-4xl font-bold border-4 border-white/5 shadow-2xl">
+    <div className="max-w-4xl mx-auto py-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
+      {/* Profile Header */}
+      <div className="flex flex-col md:flex-row items-center gap-8 mb-10">
+        <div className="w-24 h-24 bg-primary/10 rounded-2xl flex items-center justify-center text-4xl font-black text-primary border border-primary/20 shrink-0">
           {userName.charAt(0)}
         </div>
-        <div>
-          <h1 className="text-4xl font-black text-white tracking-tighter">Meu Perfil</h1>
-          <p className="text-gray-500 text-lg">Gerencie suas informações e plano ativo.</p>
+        <div className="text-center md:text-left">
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mb-2">
+            <span className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-[10px] font-black text-primary uppercase tracking-[0.2em]">Validated Profile</span>
+            <span className="px-3 py-1 rounded-full bg-gray-100 border border-gray-200 text-[10px] font-black text-gray-600 uppercase tracking-[0.2em]">Verified Member</span>
+          </div>
+          <h1 className="text-4xl font-black text-gray-900 tracking-tight">Meu Perfil</h1>
+          <p className="text-gray-600 font-black mt-1">Configurações de conta e gestão de assinatura Umbra.</p>
         </div>
       </div>
 
-      <div className="space-y-8">
-        <section className="bg-background-mid border border-white/5 rounded-[40px] overflow-hidden shadow-2xl">
-          <div className="p-8 border-b border-white/5 bg-white/5 flex items-center justify-between">
-            <h3 className="text-xl font-black flex items-center gap-3">
-              <User className="w-6 h-6 text-brand-cyan" /> Informações Pessoais
-            </h3>
-            <button className="p-2 bg-white/5 rounded-xl hover:text-brand-cyan transition-colors"><Settings className="w-5 h-5" /></button>
-          </div>
-          <div className="p-10 grid md:grid-cols-2 gap-10">
-            <div className="space-y-8">
-              <div>
-                <label className="block text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] mb-3">Nome de Exibição</label>
-                <div className="text-2xl font-bold text-white">{userName}</div>
+      <div className="grid grid-cols-1 gap-6">
+        {/* Personal Info */}
+        <section className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+          <div className="px-8 py-5 border-b border-gray-200 flex items-center justify-between bg-gray-50">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20">
+                <User className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-gray-600 uppercase tracking-[0.2em] mb-3">Identificador</label>
-                <div className="text-brand-cyan font-space">umbra_user_9921</div>
+                <h3 className="text-base font-black text-gray-900">Informações Pessoais</h3>
+                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Seus dados de identificação</p>
               </div>
             </div>
-            <div className="space-y-6 bg-background-deep/50 p-8 rounded-3xl border border-white/5 shadow-inner">
-              <h4 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-4">Segurança da Conta</h4>
-              <div className="space-y-5">
-                <div className="flex justify-between items-center"><span className="text-sm text-gray-500 font-medium">Membro desde</span><span className="text-sm font-bold">{getMemberSince()}</span></div>
-                <div className="flex justify-between items-center"><span className="text-sm text-gray-500 font-medium">Verificação</span><span className="text-sm font-bold text-brand-green">✓ Verificado</span></div>
-                <div className="flex justify-between items-center"><span className="text-sm text-gray-500 font-medium">Localização</span><span className="text-sm font-bold">Brasil</span></div>
+            <button className="p-2 bg-white border border-gray-200 rounded-xl text-gray-500 hover:text-gray-900 hover:border-gray-300 transition-all">
+              <Settings className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="space-y-1 p-5 bg-gray-50 border border-gray-200 rounded-xl">
+              <label className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">
+                <User className="w-3 h-3" /> Nome de Exibição
+              </label>
+              <div className="text-xl font-black text-gray-900 truncate">{userName}</div>
+            </div>
+
+            <div className="space-y-1 p-5 bg-gray-50 border border-gray-200 rounded-xl">
+              <label className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">
+                <Mail className="w-3 h-3" /> E-mail de Acesso
+              </label>
+              <div className="text-base font-black text-gray-900 truncate">{userEmail}</div>
+            </div>
+
+            <div className="space-y-1 p-5 bg-gray-50 border border-gray-200 rounded-xl">
+              <label className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">
+                <Flame className="w-3 h-3 text-orange-500" /> Identificador
+              </label>
+              <div className="text-primary font-mono text-xs font-black tracking-widest bg-primary/5 px-3 py-2 rounded-lg border border-primary/20 inline-block uppercase">
+                umbra_user_{userEmail.split('@')[0].slice(-4)}
+              </div>
+            </div>
+
+            <div className="space-y-1 p-5 bg-gray-50 border border-gray-200 rounded-xl">
+              <label className="flex items-center gap-2 text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">
+                <Phone className="w-3 h-3" /> Suporte VIP
+              </label>
+              <div className="text-sm font-black text-primary flex items-center gap-2">
+                Disponível via Telegram <ExternalLink className="w-3 h-3" />
+              </div>
+            </div>
+
+            <div className="md:col-span-2 p-5 bg-gray-50 border border-gray-200 rounded-xl">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <ShieldCheck className="w-5 h-5 text-green-500" />
+                  <div>
+                    <div className="text-sm font-black text-gray-900">Membro desde {getMemberSince()}</div>
+                    <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Acesso verificado</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-green-50 border border-green-200">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-[10px] font-black text-green-700 uppercase tracking-widest">Active & Verified</span>
+                </div>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="bg-background-mid border border-white/5 rounded-[40px] overflow-hidden shadow-2xl">
-          <div className="p-8 border-b border-white/5 bg-white/5 flex items-center gap-3">
-            <CreditCard className="w-6 h-6 text-brand-purple" />
-            <h3 className="text-xl font-black">Plano & Faturamento</h3>
+        {/* Plan & Billing */}
+        <section className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+          <div className="px-8 py-5 border-b border-gray-200 flex items-center gap-3 bg-gray-50">
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20">
+              <CreditCard className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-base font-black text-gray-900">Plano & Faturamento</h3>
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Gestão de pagamentos e benefícios</p>
+            </div>
           </div>
-          <div className="p-10">
-            <div className="p-8 bg-gradient-to-r from-brand-purple/10 to-brand-cyan/10 border border-brand-purple/20 rounded-3xl mb-8 flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="text-center md:text-left">
-                <span className="text-[10px] font-black text-brand-purple uppercase tracking-[0.3em] block mb-2">Assinatura Ativa</span>
-                <p className="text-2xl font-black text-white">Status: <span className="text-brand-green uppercase">Ativo</span></p>
-                <p className="text-sm text-gray-500 font-medium mt-1">Próxima renovação: {getNextBilling()}</p>
+
+          <div className="p-8">
+            <div className="p-6 bg-gray-50 border border-gray-200 rounded-2xl flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="space-y-3 text-center md:text-left">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary text-[9px] font-black uppercase tracking-[0.2em] text-white">
+                  <Sparkles className="w-3 h-3" /> Signature Valid
+                </div>
+                <div>
+                  <p className="text-gray-500 text-xs font-black uppercase tracking-widest mb-1">Status da Assinatura</p>
+                  <div className="flex flex-col md:flex-row md:items-center gap-3">
+                    <h4 className="text-3xl font-black text-gray-900 uppercase tracking-tight">
+                      {userTier} <span className="text-green-600">Ativo</span>
+                    </h4>
+                    <div className="px-3 py-1 rounded-xl bg-white border border-gray-200 text-[10px] font-black text-gray-600 uppercase tracking-widest">
+                      ID #UM-{userEmail.split('@')[0].slice(-3)}-2026
+                    </div>
+                  </div>
+                </div>
+                <p className="text-gray-600 font-black flex items-center gap-2 justify-center md:justify-start">
+                  <Calendar className="w-4 h-4" /> Próxima renovação: <span className="text-gray-900">{getNextBilling()}</span>
+                </p>
               </div>
-              <div className="flex gap-3">
-                <button onClick={onUpgradeClick} className="px-8 py-4 bg-brand-purple text-white rounded-2xl font-black text-xs tracking-widest hover:bg-brand-purple/90 shadow-xl shadow-brand-purple/20 transition-all uppercase">Fazer Upgrade</button>
-                <button className="px-6 py-4 bg-white/5 text-gray-500 rounded-2xl font-black text-xs hover:text-red-400 transition-all uppercase">Cancelar</button>
+
+              <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                <button
+                  onClick={onUpgradeClick}
+                  className="flex-1 sm:flex-none px-8 py-3 bg-primary text-white rounded-xl font-black text-xs tracking-[0.2em] hover:bg-primary-dark transition-all uppercase"
+                >
+                  Mudar Plano
+                </button>
+                <button className="flex-1 sm:flex-none px-6 py-3 bg-white text-gray-700 border border-gray-200 rounded-xl font-black text-xs tracking-widest hover:border-red-300 hover:text-red-600 transition-all uppercase">
+                  Gerenciar
+                </button>
               </div>
             </div>
           </div>
@@ -267,234 +372,285 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, us
   );
 
   return (
-    <div className="flex h-screen bg-background-deep text-white overflow-hidden relative font-rajdhani">
-      {/* Mobile Sidebar Backdrop Overlay */}
+    <div className="flex h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 overflow-hidden relative">
+      {/* Mobile Sidebar Backdrop */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/80 backdrop-blur-md z-[60] md:hidden animate-in fade-in duration-300"
+          className="fixed inset-0 bg-black/40 z-[60] md:hidden animate-in fade-in duration-300"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
-      {/* Sidebar - Fixed/Drawer on Mobile, Flex on Desktop */}
+      {/* Sidebar */}
       <aside className={`
         fixed inset-y-0 left-0 z-[70] md:relative flex flex-col shrink-0
-        bg-background-mid border-r border-white/5 transition-all duration-300 ease-in-out
+        bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 transition-all duration-300 ease-in-out
         ${isSidebarOpen
-          ? 'w-[280px] translate-x-0'
+          ? 'w-[260px] translate-x-0'
           : 'w-0 -translate-x-full md:w-0 md:translate-x-0 overflow-hidden'}
       `}>
         {/* Sidebar Header */}
-        <div className="p-6 border-b border-white/5 flex items-center justify-between min-w-[280px]">
-          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => { setActiveTab('home'); if (window.innerWidth < 768) setIsSidebarOpen(false); }}>
-            <div className="w-10 h-10 bg-brand-purple rounded-xl flex items-center justify-center font-black text-xl shadow-lg shadow-brand-purple/20 group-hover:scale-105 transition-transform">U</div>
-            <span className="font-black text-xl tracking-tighter">Umbra<span className="text-brand-cyan">Hub</span></span>
+        <div className="p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between min-w-[260px]">
+          <div
+            className="flex items-center gap-3 cursor-pointer"
+            onClick={() => { setActiveTab('home'); if (window.innerWidth < 768) setIsSidebarOpen(false); }}
+          >
+            <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center font-black text-lg text-white shadow-sm">U</div>
+            <span className="font-black text-lg tracking-tight text-gray-900">Umbra<span className="text-primary">Hub</span></span>
           </div>
           <button
             onClick={() => setIsSidebarOpen(false)}
-            className="p-2.5 text-gray-600 hover:text-white hover:bg-white/5 rounded-2xl transition-all"
+            className="p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Sidebar Navigation & Tools */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar px-3 py-8 min-w-[280px]">
-          <div className="mb-10 space-y-1">
+        {/* Navigation */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-3 py-6 min-w-[260px]">
+          <div className="mb-8 space-y-1">
             <button
               onClick={() => { setActiveTab('home'); if (window.innerWidth < 768) setIsSidebarOpen(false); }}
-              className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all font-bold text-sm ${activeTab === 'home' ? 'bg-brand-purple text-white shadow-xl shadow-brand-purple/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-black text-sm ${activeTab === 'home' ? 'bg-primary text-white' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'}`}
             >
-              <LayoutDashboard className="w-5 h-5" /> Dashboard
+              <LayoutDashboard className="w-4 h-4" /> Dashboard
             </button>
             <button
               onClick={() => { setActiveTab('profile'); if (window.innerWidth < 768) setIsSidebarOpen(false); }}
-              className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all font-bold text-sm ${activeTab === 'profile' ? 'bg-brand-purple text-white shadow-xl shadow-brand-purple/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-black text-sm ${activeTab === 'profile' ? 'bg-primary text-white' : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'}`}
             >
-              <User className="w-5 h-5" /> Meu Perfil
+              <User className="w-4 h-4" /> Meu Perfil
             </button>
             <button
-              onClick={() => { setActiveTab('academy'); if (window.innerWidth < 768) setIsSidebarOpen(false); }}
-              className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all font-bold text-sm ${activeTab === 'academy' ? 'bg-brand-purple text-white shadow-xl shadow-brand-purple/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              onClick={() => {
+                if (userTier !== ToolTier.FREE) {
+                  setActiveTab('academy');
+                  if (window.innerWidth < 768) setIsSidebarOpen(false);
+                }
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all font-black text-sm ${activeTab === 'academy' ? 'bg-primary text-white' : userTier === ToolTier.FREE ? 'text-gray-400 cursor-not-allowed opacity-60' : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'}`}
             >
-              <BookOpen className="w-5 h-5" /> Umbra Academy
+              <div className="flex items-center gap-3">
+                <BookOpen className="w-4 h-4" /> Umbra Academy
+              </div>
+              {userTier === ToolTier.FREE && <Lock className="w-3 h-3" />}
             </button>
             <button
               onClick={() => { setActiveTab('extensions'); if (window.innerWidth < 768) setIsSidebarOpen(false); }}
-              className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all font-bold text-sm ${activeTab === 'extensions' ? 'bg-brand-purple text-white shadow-xl shadow-brand-purple/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-black text-sm ${activeTab === 'extensions' ? 'bg-primary text-white' : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'}`}
             >
-              <Package className="w-5 h-5" /> Downloads Extensões
+              <Package className="w-4 h-4" /> Downloads Extensões
             </button>
             <button
-              onClick={() => { setActiveTab('licenses'); if (window.innerWidth < 768) setIsSidebarOpen(false); }}
-              className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all font-bold text-sm ${activeTab === 'licenses' ? 'bg-brand-purple text-white shadow-xl shadow-brand-purple/20' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+              onClick={() => {
+                if (userTier !== ToolTier.FREE) {
+                  setActiveTab('licenses');
+                  if (window.innerWidth < 768) setIsSidebarOpen(false);
+                }
+              }}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all font-black text-sm ${activeTab === 'licenses' ? 'bg-primary text-white' : userTier === ToolTier.FREE ? 'text-gray-400 cursor-not-allowed opacity-60' : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'}`}
             >
-              <Key className="w-5 h-5" /> Minhas Licenças
+              <div className="flex items-center gap-3">
+                <Key className="w-4 h-4" /> Minhas Licenças
+              </div>
+              {userTier === ToolTier.FREE && <Lock className="w-3 h-3" />}
             </button>
-            <button
-              onClick={() => { setActiveTab('umbra-z'); if (window.innerWidth < 768) setIsSidebarOpen(false); }}
-              className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all font-bold text-sm group relative overflow-hidden ${
-                activeTab === 'umbra-z'
-                  ? 'text-white shadow-xl'
-                  : 'text-gray-400 hover:text-white hover:bg-white/5'
-              }`}
-              style={activeTab === 'umbra-z' ? { background: 'linear-gradient(135deg, #7c3aed 0%, #ec4899 100%)', boxShadow: '0 8px 32px rgba(124,58,237,0.35)' } : {}}
-            >
-              {activeTab !== 'umbra-z' && (
-                <span className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity rounded-2xl" style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.1) 0%, rgba(236,72,153,0.05) 100%)' }} />
-              )}
-              <Flame className="w-5 h-5 relative z-10 shrink-0" style={activeTab === 'umbra-z' ? {} : { color: '#a855f7' }} />
-              <span className="relative z-10 flex-1 text-left">Umbra Z</span>
-              <span className="relative z-10 text-[8px] font-black px-1.5 py-0.5 rounded-md uppercase tracking-wider" style={{ background: activeTab === 'umbra-z' ? 'rgba(255,255,255,0.2)' : 'rgba(124,58,237,0.2)', color: activeTab === 'umbra-z' ? 'white' : '#a855f7' }}>NOVO</span>
-            </button>
-            {renderToolsList(ToolCategory.UMBRA_TIKTOK, 'UmbraHub Tiktok')}
-            {renderToolsList(ToolCategory.CHATBOTS, 'ChatBots')}
-            {renderToolsList(ToolCategory.WEB, 'Arsenal Web')}
-            {renderToolsList(ToolCategory.MOTOR_SUPREMO, 'Motor Supremo')}
-            {renderToolsList(ToolCategory.TOOLS_2IN1, 'Automação 2 em 1')}
           </div>
 
-          <div className="mt-10 px-3 flex flex-col gap-3">
-            <a
-              href="https://umbra-railway-production-f7c5.up.railway.app/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl bg-brand-purple/10 text-brand-purple border border-brand-purple/20 hover:bg-brand-purple/20 transition-all font-black text-sm uppercase tracking-widest shadow-lg shadow-brand-purple/5 group"
-            >
-              <BarChart3 className="w-5 h-5 group-hover:scale-110 transition-transform" /> Umbra YouTube Analytics
-            </a>
-            <a
-              href="https://chat.whatsapp.com/LHE7HDJUtxMIEqncAs1PvT"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl bg-brand-green/10 text-brand-green border border-brand-green/20 hover:bg-brand-green/20 transition-all font-black text-sm uppercase tracking-widest shadow-lg shadow-brand-green/5 group"
-            >
-              <MessageCircle className="w-5 h-5 group-hover:scale-110 transition-transform" /> Grupo WhatsApp
-            </a>
-          </div>
+          {renderToolsList(ToolCategory.WEB, 'Arsenal Web')}
+          {renderToolsList(ToolCategory.TOOLS_2IN1, 'Automação 2 em 1')}
         </div>
 
-        {/* Sidebar Footer User Info */}
-        <div className="p-4 border-t border-white/5 bg-black/20 min-w-[280px]">
-          <div className="flex items-center justify-between gap-4 p-4 bg-white/5 rounded-[24px] border border-white/5">
+        {/* Sidebar Footer */}
+        <div className="p-4 border-t border-gray-200 dark:border-gray-800 min-w-[260px]">
+          <div className="flex items-center justify-between gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-3 overflow-hidden">
-              <div className="w-11 h-11 bg-gradient-to-br from-brand-purple to-brand-pink rounded-2xl flex items-center justify-center font-black shadow-lg shrink-0">
+              <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center font-black text-white shrink-0">
                 {userName.charAt(0)}
               </div>
               <div className="overflow-hidden">
-                <div className="text-sm font-bold text-white truncate">{userName}</div>
-                <div className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1 ${userTier === ToolTier.TURBO ? 'text-brand-pink' :
-                  userTier === ToolTier.PRO ? 'text-brand-purple' : 'text-gray-500'
-                  }`}>
+                <div className="text-sm font-black text-gray-900 truncate">{userName}</div>
+                <div className={`text-[9px] font-black uppercase tracking-widest flex items-center gap-1 ${userTier === ToolTier.FREE ? 'text-gray-500' : 'text-primary'}`}>
                   <Zap className="w-2 h-2 fill-current" /> {userTier === ToolTier.FREE ? 'Plano Free' : `${userTier} Ativo`}
                 </div>
               </div>
             </div>
-            <button onClick={onLogout} className="text-gray-600 hover:text-brand-pink transition-colors p-2" title="Sair">
-              <LogOut className="w-5 h-5" />
+            <button onClick={onLogout} className="text-gray-400 hover:text-red-500 transition-colors p-1.5" title="Sair">
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
+          {userTier !== ToolTier.FREE && (
+            <button
+              onClick={() => setShowOnboarding(true)}
+              className="mt-2 w-full flex items-center gap-2 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/5 transition-all border border-primary/20 hover:border-primary/40 min-w-[228px]"
+            >
+              <Sparkles className="w-3.5 h-3.5" /> Guia PRO
+            </button>
+          )}
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden bg-background-deep relative scroll-smooth transition-all duration-300">
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col h-full overflow-hidden bg-white dark:bg-gray-950">
 
-        {/* Sticky Content Header */}
-        <header className="h-20 shrink-0 border-b border-white/5 flex items-center justify-between px-6 md:px-10 bg-background-deep/50 backdrop-blur-2xl sticky top-0 z-40">
+        {/* Header */}
+        <header className="h-16 shrink-0 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-6 bg-white dark:bg-gray-900 sticky top-0 z-40">
           <div className="flex items-center gap-4">
-            {/* Hamburger Button - Only visible when sidebar is closed or on mobile */}
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className={`p-3 text-gray-400 hover:text-white hover:bg-white/5 rounded-2xl transition-all ${isSidebarOpen ? 'md:hidden' : 'flex'} shadow-lg`}
+              className={`p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-xl transition-all ${isSidebarOpen ? 'md:hidden' : 'flex'}`}
             >
-              <Menu className="w-6 h-6" />
+              <Menu className="w-5 h-5" />
             </button>
-
             <div className="flex flex-col">
-              <h2 className="text-base md:text-xl font-black text-white uppercase tracking-tighter truncate max-w-[180px] md:max-w-none">
+              <h2 className="text-base font-black text-gray-900 dark:text-white truncate max-w-[180px] md:max-w-none">
                 {activeTab === 'home' ? 'Visão Geral' : activeTab === 'profile' ? 'Configurações' : activeTab === 'extensions' ? 'Downloads' : activeTab === 'licenses' ? 'Licenças' : activeTab === 'umbra-z' ? 'Umbra Z — Comunidade' : selectedTool?.name}
               </h2>
               {activeTab !== 'home' && activeTab !== 'profile' && (
-                <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest hidden md:block">Ferramenta Ativa</span>
+                <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest hidden md:block">Ferramenta Ativa</span>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-4 md:gap-8">
-            <div className="hidden lg:flex items-center gap-3 bg-brand-cyan/10 px-4 py-2 rounded-2xl text-[10px] font-black text-brand-cyan uppercase tracking-widest border border-brand-cyan/20 shadow-lg shadow-brand-cyan/5">
-              <CheckCircle2 className="w-4 h-4" /> Sessão Protegida
+          <div className="flex items-center gap-3">
+            <div className="hidden lg:flex items-center gap-2 bg-green-50 px-3 py-1.5 rounded-xl text-[10px] font-black text-green-700 uppercase tracking-widest border border-green-200">
+              <CheckCircle2 className="w-3.5 h-3.5" /> Sessão Protegida
             </div>
-            <div className="flex items-center gap-2">
-              <button className="relative text-gray-500 hover:text-white p-3 bg-white/5 rounded-2xl transition-all border border-white/5">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-3 right-3 w-2 h-2 bg-brand-pink rounded-full border-2 border-background-deep"></span>
-              </button>
+
+            {/* Global Search */}
+            <div className="relative">
+              {showSearch ? (
+                <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 focus-within:border-primary/40 transition-all">
+                  <Search className="w-4 h-4 text-gray-400 shrink-0" />
+                  <input
+                    ref={searchRef}
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Buscar ferramenta..."
+                    className="bg-transparent outline-none text-sm font-black text-gray-900 dark:text-white w-44 placeholder:text-gray-400 placeholder:font-normal"
+                  />
+                  <button onClick={() => { setShowSearch(false); setSearchQuery(''); }} className="text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowSearch(true)}
+                  title="Buscar ferramenta (Ctrl+K)"
+                  className="p-2 bg-gray-50 dark:bg-gray-800 rounded-xl transition-all border border-gray-200 dark:border-gray-700 hover:border-primary/40 hover:bg-primary/5 text-gray-500 dark:text-gray-400 hover:text-primary"
+                >
+                  <Search className="w-4 h-4" />
+                </button>
+              )}
+
+              {/* Search results dropdown */}
+              {showSearch && searchResults.length > 0 && (
+                <div className="absolute top-full mt-2 right-0 w-72 bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                  {searchResults.map(tool => (
+                    <button
+                      key={tool.id}
+                      onClick={() => {
+                        trackSearch(searchQuery.length, searchResults.length);
+                        setActiveTab(tool.id);
+                        setShowSearch(false);
+                        setSearchQuery('');
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm font-black text-gray-900 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0"
+                    >
+                      <span className="text-xl shrink-0">{tool.icon}</span>
+                      <div className="text-left">
+                        <div className="text-sm font-black">{tool.name}</div>
+                        <div className="text-[10px] text-gray-400 uppercase tracking-widest font-black">{tool.tier}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {showSearch && searchQuery.trim() && searchResults.length === 0 && (
+                <div className="absolute top-full mt-2 right-0 w-64 bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 px-5 py-4 text-center">
+                  <p className="text-xs font-black text-gray-500">Nenhuma ferramenta encontrada</p>
+                </div>
+              )}
             </div>
+
+            {/* Theme toggle */}
+            <button
+              onClick={() => setIsDark(d => !d)}
+              title={isDark ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
+              className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-xl transition-all border border-gray-200 dark:border-gray-700 hover:border-primary/40 hover:bg-primary/5 text-gray-500 dark:text-gray-400 hover:text-primary"
+            >
+              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+
+            <button className="relative text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white p-2 bg-gray-50 dark:bg-gray-800 rounded-xl transition-all border border-gray-200 dark:border-gray-700">
+              <Bell className="w-4 h-4" />
+              <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-primary rounded-full"></span>
+            </button>
           </div>
         </header>
 
-        {/* Scrollable Content Viewport */}
-        <div className={`flex-1 overflow-y-auto custom-scrollbar ${activeTab === 'umbra-edit' ? 'p-2 md:p-4' : 'p-6 md:p-10'}`}>
-          <div className={`${activeTab === 'umbra-edit' ? 'max-w-none' : 'max-w-7xl'} mx-auto w-full h-full flex flex-col`}>
+        {/* Scrollable Content */}
+        <div className={`flex-1 overflow-y-auto custom-scrollbar dark:bg-gray-950 ${activeTab === 'umbra-edit' ? 'p-2 md:p-4' : 'p-6 md:p-8'}`}>
+          <div className={`${activeTab === 'umbra-edit' ? 'max-w-none' : 'max-w-6xl'} mx-auto w-full h-full flex flex-col`}>
             {activeTab === 'home' && (
-              <div className="animate-in fade-in slide-in-from-bottom-6 duration-700 space-y-12">
-                <div className="space-y-2">
-                  <h1 className="text-4xl md:text-6xl font-black tracking-tighter leading-none">Bem-vindo à <span className="text-brand-purple">Central Umbra</span>.</h1>
-                  <p className="text-gray-500 text-lg md:text-xl font-medium">Seu arsenal definitivo de inteligência para YouTube está pronto.</p>
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-10">
+                {/* Welcome */}
+                <div className="space-y-1">
+                  <h1 className="text-3xl md:text-4xl font-black tracking-tight text-gray-900">
+                    Bem-vindo, <span className="text-primary">{userName}</span>.
+                  </h1>
+                  <p className="text-gray-600 font-black text-base">Seu arsenal de inteligência para YouTube está pronto.</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                  {/* Dynamic Status Card */}
-                  <div className="p-10 bg-background-mid border border-white/5 rounded-[48px] shadow-2xl hover:border-brand-purple/20 transition-all relative overflow-hidden group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-brand-purple/5 -mr-16 -mt-16 rounded-full blur-3xl group-hover:bg-brand-purple/10 transition-all" />
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-8 shadow-xl ${userTier === ToolTier.TURBO ? 'bg-brand-pink/10 text-brand-pink' :
-                      userTier === ToolTier.PRO ? 'bg-brand-purple/10 text-brand-purple' : 'bg-gray-500/10 text-gray-500'
-                      }`}>
-                      <Zap className="w-7 h-7 fill-current" />
+                {/* 3 Equal Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                  {/* Card 1 — Plano */}
+                  <div className="p-6 bg-white border border-gray-200 rounded-2xl hover:border-primary/30 hover:shadow-sm transition-all">
+                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-5 ${userTier === ToolTier.FREE ? 'bg-gray-100 text-gray-500' : 'bg-primary/10 text-primary'}`}>
+                      <Zap className="w-5 h-5 fill-current" />
                     </div>
-                    <h3 className="text-2xl font-black mb-1 uppercase tracking-tighter">
-                      Plano <span className={userTier === ToolTier.TURBO ? 'text-brand-pink' : userTier === ToolTier.PRO ? 'text-brand-purple' : 'text-gray-500'}>{userTier}</span>
-                    </h3>
-                    <p className="text-gray-500 font-medium leading-relaxed mb-6">
-                      {userTier === ToolTier.TURBO ? 'Você tem acesso total e prioritário.' : 'Faça upgrade para liberar o Motor Supremo.'}
+                    <h3 className="text-lg font-black text-gray-900 mb-1">Plano {userTier}</h3>
+                    <p className="text-gray-600 font-black text-sm leading-relaxed mb-4">
+                      Você tem acesso total às ferramentas e automações premium.
                     </p>
-                    {userTier !== ToolTier.TURBO && (
+                    {userTier === ToolTier.FREE && (
                       <button
                         onClick={() => setActiveTab('profile')}
-                        className="text-[10px] font-black uppercase tracking-widest text-brand-purple flex items-center gap-2 group/btn"
+                        className="text-[11px] font-black uppercase tracking-widest text-primary flex items-center gap-1"
                       >
-                        Ver Detalhes <ChevronRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                        Ver Detalhes <ChevronRight className="w-3 h-3" />
                       </button>
                     )}
                   </div>
 
-                  {/* Quick Navigation Card */}
-                  <div onClick={() => setActiveTab('meus-canais')} className="p-10 bg-background-mid border border-white/5 rounded-[48px] shadow-2xl hover:border-brand-cyan/20 transition-all relative overflow-hidden group cursor-pointer">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-brand-cyan/5 -mr-16 -mt-16 rounded-full blur-3xl group-hover:bg-brand-cyan/10 transition-all" />
-                    <div className="w-14 h-14 bg-brand-cyan/10 rounded-2xl flex items-center justify-center text-brand-cyan mb-8 shadow-xl">
-                      <Youtube className="w-7 h-7" />
+                  {/* Card 2 — Meus Canais */}
+                  <div
+                    onClick={() => setActiveTab('meus-canais')}
+                    className="p-6 bg-white border border-gray-200 rounded-2xl hover:border-primary/30 hover:shadow-sm transition-all cursor-pointer"
+                  >
+                    <div className="w-11 h-11 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-5">
+                      <Youtube className="w-5 h-5" />
                     </div>
-                    <h3 className="text-2xl font-black mb-3 uppercase tracking-tighter">Meus Canais</h3>
-                    <p className="text-gray-500 font-medium leading-relaxed">Gerencie seus canais Dark e monitore o crescimento em tempo real.</p>
+                    <h3 className="text-lg font-black text-gray-900 mb-1">Meus Canais</h3>
+                    <p className="text-gray-600 font-black text-sm leading-relaxed">Gerencie seus canais Faceless e monitore o crescimento em tempo real.</p>
                   </div>
 
-                  {/* Insight / Trends Card */}
-                  <div className="p-10 bg-gradient-to-br from-brand-purple to-brand-pink border border-white/10 rounded-[48px] text-white shadow-2xl shadow-brand-purple/20 hover:scale-[1.02] transition-all relative overflow-hidden group">
-                    <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center text-white mb-8 shadow-inner">
-                      <TrendingUp className="w-7 h-7" />
+                  {/* Card 3 — Insight */}
+                  <div className="p-6 bg-white border border-gray-200 rounded-2xl hover:border-primary/30 hover:shadow-sm transition-all">
+                    <div className="w-11 h-11 bg-primary/10 rounded-xl flex items-center justify-center text-primary mb-5">
+                      <TrendingUp className="w-5 h-5" />
                     </div>
-                    <h3 className="text-2xl font-black mb-3 uppercase tracking-tighter">Insight do Dia</h3>
-                    <p className="text-white/80 font-bold leading-relaxed italic">"Documentários com vozes neurais profundas estão com 4x mais retenção."</p>
+                    <h3 className="text-lg font-black text-gray-900 mb-1">Insight do Dia</h3>
+                    <p className="text-gray-600 font-black text-sm leading-relaxed italic">"Documentários com vozes neurais profundas estão com 4x mais retenção."</p>
                   </div>
                 </div>
 
-                <div className="space-y-8">
-                  <h3 className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em] flex items-center gap-4">
-                    Arsenal Rápido <div className="h-px flex-1 bg-white/5" />
+                {/* Quick Arsenal */}
+                <div className="space-y-5">
+                  <h3 className="text-[11px] font-black text-gray-500 uppercase tracking-[0.3em] flex items-center gap-3">
+                    Arsenal Rápido <div className="h-px flex-1 bg-gray-200" />
                   </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
                     {TOOLS.slice(0, 5).map(tool => {
                       const locked = isToolLocked(tool.tier);
                       return (
@@ -506,20 +662,20 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, us
                               if (window.innerWidth < 768) setIsSidebarOpen(false);
                             }
                           }}
-                          className={`p-6 border border-white/5 rounded-3xl text-center transition-all group shadow-xl relative overflow-hidden ${locked
-                            ? 'bg-background-light/20 cursor-not-allowed opacity-60'
-                            : 'bg-background-light/50 hover:border-brand-purple/40 hover:bg-background-light'
+                          className={`p-5 border rounded-2xl text-center transition-all group relative ${locked
+                            ? 'bg-gray-50 border-gray-200 cursor-not-allowed opacity-50'
+                            : 'bg-white border-gray-200 hover:border-primary/40 hover:shadow-sm'
                             }`}
                         >
                           {locked && (
                             <div className="absolute top-2 right-2">
-                              <Lock className="w-4 h-4 text-gray-500" />
+                              <Lock className="w-3.5 h-3.5 text-gray-400" />
                             </div>
                           )}
-                          <span className={`text-3xl mb-4 block transition-transform ${locked ? 'grayscale opacity-50' : 'group-hover:scale-110'}`}>
+                          <span className={`text-2xl mb-3 block transition-transform ${locked ? 'grayscale opacity-50' : 'group-hover:scale-110'}`}>
                             {tool.icon}
                           </span>
-                          <span className={`text-[10px] font-black uppercase tracking-widest ${locked ? 'text-gray-600' : 'text-gray-400 group-hover:text-white'}`}>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-gray-700">
                             {tool.name}
                           </span>
                         </button>
@@ -532,79 +688,32 @@ const Dashboard: React.FC<DashboardProps> = ({ userName, userTier, userEmail, us
 
             {activeTab === 'profile' && renderProfile()}
 
-            {/* Tools Rendering */}
-            {activeTab === 'meus-canais' && <MeusCanaisTool />}
-
-            {activeTab === 'srt' && <EditingToolsTool />}
-
-            {activeTab === 'screenshot' && <ScreenshotTool />}
-            {activeTab === 'downloader-hub' && <UmbraDownloaderHub />}
-
-
-
-
-
-
-            {activeTab === 'media-hub' && <UmbraMediaHub />}
-
-            {activeTab === 'motor-hub' && <UmbraMotorHub />}
-            {activeTab === 'academy' && <AcademyTool />}
-            {activeTab === 'extensions' && <ExtensionsDownloadTool userTier={userTier} />}
-            {activeTab === 'licenses' && <LicensesTool userTier={userTier} userEmail={userEmail} />}
-
-            {activeTab === 'youtube-hub' && <UmbraYouTubeHub />}
-            {activeTab === 'turbo-hub' && <UmbraTurboHub />}
-            {activeTab === 'umbra-audios' && <UmbraAudiosTool userTier={userTier} />}
-            {activeTab === 'prompt-vault' && <PromptVaultTool />}
-            {activeTab === 'storytelling' && <UmbraYouStorytelling userTier={userTier} />}
-            {activeTab === 'multimodal-ai' && <UmbraMultimodalAI userTier={userTier} />}
-            {activeTab === 'tiktok-analytics' && <TikTokAnalyticsTool />}
-            {activeTab === 'calculadora-ganhos-tiktok' && <TikTokMoneyCalculator />}
-            {activeTab === 'tiktok-video-counter' && <TikTokVideoCounter />}
-            {activeTab === 'tiksongs' && <TikSongsTool />}
-            {activeTab === 'umbraviral-ai' && <UmbraViralAITool userTier={userTier} />}
-            {activeTab === 'umbra-agent-ugc' && <UmbraAgentUGCTool userTier={userTier} />}
-            {activeTab === 'umbra-prompter' && <UmbraPrompterTool userTier={userTier} />}
-            {activeTab === 'material-bonus' && <BonusMaterialTool userTier={userTier} />}
-            {activeTab === 'umbra-z' && <UmbraZTool userTier={userTier} userName={userName} />}
-
-            {/* Tool Loader / Fallback */}
-            {activeTab !== 'home' && activeTab !== 'profile' && activeTab !== 'academy' && activeTab !== 'extensions' && activeTab !== 'licenses' && activeTab !== 'umbra-z' && !activeTab.includes('home') && selectedTool && (
-              !['meus-canais', 'srt', 'screenshot', 'downloader-hub', 'motor-hub', 'prompt-vault', 'media-hub', 'youtube-hub', 'turbo-hub', 'umbra-audios', 'umbra-edit', 'storytelling', 'multimodal-ai', 'tiktok-analytics', 'tiksongs', 'calculadora-ganhos-tiktok', 'tiktok-video-counter', 'umbra-prompter', 'umbra-agent-ugc', 'umbraviral-ai', 'material-bonus', 'umbra-z'].includes(activeTab) && (
-                <div className="animate-in fade-in slide-in-from-bottom-8 duration-500">
-                  <div className="mb-8 p-12 bg-background-mid border border-white/5 rounded-[56px] shadow-2xl relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-brand-purple/5 to-transparent pointer-events-none" />
-                    <div className="flex flex-col md:flex-row items-center gap-10 mb-12">
-                      <div className="text-8xl shadow-2xl bg-background-deep p-8 rounded-[40px] border border-white/5">{selectedTool.icon}</div>
-                      <div className="text-center md:text-left">
-                        <h1 className="text-4xl md:text-5xl font-black mb-3 tracking-tighter">{selectedTool.name}</h1>
-                        <div className={`inline-flex items-center gap-3 px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-lg ${selectedTool.tier === ToolTier.TURBO ? 'bg-brand-pink text-white shadow-brand-pink/20' : 'bg-brand-purple text-white shadow-brand-purple/20'
-                          }`}>
-                          <Zap className="w-3 h-3 fill-current" /> Plano {selectedTool.tier}
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-gray-400 text-lg md:text-xl leading-relaxed max-w-4xl mb-12 font-medium">
-                      {selectedTool.description}
-                    </p>
-
-                    <div className="bg-background-deep/50 border border-white/5 rounded-[40px] p-20 text-center border-dashed relative group">
-                      <div className="w-20 h-20 bg-white/5 rounded-[32px] flex items-center justify-center mx-auto mb-8 shadow-xl group-hover:scale-110 transition-transform">
-                        <Settings className="w-10 h-10 text-gray-700 animate-spin-slow" />
-                      </div>
-                      <h4 className="text-2xl font-black text-white mb-3">Motor de IA em Inicialização</h4>
-                      <p className="text-gray-500 max-w-md mx-auto text-sm leading-relaxed mb-10 font-medium">Este módulo está pronto para ser injetado no seu fluxo de trabalho. Conecte sua chave de API para liberar o processamento total.</p>
-                      <button className="bg-brand-purple text-white px-12 py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-xs shadow-2xl shadow-brand-purple/30 hover:scale-105 transition-all">
-                        INICIAR CONEXÃO
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )
-            )}
+            <Suspense fallback={<ToolFallback />}>
+              {activeTab === 'academy'        && <AcademyTool />}
+              {activeTab === 'extensions'     && <ExtensionsDownloadTool userTier={userTier} />}
+              {activeTab === 'licenses'       && <LicensesTool userTier={userTier} userEmail={userEmail} />}
+              {activeTab === 'meus-canais'    && <MeusCanaisTool />}
+              {activeTab === 'srt'            && <EditingToolsTool />}
+              {activeTab === 'screenshot'     && <ScreenshotTool />}
+              {activeTab === 'media-hub'      && <UmbraMediaHub />}
+              {activeTab === 'youtube-hub'    && <UmbraYouTubeHub />}
+              {activeTab === 'turbo-hub'      && <UmbraTurboHub />}
+              {activeTab === 'umbra-audios'   && <UmbraAudiosTool userTier={userTier} />}
+              {activeTab === 'prompt-vault'   && <PromptVaultTool />}
+              {activeTab === 'material-bonus' && <BonusMaterialTool userTier={userTier} />}
+            </Suspense>
           </div>
         </div>
       </main>
+
+      {/* Onboarding Guide — aparece 1x para usuários PRO novos */}
+      {showOnboarding && (
+        <OnboardingGuide
+          userName={userName}
+          onClose={() => setShowOnboarding(false)}
+          onNavigate={(tab) => setActiveTab(tab)}
+        />
+      )}
 
       <style>{`
         @keyframes spin-slow {

@@ -1,8 +1,7 @@
 
 import React from 'react';
 import { PLANS } from '../constants';
-import { Check, Zap, Crown, Rocket } from 'lucide-react';
-import { ToolTier } from '../types';
+import { Check, Zap, Shield, Lock } from 'lucide-react';
 
 interface PricingProps {
   userEmail?: string;
@@ -13,108 +12,111 @@ const Pricing: React.FC<PricingProps> = ({ userEmail }) => {
     if (link) {
       let finalLink = link;
       if (userEmail) {
-        const separator = link.includes('?') ? '&' : '?';
-        finalLink = `${link}${separator}email=${encodeURIComponent(userEmail)}`;
+        const sep = link.includes('?') ? '&' : '?';
+        finalLink = `${link}${sep}email=${encodeURIComponent(userEmail)}`;
       }
       window.open(finalLink, '_blank');
     } else {
-      // For Free plan or missing links
       document.getElementById('root')?.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
   return (
-    <section className="py-32 bg-background-deep relative overflow-hidden" id="precos">
-      {/* Background decoration */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-brand-purple/5 blur-[150px] rounded-full -z-10" />
+    <section className="py-32 bg-white relative overflow-hidden" id="precos">
+      <div className="max-w-3xl mx-auto px-4">
 
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="text-center mb-20">
-          <div className="inline-flex items-center gap-2 bg-brand-purple/10 border border-brand-purple/20 px-4 py-1.5 rounded-full text-[10px] font-black text-brand-purple mb-6 tracking-widest uppercase">
-            💰 INVESTIMENTO INTELIGENTE
+        {/* Section header */}
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 bg-gray-100 border border-gray-200 px-4 py-2 rounded-full text-[10px] font-black text-gray-600 mb-6 uppercase tracking-widest">
+            Investimento Inteligente
           </div>
-          <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter mb-6">Escolha seu plano</h2>
-          <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto font-medium">
-            Desbloqueie o arsenal definitivo para dominar o YouTube e escalar seus canais Dark.
+          <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter text-gray-900 mb-4">
+            Escolha seu plano
+          </h2>
+          <p className="text-gray-500 text-lg font-black max-w-xl mx-auto">
+            Desbloqueie o arsenal definitivo para dominar o YouTube e escalar como um Criador Faceless.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8 items-start">
-          {PLANS.map((plan, idx) => (
-            <div
-              key={idx}
-              className={`relative flex flex-col p-10 rounded-[48px] border transition-all duration-500 hover:translate-y-[-8px] ${plan.popular
-                  ? 'bg-background-mid border-brand-purple shadow-[0_20px_60px_rgba(168,85,247,0.15)] ring-1 ring-brand-purple/30'
-                  : plan.tier === ToolTier.TURBO
-                    ? 'bg-background-mid border-brand-pink/30 shadow-2xl'
-                    : 'bg-background-light/50 border-white/5 hover:border-white/10'
-                }`}
-            >
-              {plan.popular && (
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-brand-purple text-white text-[10px] font-black px-6 py-2 rounded-full uppercase tracking-widest shadow-xl shadow-brand-purple/40">
-                  ⭐ MAIS VENDIDO
-                </div>
-              )}
+        {/* Plan card */}
+        {PLANS.map((plan, idx) => (
+          <div
+            key={idx}
+            className="relative bg-white border-2 border-gray-900 rounded-3xl overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.10)] hover:-translate-y-2 transition-all duration-500"
+          >
+            {/* TOP BADGE */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-black text-white text-[10px] font-black px-6 py-2 rounded-full uppercase tracking-widest shadow-md">
+              ⭐ Plano Completo
+            </div>
 
-              {plan.tier === ToolTier.TURBO && (
-                <div className="absolute top-4 right-8 text-brand-pink opacity-50">
-                  <Crown className="w-8 h-8" />
+            {/* Card header */}
+            <div className="px-10 md:px-16 pt-16 pb-10 border-b border-gray-100 text-center md:text-left">
+              <div className="flex items-center justify-center md:justify-start gap-3 mb-5">
+                <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center">
+                  <Zap className="w-6 h-6 text-white fill-white" />
                 </div>
-              )}
-
-              <div className="mb-10">
-                <div className="flex items-center gap-3 mb-4">
-                  {plan.tier === ToolTier.FREE && <Rocket className="w-5 h-5 text-gray-500" />}
-                  {plan.tier === ToolTier.PRO && <Zap className="w-5 h-5 text-brand-purple" />}
-                  {plan.tier === ToolTier.TURBO && <Zap className="w-5 h-5 text-brand-pink" />}
-                  <h3 className={`text-2xl font-black uppercase tracking-tight ${plan.tier === ToolTier.TURBO ? 'text-brand-pink' :
-                      plan.popular ? 'text-brand-purple' : 'text-white'
-                    }`}>{plan.name}</h3>
-                </div>
-
-                <div className="flex items-baseline gap-2 mb-4">
-                  <span className="text-5xl font-black tracking-tighter text-white">{plan.price}</span>
-                  <span className="text-gray-500 text-sm font-bold uppercase tracking-widest">{plan.period}</span>
-                </div>
-
-                <p className="text-gray-500 text-sm font-medium leading-relaxed">
-                  {plan.description}
-                </p>
+                <h3 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-gray-900">{plan.name}</h3>
               </div>
 
-              <div className="flex-1 space-y-5 mb-10">
-                {plan.features.map((feature, fIdx) => (
-                  <div key={fIdx} className="flex items-start gap-4">
-                    <div className={`shrink-0 mt-1 w-4 h-4 rounded-full flex items-center justify-center ${plan.tier === ToolTier.FREE ? 'bg-white/10' :
-                        plan.tier === ToolTier.PRO ? 'bg-brand-purple/20' : 'bg-brand-pink/20'
-                      }`}>
-                      <Check className={`w-3 h-3 ${plan.tier === ToolTier.FREE ? 'text-gray-400' :
-                          plan.tier === ToolTier.PRO ? 'text-brand-purple' : 'text-brand-pink'
-                        }`} />
+              <div className="flex items-baseline justify-center md:justify-start gap-2 mb-4">
+                <span className="text-6xl md:text-7xl font-black tracking-tighter text-gray-900">{plan.price}</span>
+                <span className="text-gray-500 text-sm font-black uppercase tracking-widest">{plan.period}</span>
+              </div>
+
+              <p className="text-gray-600 text-base font-black leading-relaxed max-w-md mx-auto md:mx-0">
+                {plan.description}
+              </p>
+            </div>
+
+            {/* Features */}
+            <div className="px-10 md:px-16 py-10">
+              <div className="grid md:grid-cols-2 gap-x-8 gap-y-4 mb-10">
+                {plan.features.map((feature, fIdx) => {
+                  if (feature === '---') {
+                    return <div key={fIdx} className="col-span-full h-px bg-gray-100 my-2" />;
+                  }
+                  if (feature === 'Extensões Chrome') {
+                    return (
+                      <div key={fIdx} className="col-span-full text-center py-3">
+                        <span className="bg-gray-100 text-gray-700 px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border border-gray-200">
+                          {feature}
+                        </span>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div key={fIdx} className="flex items-start gap-3">
+                      <div className="shrink-0 mt-0.5 w-5 h-5 rounded-full flex items-center justify-center bg-gray-900">
+                        <Check className="w-3 h-3 text-white" strokeWidth={3} />
+                      </div>
+                      <span className="text-sm font-black text-gray-700 leading-tight">{feature}</span>
                     </div>
-                    <span className={`text-sm font-medium leading-tight ${feature.includes('Tudo do') ? 'text-white font-black' : 'text-gray-400'}`}>
-                      {feature}
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
+              {/* CTA */}
               <button
                 onClick={() => handleCta(plan.ctaLink)}
-                className={`w-full py-5 rounded-[24px] font-black uppercase tracking-[0.2em] text-xs transition-all transform active:scale-95 shadow-xl ${plan.popular
-                    ? 'bg-brand-purple hover:bg-brand-purple/90 text-white shadow-brand-purple/30'
-                    : plan.tier === ToolTier.TURBO
-                      ? 'bg-brand-pink hover:bg-brand-pink/90 text-white shadow-brand-pink/30'
-                      : 'bg-white/5 hover:bg-white/10 text-white'
-                  }`}>
+                className="w-full py-5 rounded-2xl font-black uppercase tracking-widest text-sm bg-black hover:bg-gray-900 text-white transition-all active:scale-95 shadow-lg shadow-black/20"
+              >
                 {plan.cta}
               </button>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
 
-        <div className="mt-20 text-center">
-          <p className="text-[10px] font-black text-gray-700 uppercase tracking-[0.3em]">Ambiente de Pagamento Seguro via Cakto</p>
+        {/* Trust row */}
+        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-6">
+          {[
+            { icon: Shield, label: 'Pagamento Seguro via Cakto' },
+            { icon: Lock,   label: 'Cancele quando quiser' },
+          ].map(({ icon: Icon, label }) => (
+            <div key={label} className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+              <Icon className="w-3.5 h-3.5" />
+              {label}
+            </div>
+          ))}
         </div>
       </div>
     </section>

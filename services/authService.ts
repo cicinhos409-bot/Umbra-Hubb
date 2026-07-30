@@ -1,12 +1,31 @@
 import { supabase } from './supabaseClient';
+export { supabase };
 import type { User } from '@supabase/supabase-js';
 import { ToolTier } from '../types';
+
+const getRedirectUrl = () => {
+    const isElectron = typeof window !== 'undefined' && ((window as any).electron || window.location.protocol === 'file:');
+    return isElectron ? 'http://localhost:3001/auth-callback' : window.location.origin;
+};
 
 export interface UserProfile {
     id: string;
     email: string;
     tier: ToolTier;
     updated_at: string;
+    nickname?: string;
+    avatar_url?: string;
+    bio?: string;
+    dob?: string;
+    banner_color?: string;
+    notif_settings?: {
+        sound: boolean;
+        email: boolean;
+        mentions: boolean;
+        replies: boolean;
+    };
+    deactivated?: boolean;
+    member_since?: string;
 }
 
 export interface AuthResponse {
@@ -24,7 +43,7 @@ export const signUpWithEmail = async (email: string, password: string): Promise<
             email,
             password,
             options: {
-                emailRedirectTo: window.location.origin,
+                emailRedirectTo: getRedirectUrl(),
             },
         });
 
@@ -86,7 +105,7 @@ export const signInWithGoogle = async (): Promise<AuthResponse> => {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: window.location.origin,
+                redirectTo: getRedirectUrl(),
             },
         });
 
@@ -117,7 +136,7 @@ export const signInWithEmail = async (email: string): Promise<AuthResponse> => {
         const { error } = await supabase.auth.signInWithOtp({
             email,
             options: {
-                emailRedirectTo: window.location.origin,
+                emailRedirectTo: getRedirectUrl(),
             },
         });
 
@@ -140,29 +159,34 @@ export const signInWithEmail = async (email: string): Promise<AuthResponse> => {
     }
 };
 
+// Chaves de localStorage com dados do usuário que devem ser limpas no logout (seção 8 — LGPD)
+const USER_STORAGE_KEYS = [
+    'umbra_hub_meus_canais_v5',
+    'umbra_prompts_vault_v2',
+    'umbra_scout_collections',
+    'umbra_scout_config',
+    'umbra_search_config_v1',
+    'umbra_audios_usage_v2',
+    'umbra_active_tab',
+];
+
 /**
- * Faz logout do usuário atual
+ * Faz logout do usuário atual e limpa dados locais sensíveis
  */
 export const signOut = async (): Promise<AuthResponse> => {
     try {
         const { error } = await supabase.auth.signOut();
 
         if (error) {
-            return {
-                success: false,
-                message: error.message,
-            };
+            return { success: false, message: error.message };
         }
 
-        return {
-            success: true,
-            message: 'Logout realizado com sucesso.',
-        };
+        // Remove dados do usuário do localStorage (conformidade LGPD)
+        USER_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
+
+        return { success: true, message: 'Logout realizado com sucesso.' };
     } catch (error) {
-        return {
-            success: false,
-            message: 'Erro ao fazer logout.',
-        };
+        return { success: false, message: 'Erro ao fazer logout.' };
     }
 };
 
@@ -196,7 +220,7 @@ export const getSession = async () => {
 };
 
 /**
- * Obtém o perfil do usuário do banco de dados
+ * Obtém o perfil do usuário do banco de dados (Comunidade Umbra Z)
  */
 export const getUserProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
@@ -214,5 +238,24 @@ export const getUserProfile = async (userId: string): Promise<UserProfile | null
         return data as UserProfile;
     } catch (error) {
         return null;
+    }
+};
+
+/**
+ * Atualiza ou cria o perfil do usuário (Comunidade Umbra Z)
+ */
+export const updateUserProfile = async (userId: string, data: Partial<UserProfile>): Promise<boolean> => {
+    try {
+        const { error } = await supabase
+            .from('profiles')
+            .upsert({ 
+                id: userId,
+                ...data,
+                updated_at: new Date().toISOString()
+            }, { onConflict: 'id' });
+
+        return !error;
+    } catch (error) {
+        return false;
     }
 };

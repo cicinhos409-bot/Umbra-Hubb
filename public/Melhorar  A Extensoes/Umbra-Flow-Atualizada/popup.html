@@ -1,0 +1,1689 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Umbra Flow</title>
+  <style>
+    :root {
+      /* Tema baseado na logo - Ciano Neon / Terminal */
+      --bg-dark: #0a1214;
+      --bg-card: #0d1a1e;
+      --bg-elevated: #112228;
+      --bg-input: #0a1518;
+      --border: #1a3a42;
+      --border-light: #2a4a52;
+      --text: #e0f7fa;
+      --text-secondary: #80cbc4;
+      --text-muted: #4a7a7a;
+      --primary: #00e5cc;
+      --primary-light: #5ff5e0;
+      --primary-dark: #00b8a3;
+      --primary-glow: rgba(0, 229, 204, 0.4);
+      --green: #00e676;
+      --green-glow: rgba(0, 230, 118, 0.3);
+      --red: #ff5252;
+      --orange: #ffab40;
+      --blue: #40c4ff;
+      --cyan: #00e5cc;
+      --cyan-glow: rgba(0, 229, 204, 0.5);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      width: 420px;
+      min-height: 680px;
+      max-height: 680px;
+      overflow-y: auto;
+      font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+      background: var(--bg-dark);
+      color: var(--text);
+      overflow-x: hidden;
+    }
+
+    /* Efeito de scanlines sutil */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.1) 2px,
+        rgba(0, 0, 0, 0.1) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    .header {
+      background: linear-gradient(180deg, var(--bg-elevated) 0%, var(--bg-dark) 100%);
+      padding: 20px;
+      text-align: center;
+      border-bottom: 1px solid var(--primary);
+      box-shadow: 0 0 20px var(--cyan-glow);
+      position: relative;
+    }
+
+    .header-logo {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--primary);
+      text-shadow:
+        0 0 10px var(--cyan-glow),
+        0 0 20px var(--cyan-glow),
+        0 0 30px var(--cyan-glow);
+      letter-spacing: 4px;
+      margin-bottom: 4px;
+    }
+
+    .header-subtitle {
+      font-size: 11px;
+      color: var(--text-secondary);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .header-status {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--red);
+      box-shadow: 0 0 8px rgba(255, 82, 82, 0.5);
+      transition: all 0.3s;
+    }
+    .header-status.active {
+      background: var(--primary);
+      box-shadow: 0 0 15px var(--cyan-glow);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 10px var(--cyan-glow); }
+      50% { box-shadow: 0 0 20px var(--cyan-glow), 0 0 30px var(--cyan-glow); }
+    }
+
+    .content { padding: 16px; }
+
+    .status-bar {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--primary);
+      border-radius: 4px;
+      padding: 12px 16px;
+      margin-bottom: 14px;
+      font-size: 12px;
+      font-family: 'Consolas', monospace;
+      transition: all 0.3s;
+    }
+
+    .status-bar::before {
+      content: '> ';
+      color: var(--primary);
+    }
+
+    .status-bar.success {
+      border-left-color: var(--green);
+      color: var(--green);
+    }
+    .status-bar.error {
+      border-left-color: var(--red);
+      color: var(--red);
+    }
+    .status-bar.warning {
+      border-left-color: var(--orange);
+      color: var(--orange);
+    }
+    .status-bar.running {
+      border-left-color: var(--primary);
+      color: var(--primary);
+      animation: glow 1.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes glow {
+      from { box-shadow: 0 0 5px var(--cyan-glow); }
+      to { box-shadow: 0 0 15px var(--cyan-glow); }
+    }
+
+    .info-box {
+      background: rgba(0, 229, 204, 0.05);
+      border: 1px solid rgba(0, 229, 204, 0.2);
+      border-radius: 4px;
+      padding: 12px;
+      margin-bottom: 14px;
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+    .info-box strong { color: var(--primary); }
+    .info-box code {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 2px 6px;
+      border-radius: 2px;
+      font-family: 'Consolas', monospace;
+      color: var(--primary);
+      border: 1px solid var(--border);
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+
+    .card-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .setting-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .setting-row label { font-size: 11px; color: var(--text-secondary); }
+
+    .setting-row input[type="number"],
+    .setting-row input[type="text"] {
+      padding: 6px 10px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      color: var(--primary);
+      font-size: 12px;
+      font-family: 'Consolas', monospace;
+    }
+    .setting-row input[type="number"] {
+      width: 70px;
+      text-align: center;
+    }
+    .setting-row input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 8px var(--cyan-glow);
+    }
+
+    /* Speed Control Styles */
+    .speed-info {
+      margin-bottom: 12px;
+      padding: 10px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+
+    .speed-metric {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+    }
+
+    .speed-metric .metric-label {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .speed-metric .metric-value {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--primary);
+      font-family: 'Consolas', monospace;
+    }
+
+    .speed-controls {
+      margin-top: 12px;
+    }
+
+    .range-input-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .range-input-group input[type="number"] {
+      width: 60px;
+      padding: 4px 6px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      color: var(--primary);
+      font-size: 11px;
+      font-family: 'Consolas', monospace;
+      text-align: center;
+    }
+
+    .range-input-group span {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    .speed-buttons {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .speed-buttons .btn {
+      flex: 1;
+      font-size: 11px;
+      padding: 8px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 120px;
+      padding: 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-size: 11px;
+      font-family: 'Consolas', monospace;
+      resize: vertical;
+      line-height: 1.6;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 10px var(--cyan-glow);
+    }
+    textarea::placeholder { color: var(--text-muted); }
+
+    .hint { font-size: 10px; color: var(--text-muted); margin-top: 8px; }
+
+    .prompt-list { max-height: 150px; overflow-y: auto; }
+
+    .prompt-list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .prompt-count {
+      font-size: 11px;
+      color: var(--primary);
+      background: var(--bg-elevated);
+      padding: 4px 10px;
+      border-radius: 2px;
+      border: 1px solid var(--border);
+      font-family: 'Consolas', monospace;
+    }
+
+    .prompt-item {
+      display: flex;
+      align-items: center;
+      padding: 7px 10px;
+      background: var(--bg-elevated);
+      border-radius: 2px;
+      margin-bottom: 4px;
+      font-size: 11px;
+      border-left: 2px solid var(--border);
+      transition: all 0.2s;
+    }
+
+    .prompt-item:hover {
+      border-left-color: var(--primary);
+    }
+
+    .prompt-item .number {
+      background: var(--primary);
+      color: var(--bg-dark);
+      padding: 2px 7px;
+      border-radius: 2px;
+      font-weight: 700;
+      margin-right: 8px;
+      min-width: 28px;
+      text-align: center;
+      font-size: 10px;
+    }
+
+    .prompt-item .elements {
+      background: var(--blue);
+      color: var(--bg-dark);
+      padding: 2px 6px;
+      border-radius: 2px;
+      font-size: 9px;
+      font-weight: 600;
+      margin-right: 8px;
+    }
+
+    .prompt-item .text {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--text-secondary);
+    }
+
+    .prompt-item .status-icon { margin-left: 8px; font-size: 12px; }
+
+    .prompt-item.sent { border-left-color: var(--green); }
+    .prompt-item.sent .number { background: var(--green); }
+    .prompt-item.sending { border-left-color: var(--orange); }
+    .prompt-item.sending .number { background: var(--orange); }
+    .prompt-item.error { border-left-color: var(--red); }
+    .prompt-item.error .number { background: var(--red); }
+
+    .progress-container { margin-bottom: 14px; }
+
+    .progress-bar {
+      height: 6px;
+      background: var(--bg-elevated);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary-dark), var(--primary), var(--primary-light));
+      border-radius: 2px;
+      transition: width 0.3s ease;
+      width: 0%;
+      box-shadow: 0 0 10px var(--cyan-glow);
+    }
+
+    .progress-text {
+      font-size: 11px;
+      color: var(--primary);
+      text-align: center;
+      font-family: 'Consolas', monospace;
+    }
+
+    .missing-prompts {
+      background: rgba(255, 82, 82, 0.1);
+      border: 1px solid rgba(255, 82, 82, 0.3);
+      border-left: 3px solid var(--red);
+      border-radius: 4px;
+      padding: 12px;
+      margin-bottom: 14px;
+    }
+    .missing-prompts .title {
+      color: var(--red);
+      font-weight: 600;
+      font-size: 11px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .missing-prompts .list {
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-family: 'Consolas', monospace;
+    }
+
+    .btn-copy-missing {
+      margin-top: 10px;
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--primary);
+      border-radius: 4px;
+      background: transparent;
+      color: var(--primary);
+      font-family: 'Consolas', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-copy-missing:hover {
+      background: rgba(0, 255, 255, 0.1);
+      box-shadow: 0 0 10px var(--cyan-glow);
+    }
+    .btn-copy-missing.copied {
+      border-color: var(--green);
+      color: var(--green);
+      background: rgba(0, 255, 136, 0.1);
+    }
+
+    .btn {
+      width: 100%;
+      padding: 12px 18px;
+      border: none;
+      border-radius: 4px;
+      font-family: 'Consolas', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: var(--bg-dark);
+      border: 1px solid var(--primary);
+    }
+    .btn-primary:hover:not(:disabled) {
+      box-shadow: 0 0 20px var(--cyan-glow), 0 0 40px var(--cyan-glow);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover:not(:disabled) {
+      border-color: var(--primary);
+      color: var(--primary);
+      box-shadow: 0 0 10px var(--cyan-glow);
+    }
+
+    .btn-danger {
+      background: linear-gradient(180deg, var(--red) 0%, #c62828 100%);
+      color: white;
+      border: 1px solid var(--red);
+    }
+    .btn-danger:hover:not(:disabled) {
+      box-shadow: 0 0 15px rgba(255, 82, 82, 0.5);
+    }
+
+    .btn-warning {
+      background: linear-gradient(180deg, var(--orange) 0%, #f57c00 100%);
+      color: var(--bg-dark);
+      border: 1px solid var(--orange);
+    }
+    .btn-warning:hover:not(:disabled) {
+      box-shadow: 0 0 15px rgba(255, 171, 64, 0.5);
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    .btn + .btn { margin-top: 8px; }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-group .btn { flex: 1; }
+    .btn-group .btn + .btn { margin-top: 0; }
+
+    .footer {
+      text-align: center;
+      padding: 14px;
+      font-size: 9px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--border);
+      background: var(--bg-card);
+    }
+
+    .footer-version {
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+
+    .footer-credits {
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    .hidden { display: none !important; }
+
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-dark); }
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-light);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--primary);
+      box-shadow: 0 0 5px var(--cyan-glow);
+    }
+
+    /* ========== FOLDER SELECTOR ========== */
+    .folder-selector {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+
+    .folder-label {
+      font-size: 10px;
+      color: var(--primary);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .folder-buttons {
+      display: flex;
+      gap: 4px;
+    }
+
+    .folder-btn {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-muted);
+      font-family: 'Consolas', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .folder-btn:hover {
+      color: var(--text-secondary);
+      border-color: var(--primary);
+    }
+
+    .folder-btn.active {
+      background: var(--primary);
+      color: var(--bg-dark);
+      border-color: var(--primary);
+      box-shadow: 0 0 10px var(--cyan-glow);
+    }
+
+    .folder-path {
+      font-size: 10px;
+      color: var(--text-secondary);
+      font-family: 'Consolas', monospace;
+      background: var(--bg-input);
+      padding: 4px 8px;
+      border-radius: 2px;
+      border: 1px solid var(--border);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ========== MODE SELECTOR ========== */
+    .mode-selector {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+      padding: 4px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 12px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 4px;
+      color: var(--text-muted);
+      font-family: 'Consolas', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mode-btn:hover {
+      color: var(--text-secondary);
+      background: var(--bg-elevated);
+    }
+
+    .mode-btn.active {
+      background: linear-gradient(180deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: var(--bg-dark);
+      border-color: var(--primary);
+      box-shadow: 0 0 15px var(--cyan-glow);
+    }
+
+    .mode-icon {
+      font-family: 'Material Symbols Outlined', 'Material Icons';
+      font-size: 16px;
+      font-weight: normal;
+      font-style: normal;
+    }
+
+    /* ========== EXTEND MODE STYLES ========== */
+    .extend-info {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: rgba(0, 229, 204, 0.08);
+      border: 1px solid var(--primary);
+    }
+
+    .alert-badge {
+      background: var(--primary);
+      color: var(--bg-dark);
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 11px;
+      flex-shrink: 0;
+    }
+
+    .extend-info p {
+      font-size: 10px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    .card-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .extend-textarea {
+      width: 100%;
+      height: 160px;
+      padding: 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-size: 11px;
+      font-family: 'Consolas', monospace;
+      resize: none;
+      line-height: 1.6;
+    }
+
+    .extend-textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 10px var(--cyan-glow);
+    }
+
+    .extend-textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    .extend-output {
+      border-left: 3px solid var(--primary);
+    }
+
+    .extend-output p {
+      font-size: 10px;
+      color: var(--text-secondary);
+      margin: 3px 0;
+    }
+
+    .extend-output code {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 2px 6px;
+      border-radius: 2px;
+      font-family: 'Consolas', monospace;
+      color: var(--primary);
+      border: 1px solid var(--border);
+    }
+
+    .hint-text {
+      font-size: 9px;
+      color: var(--text-muted);
+      margin-left: 6px;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+      flex: 1;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .checkbox-row input[type="checkbox"] {
+      display: none;
+    }
+
+    .custom-checkbox {
+      width: 14px;
+      height: 14px;
+      background: var(--bg-input);
+      border: 2px solid var(--primary);
+      border-radius: 2px;
+      margin-right: 8px;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .checkbox-row input[type="checkbox"]:checked + .custom-checkbox {
+      background: var(--primary);
+    }
+
+    .checkbox-row input[type="checkbox"]:checked + .custom-checkbox::after {
+      content: '';
+      position: absolute;
+      left: 3px;
+      top: 0px;
+      width: 4px;
+      height: 8px;
+      border: solid var(--bg-dark);
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+    }
+
+    .extend-total {
+      text-align: center;
+      font-weight: bold;
+      font-size: 12px;
+      color: var(--primary);
+      margin-bottom: 12px;
+      padding: 10px;
+      background: var(--bg-elevated);
+      border-radius: 4px;
+      border: 1px solid var(--border);
+      font-family: 'Consolas', monospace;
+    }
+
+    .current-scene {
+      background: rgba(0, 229, 204, 0.08);
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+      border: 1px solid var(--primary);
+    }
+
+    .scene-label {
+      font-size: 10px;
+      color: var(--primary);
+      margin-bottom: 6px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .scene-text {
+      font-size: 11px;
+      color: var(--text);
+      line-height: 1.5;
+      max-height: 50px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Standard mode section wrapper */
+    #standardModeSection {
+      display: block;
+    }
+
+    #standardModeSection.hidden,
+    #extendModeSection.hidden {
+      display: none !important;
+    }
+
+    /* ========== SERVER PANEL ========== */
+    .server-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .server-header {
+      background: var(--bg-elevated);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .server-icon {
+      font-size: 14px;
+    }
+
+    .server-title {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .server-body {
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .server-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-indicator {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .server-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      transition: all 0.3s ease;
+    }
+
+    .server-dot.offline {
+      background: var(--red);
+      box-shadow: 0 0 8px rgba(255, 82, 82, 0.4);
+    }
+
+    .server-dot.connecting {
+      background: var(--orange);
+      box-shadow: 0 0 10px rgba(255, 171, 64, 0.4);
+      animation: server-pulse 1.5s ease-in-out infinite;
+    }
+
+    .server-dot.online {
+      background: var(--green);
+      box-shadow: 0 0 10px var(--green-glow);
+    }
+
+    @keyframes server-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(0.9); }
+    }
+
+    .server-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .server-status-text {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .server-details {
+      font-size: 9px;
+      color: var(--text-muted);
+    }
+
+    .btn-server {
+      padding: 6px 12px;
+      font-size: 10px;
+      white-space: nowrap;
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Consolas', monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-server:hover:not(:disabled) {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .btn-server.stop {
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    .btn-server.stop:hover:not(:disabled) {
+      background: rgba(255, 82, 82, 0.1);
+    }
+
+    .btn-server:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* ========== VISUAL SLOTS ========== */
+    .prompt-slots {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 48px;
+      margin-right: 8px;
+    }
+
+    .slots-visual {
+      display: flex;
+      gap: 3px;
+      margin-bottom: 2px;
+    }
+
+    .slot {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      background: var(--border);
+    }
+
+    .slot.filled {
+      background: var(--primary);
+      box-shadow: 0 0 4px var(--cyan-glow);
+    }
+
+    .slot-text-only {
+      width: 36px;
+      height: 10px;
+      background: var(--text-muted);
+      border-radius: 2px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 7px;
+      font-weight: 700;
+      color: var(--bg-dark);
+      letter-spacing: 0.5px;
+    }
+
+    .slots-numbers {
+      display: flex;
+      gap: 3px;
+      font-size: 7px;
+      color: var(--text-muted);
+    }
+
+    .slots-numbers span {
+      width: 10px;
+      text-align: center;
+    }
+
+    .slots-label {
+      font-size: 7px;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+
+    /* ========== PROGRESS LAYER ========== */
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .progress-layer {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .progress-count {
+      color: var(--text-secondary);
+    }
+
+    /* ========== GROK AI SETTINGS ========== */
+    #grokSettingsCard {
+      border-color: var(--border);
+    }
+
+    #grokSettingsCard .card-title {
+      color: var(--primary);
+    }
+
+    .grok-settings {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .api-key-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 4px;
+    }
+
+    .api-key-row label {
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+
+    .api-key-input-group {
+      display: flex;
+      width: 100%;
+      gap: 4px;
+    }
+
+    .api-key-input-group input {
+      flex: 1;
+      background: var(--bg-main);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 8px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 11px;
+    }
+
+    .api-key-input-group input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .api-key-input-group input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .btn-icon {
+      background: var(--bg-main);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 4px 6px;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-icon:hover {
+      border-color: var(--primary);
+      color: var(--text-primary);
+    }
+
+    .btn-icon .icon {
+      font-family: 'Material Icons', sans-serif;
+      font-size: 14px;
+    }
+
+    .grok-status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .grok-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10px;
+    }
+
+    .grok-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--red);
+    }
+
+    .grok-dot.configured {
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+    }
+
+    .grok-status-text {
+      color: var(--text-muted);
+    }
+
+    .grok-dot.configured + .grok-status-text {
+      color: var(--green);
+    }
+
+    .btn-small {
+      background: var(--primary);
+      color: #000;
+      border: none;
+      border-radius: 4px;
+      padding: 4px 10px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-small:hover {
+      box-shadow: 0 0 8px var(--cyan-glow);
+    }
+
+    .checkbox-row {
+      margin-top: 4px;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+
+    .checkbox-label input[type="checkbox"] {
+      accent-color: var(--primary);
+      width: 14px;
+      height: 14px;
+    }
+
+    .grok-hint {
+      margin-top: 4px;
+      font-size: 9px;
+    }
+
+    /* ========== ERROR STATS IN PROGRESS ========== */
+    .error-stats {
+      display: flex;
+      gap: 12px;
+      font-size: 9px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .error-stat {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
+    .error-stat.policy {
+      color: var(--orange, #ff9800);
+    }
+
+    .error-stat.timeout {
+      color: var(--text-muted);
+    }
+
+    .error-stat.fixing {
+      color: var(--primary);
+    }
+
+    /* ========== FINAL REPORT ========== */
+    .final-report {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      margin-top: 10px;
+    }
+
+    .final-report-title {
+      color: var(--primary);
+      font-size: 11px;
+      margin-bottom: 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .report-stats {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      font-size: 10px;
+    }
+
+    .report-stat {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .report-stat-label {
+      color: var(--text-secondary);
+    }
+
+    .report-stat-value {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .report-stat-value.success {
+      color: var(--green);
+    }
+
+    .report-stat-value.error {
+      color: var(--red);
+    }
+
+    .report-stat-value.fixed {
+      color: var(--primary);
+    }
+
+    .report-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .report-actions .btn {
+      flex: 1;
+      font-size: 10px;
+      padding: 6px 8px;
+    }
+    /* ========== LICENSE OVERLAY ========== */
+    #licenseOverlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 10000;
+      background: var(--bg-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    #licenseOverlay.hidden { display: none; }
+    .license-box { width: 90%; max-width: 320px; text-align: center; }
+    .license-logo {
+      font-size: 36px; font-weight: 700; color: var(--primary);
+      text-shadow: 0 0 10px var(--cyan-glow), 0 0 20px var(--cyan-glow);
+      letter-spacing: 4px; margin-bottom: 6px;
+    }
+    .license-subtitle {
+      font-size: 10px; color: var(--text-muted);
+      letter-spacing: 2px; text-transform: uppercase; margin-bottom: 28px;
+    }
+    .license-label { font-size: 11px; color: var(--text-secondary); text-align: left; margin-bottom: 6px; letter-spacing: 1px; }
+    #licenseKeyInput {
+      width: 100%; background: var(--bg-input); border: 1px solid var(--border);
+      padding: 12px 14px; border-radius: 4px; color: var(--text);
+      font-family: 'Consolas', monospace; font-size: 13px; letter-spacing: 1px;
+      outline: none; transition: border-color 0.3s, box-shadow 0.3s; box-sizing: border-box;
+    }
+    #licenseKeyInput:focus { border-color: var(--primary); box-shadow: 0 0 8px var(--cyan-glow); }
+    #licenseKeyInput::placeholder { color: var(--text-muted); }
+    #licenseActivateBtn {
+      width: 100%; margin-top: 14px; padding: 12px;
+      background: var(--primary); color: #000; border: none; border-radius: 4px;
+      font-family: 'Consolas', monospace; font-size: 13px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 2px; cursor: pointer; transition: all 0.3s;
+    }
+    #licenseActivateBtn:hover { box-shadow: 0 0 15px var(--cyan-glow); transform: scale(1.02); }
+    #licenseActivateBtn:disabled { opacity: 0.5; pointer-events: none; }
+    #licenseError { color: var(--red); font-size: 11px; margin-top: 10px; min-height: 16px; }
+    .license-footer { margin-top: 24px; font-size: 10px; }
+    .license-footer a { color: var(--text-muted); text-decoration: none; transition: color 0.3s; }
+    .license-footer a:hover { color: var(--primary); }
+  </style>
+</head>
+<body>
+  <!-- LICENSE OVERLAY -->
+  <div id="licenseOverlay">
+    <div class="license-box">
+      <div class="license-logo">UMBRA_</div>
+      <div class="license-subtitle">Insira sua licenca para liberar o acesso</div>
+      <div class="license-label">// CHAVE DE LICENCA:</div>
+      <input type="text" id="licenseKeyInput" placeholder="UMBRA-XXXX-XXXX" spellcheck="false" autocomplete="off">
+      <button id="licenseActivateBtn">[ ATIVAR ]</button>
+      <div id="licenseError"></div>
+      <div class="license-footer">
+        <a href="https://umbrahubb.vercel.app" target="_blank">Gerenciar Slots</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="header">
+    <div class="header-logo">UMBRA_</div>
+    <div class="header-subtitle">Video Generation Lab</div>
+    <div class="header-status" id="headerStatus"></div>
+  </div>
+
+  <div class="content">
+    <!-- Mode Selector -->
+    <div class="mode-selector">
+      <button class="mode-btn active" data-mode="standard" id="modeStandard">
+        <i class="mode-icon">layers</i>
+        <span>Padrão</span>
+      </button>
+      <button class="mode-btn" data-mode="extend" id="modeExtend">
+        <i class="mode-icon">extension</i>
+        <span>Extend</span>
+      </button>
+    </div>
+
+    <!-- Folder Selector -->
+    <div class="folder-selector">
+      <label class="folder-label">// PASTA DE DESTINO:</label>
+      <div class="folder-buttons">
+        <button class="folder-btn active" data-folder="1" id="folder1">1</button>
+        <button class="folder-btn" data-folder="2" id="folder2">2</button>
+        <button class="folder-btn" data-folder="3" id="folder3">3</button>
+        <button class="folder-btn" data-folder="4" id="folder4">4</button>
+        <button class="folder-btn" data-folder="5" id="folder5">5</button>
+        <button class="folder-btn" data-folder="6" id="folder6">6</button>
+        <button class="folder-btn" data-folder="7" id="folder7">7</button>
+        <button class="folder-btn" data-folder="8" id="folder8">8</button>
+      </div>
+      <span class="folder-path" id="folderPath">Umbra Flow Videos/</span>
+    </div>
+
+    <!-- Server Panel -->
+    <div class="server-panel" id="serverPanel">
+      <div class="server-header">
+        <span class="server-icon">🐍</span>
+        <span class="server-title">Python Server</span>
+      </div>
+      <div class="server-body">
+        <div class="server-status">
+          <div class="status-indicator">
+            <span class="server-dot offline" id="serverDot"></span>
+          </div>
+          <div class="server-info">
+            <div class="server-status-text" id="serverStatusText">Offline</div>
+            <div class="server-details" id="serverDetails">Modo Direto ativo</div>
+          </div>
+        </div>
+        <button class="btn-server" id="serverBtn">Iniciar</button>
+      </div>
+    </div>
+
+    <div id="statusBar" class="status-bar">
+      <span id="statusText">Cole seus prompts e clique em PROCESSAR</span>
+    </div>
+
+    <!-- ========== STANDARD MODE SECTION ========== -->
+    <div id="standardModeSection">
+    <div class="info-box">
+      <strong>// FORMATO:</strong> <code>PROMPT 1 [1, 2]: texto...</code><br>
+      <code>[1]</code> a <code>[24]</code> = posicao da imagem na galeria (ate 24 imagens)<br>
+      Ex: <code>[5, 12, 18]</code> = imagens 5, 12 e 18 | Sem <code>[ ]</code> = texto simples
+    </div>
+
+    <!-- Settings -->
+    <div class="card" id="settingsCard">
+      <div class="card-title">// CONFIG</div>
+      <div class="setting-row">
+        <label>Videos simultaneos:</label>
+        <input type="number" id="batchSize" value="4" min="1" max="10">
+      </div>
+      <div class="setting-row">
+        <label>Delay entre prompts (seg):</label>
+        <input type="number" id="promptDelay" value="2" min="1" max="30">
+      </div>
+      <div class="setting-row">
+        <label>Pausa entre lotes (seg):</label>
+        <input type="number" id="batchPause" value="0" min="0" max="300">
+      </div>
+    </div>
+
+    <!-- Speed Control Settings -->
+    <div class="card" id="speedControlCard">
+      <div class="card-title">// SPEED CONTROL</div>
+      <div class="speed-info">
+        <div class="speed-metric">
+          <span class="metric-label">Delay entre prompts:</span>
+          <span class="metric-value" id="speedPromptDelay">1.5-2.5s</span>
+        </div>
+        <div class="speed-metric">
+          <span class="metric-label">Intervalo de verificação:</span>
+          <span class="metric-value" id="speedCheckInterval">0.5-1.0s</span>
+        </div>
+        <div class="speed-metric">
+          <span class="metric-label">Timeout por vídeo:</span>
+          <span class="metric-value" id="speedSlotTimeout">80s</span>
+        </div>
+        <div class="speed-metric">
+          <span class="metric-label">Máx. retries:</span>
+          <span class="metric-value" id="speedMaxRetries">2x</span>
+        </div>
+      </div>
+
+      <div class="speed-controls">
+        <div class="setting-row">
+          <label>Delay prompts (ms):</label>
+          <div class="range-input-group">
+            <input type="number" id="speedPromptDelayMin" value="1500" min="500" max="5000" step="100">
+            <span>-</span>
+            <input type="number" id="speedPromptDelayMax" value="2500" min="500" max="5000" step="100">
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <label>Check interval (ms):</label>
+          <div class="range-input-group">
+            <input type="number" id="speedCheckIntervalMin" value="500" min="100" max="3000" step="100">
+            <span>-</span>
+            <input type="number" id="speedCheckIntervalMax" value="1000" min="100" max="3000" step="100">
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <label>Timeout vídeo (seg):</label>
+          <input type="number" id="speedSlotTimeoutInput" value="80" min="30" max="300" step="10">
+        </div>
+
+        <div class="setting-row">
+          <label>Max retries:</label>
+          <input type="number" id="speedMaxRetriesInput" value="2" min="0" max="5">
+        </div>
+
+        <div class="speed-buttons">
+          <button class="btn btn-secondary" id="speedResetBtn">↻ Resetar</button>
+          <button class="btn btn-primary" id="speedApplyBtn">✓ Aplicar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grok AI Auto-Fix Settings -->
+    <div class="card" id="grokSettingsCard">
+      <div class="card-title">// GROK AI (Auto-Fix)</div>
+      <div class="grok-settings">
+        <div class="setting-row api-key-row">
+          <label>API Key:</label>
+          <div class="api-key-input-group">
+            <input type="password" id="grokApiKey" placeholder="xai-..." autocomplete="off">
+            <button class="btn-icon" id="toggleApiKeyVisibility" title="Mostrar/Ocultar">
+              <span class="icon">visibility_off</span>
+            </button>
+          </div>
+        </div>
+        <div class="grok-status-row">
+          <span class="grok-status" id="grokStatus">
+            <span class="grok-dot offline"></span>
+            <span class="grok-status-text">Não configurado</span>
+          </span>
+          <button class="btn-small" id="saveGrokApiKey">Salvar</button>
+        </div>
+        <div class="setting-row checkbox-row">
+          <label class="checkbox-label">
+            <input type="checkbox" id="grokAutoFixEnabled" checked>
+            <span class="checkbox-text">Auto-fix prompts com erro de política</span>
+          </label>
+        </div>
+        <p class="hint grok-hint">// Grok AI corrige prompts rejeitados automaticamente</p>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="card" id="inputSection">
+      <div class="card-title">// INPUT PROMPTS</div>
+      <textarea id="promptsInput" placeholder="PROMPT 1 [1]: Descricao do video com elemento 1...
+
+PROMPT 2 [1, 2]: Descricao com elementos 1 e 2...
+
+PROMPT 3 [2, 3]: Descricao com elementos 2 e 3...
+
+PROMPT 4: Descricao sem elementos (so texto)..."></textarea>
+      <p class="hint">// Use [1], [1, 2] ou [1, 2, 3] para selecionar elementos</p>
+    </div>
+
+    <!-- Prompt List -->
+    <div class="card hidden" id="promptListCard">
+      <div class="prompt-list-header">
+        <div class="card-title" style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;">// QUEUE</div>
+        <span class="prompt-count" id="promptCount">0/0</span>
+      </div>
+      <div class="prompt-list" id="promptItems"></div>
+    </div>
+
+    <!-- Missing Prompts Alert -->
+    <div class="missing-prompts hidden" id="missingPromptsCard">
+      <div class="title">// ERROR: MISSING PROMPTS</div>
+      <div class="list" id="missingPromptsList"></div>
+      <button class="btn-copy-missing" id="copyMissingBtn">[ COPIAR PROMPTS FALTANTES ]</button>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-container hidden" id="progressContainer">
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-info">
+        <span class="progress-layer" id="progressLayer">// MODO DIRETO</span>
+        <span class="progress-separator">|</span>
+        <span class="progress-count" id="progressCount">0/0 prompts</span>
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <button id="processBtn" class="btn btn-secondary">[ PROCESSAR PROMPTS ]</button>
+    <button id="startBtn" class="btn btn-primary hidden">[ INICIAR GERACAO ]</button>
+
+    <div class="btn-group hidden" id="controlButtons">
+      <button id="stopBtn" class="btn btn-danger">[ PARAR ]</button>
+      <button id="cancelBtn" class="btn btn-secondary">[ CANCELAR ]</button>
+    </div>
+
+    <button id="retryBtn" class="btn btn-warning hidden">[ RETRY FALTANTES ]</button>
+    <button id="resetBtn" class="btn btn-secondary hidden">[ NOVA SESSAO ]</button>
+    </div>
+    <!-- End of Standard Mode Section -->
+
+    <!-- ========== EXTEND MODE SECTION ========== -->
+    <div id="extendModeSection" class="hidden">
+      <div class="info-box extend-info">
+        <span class="alert-badge">!</span>
+        <p>Certifique-se de ter um video ja criado no Scenebuilder antes de iniciar. A extensao ira estender a partir dele.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title-row">
+          <div class="card-title" style="margin-bottom: 0; border-bottom: none; padding-bottom: 0;">// CENAS DO PLANO SEQUENCIA</div>
+          <span class="prompt-count" id="extendPromptCount">0 cenas</span>
+        </div>
+        <textarea id="extendPromptsInput" class="extend-textarea" placeholder="Cole suas cenas aqui, uma por linha...
+
+Cada linha sera uma extensao do video anterior.
+
+Exemplo:
+O personagem olha para a camera e sorri
+Ele comeca a caminhar em direcao a porta
+Abre a porta e sai do ambiente
+Caminha pela rua com expressao pensativa"></textarea>
+      </div>
+
+      <div class="info-box extend-output">
+        <p>Output: <code id="extendFolderDisplay">Downloads/Umbra Flow Videos/</code></p>
+        <p>Formato: <code>[Nome do projeto]_sequencia.mp4</code></p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">// CONFIG EXTEND</div>
+        <div class="setting-row">
+          <label>Nome do projeto:</label>
+          <input type="text" id="extendProjectName" placeholder="meu_video" value="plano_sequencia" style="width: 140px;">
+        </div>
+        <div class="setting-row">
+          <label>Tempo max por cena (seg):</label>
+          <input type="number" id="extendMaxWait" min="30" max="300" value="120">
+          <span class="hint-text">30-300s</span>
+        </div>
+        <div class="setting-row">
+          <label>Intervalo entre extensoes (seg):</label>
+          <input type="number" id="extendDelay" min="2" max="30" value="5">
+          <span class="hint-text">2-30s</span>
+        </div>
+        <div class="setting-row">
+          <label class="checkbox-row">
+            <input type="checkbox" id="extendAutoDownload" checked>
+            <span class="custom-checkbox"></span>
+            <span>Baixar video automaticamente ao finalizar</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="extend-total" id="extendTotal">Total: 0 cenas a estender</div>
+
+      <div class="progress-container hidden" id="extendProgressContainer">
+        <div class="progress-bar">
+          <div class="progress-fill" id="extendProgressFill"></div>
+        </div>
+        <div class="progress-text" id="extendProgressText">Preparando...</div>
+      </div>
+
+      <div class="current-scene hidden" id="extendCurrentScene">
+        <div class="scene-label">// CENA ATUAL</div>
+        <div class="scene-text" id="extendSceneText"></div>
+      </div>
+
+      <button id="extendStartBtn" class="btn btn-primary" disabled>[ INICIAR SEQUENCIA ]</button>
+
+      <div class="btn-group hidden" id="extendControlButtons">
+        <button id="extendStopBtn" class="btn btn-danger">[ PARAR ]</button>
+      </div>
+
+      <button id="extendDownloadBtn" class="btn btn-secondary hidden">[ BAIXAR VIDEO FINAL ]</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    <div class="footer-version">Umbra Flow v2.0</div>
+    <div class="footer-credits">Developed by Felipe and Fabio</div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

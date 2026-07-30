@@ -1,0 +1,33 @@
+directories:
+  output: release
+  buildResources: electron
+appId: com.umbrahub.app
+productName: Umbra Hub
+copyright: Copyright © 2026 Umbra Hub
+protocols:
+  - name: umbra-hub
+    schemes:
+      - umbra-hub
+files:
+  - filter:
+      - dist/**/*
+      - electron/**/*
+      - package.json
+extraResources:
+  - from: dist-backend
+    to: backend
+win:
+  icon: electron/icon.png
+  target:
+    - target: nsis
+      arch:
+        - x64
+  artifactName: Umbra Hub Setup ${version}.exe
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Umbra Hub
+publish: null
+electronVersion: 34.5.8

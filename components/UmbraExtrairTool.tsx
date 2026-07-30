@@ -1,4 +1,4 @@
-
+﻿
 import React, { useState, useEffect } from 'react';
 import {
   Scissors,
@@ -212,26 +212,26 @@ const UmbraExtrairTool: React.FC = () => {
   return (
     <div className="font-rajdhani space-y-8 animate-in fade-in duration-700 pb-20 max-w-5xl mx-auto">
       <header className="text-center relative">
-        <div className="inline-flex items-center justify-center w-24 h-24 bg-brand-cyan/10 rounded-[32px] mb-6 shadow-2xl ring-1 ring-brand-cyan/20">
+        <div className="inline-flex items-center justify-center w-24 h-24 bg-brand-cyan/10 rounded-2xl mb-6 shadow-2xl ring-1 ring-brand-cyan/20">
           <Scissors className="w-12 h-12 text-brand-cyan" />
         </div>
         <h1 className="text-5xl font-black tracking-tighter mb-2 bg-gradient-to-r from-brand-cyan via-brand-purple to-brand-pink bg-clip-text text-transparent uppercase font-bebas">
           Umbra Extrair
         </h1>
-        <p className="text-gray-500 font-medium">Transcrição de Alta Precisão • YouTube Crawler v2.0</p>
+        <p className="text-gray-900 font-black">Transcrição de Alta Precisão • YouTube Crawler v2.0</p>
       </header>
 
       {/* INPUT PANEL */}
-      <section className="bg-background-mid border border-white/5 rounded-[40px] p-8 shadow-xl space-y-8">
+      <section className="bg-white border border-gray-200 rounded-2xl p-8 shadow-xl space-y-8">
         <div className="space-y-4">
-          <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest px-2">Link do Vídeo</label>
+          <label className="text-[10px] font-black text-gray-900 uppercase tracking-widest px-2">Link do Vídeo</label>
           <div className="flex flex-col md:flex-row gap-4">
             <input
               type="text"
               value={urlInput}
               onChange={e => setUrlInput(e.target.value)}
               placeholder="https://www.youtube.com/watch?v=..."
-              className="flex-1 bg-background-deep border border-white/10 rounded-2xl p-5 text-sm font-bold text-white focus:border-brand-purple transition-all outline-none"
+              className="flex-1 bg-white border border-gray-200 rounded-2xl p-5 text-sm font-black text-gray-900 focus:border-brand-purple transition-all outline-none"
             />
             <button
               onClick={handleExtract}
@@ -244,10 +244,10 @@ const UmbraExtrairTool: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-8 pt-4 border-t border-white/5">
+        <div className="flex flex-wrap items-center gap-8 pt-4 border-t border-gray-200">
           <div className="space-y-2">
-            <label className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Idioma Forçado (Opcional)</label>
-            <select value={lang} onChange={e => setLang(e.target.value)} className="bg-background-deep border border-white/10 rounded-xl p-3 text-[10px] font-bold outline-none">
+            <label className="text-[9px] font-black text-gray-900 uppercase tracking-widest">Idioma Forçado (Opcional)</label>
+            <select value={lang} onChange={e => setLang(e.target.value)} className="bg-white border border-gray-200 rounded-xl p-3 text-[10px] font-black outline-none">
               <option value="">Automático</option>
               <option value="pt-BR">Português BR</option>
               <option value="en">Inglês</option>
@@ -255,10 +255,10 @@ const UmbraExtrairTool: React.FC = () => {
             </select>
           </div>
           <div className="space-y-2">
-            <label className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Estilo de Exibição</label>
-            <div className="flex bg-background-deep p-1 rounded-xl">
-              <button onClick={() => setViewMode('seg')} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${viewMode === 'seg' ? 'bg-brand-cyan text-background-deep' : 'text-gray-500'}`}>Sincronizado</button>
-              <button onClick={() => setViewMode('raw')} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${viewMode === 'raw' ? 'bg-brand-cyan text-background-deep' : 'text-gray-500'}`}>Texto Puro</button>
+            <label className="text-[9px] font-black text-gray-900 uppercase tracking-widest">Estilo de Exibição</label>
+            <div className="flex bg-white p-1 rounded-xl">
+              <button onClick={() => setViewMode('seg')} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${viewMode === 'seg' ? 'bg-brand-cyan text-background-deep' : 'text-gray-900'}`}>Sincronizado</button>
+              <button onClick={() => setViewMode('raw')} className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase transition-all ${viewMode === 'raw' ? 'bg-brand-cyan text-background-deep' : 'text-gray-900'}`}>Texto Puro</button>
             </div>
           </div>
         </div>
@@ -268,7 +268,7 @@ const UmbraExtrairTool: React.FC = () => {
       {(isProcessing || logs[0].status !== 'wait') && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {logs.map(log => (
-            <div key={log.id} className={`p-4 rounded-2xl border flex items-center gap-3 transition-all ${log.status === 'ok' ? 'bg-brand-green/10 border-brand-green/30 text-brand-green' : log.status === 'run' ? 'bg-brand-cyan/10 border-brand-cyan/40 text-brand-cyan' : 'bg-background-mid border-white/5 text-gray-600'}`}>
+            <div key={log.id} className={`p-4 rounded-2xl border flex items-center gap-3 transition-all ${log.status === 'ok' ? 'bg-brand-green/10 border-brand-green/30 text-brand-green' : log.status === 'run' ? 'bg-brand-cyan/10 border-brand-cyan/40 text-brand-cyan' : 'bg-white border-gray-200 text-gray-900'}`}>
               {log.status === 'run' ? <RefreshCw className="w-4 h-4 animate-spin" /> : log.status === 'ok' ? <CheckCircle2 className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
               <span className="text-[10px] font-black uppercase tracking-widest">{log.text}</span>
             </div>
@@ -279,57 +279,57 @@ const UmbraExtrairTool: React.FC = () => {
       {error && (
         <div className="p-6 bg-brand-pink/10 border border-brand-pink/20 rounded-3xl flex items-center gap-4 text-brand-pink animate-in slide-in-from-top-2">
           <AlertCircle className="w-6 h-6" />
-          <div className="text-xs font-bold uppercase tracking-widest">{error}</div>
+          <div className="text-xs font-black uppercase tracking-widest">{error}</div>
         </div>
       )}
 
       {/* RESULTS AREA */}
       {videoInfo && (
         <div className="space-y-8 animate-in slide-in-from-bottom-8 duration-700">
-          <div className="bg-background-mid border border-white/5 rounded-[48px] p-8 shadow-2xl relative overflow-hidden group">
+          <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-2xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-brand-cyan/5 -mr-16 -mt-16 rounded-full blur-3xl group-hover:bg-brand-cyan/10 transition-all" />
 
-            <div className="flex flex-col lg:flex-row gap-8 items-center mb-8 border-b border-white/5 pb-8">
-              <img src={`https://img.youtube.com/vi/${videoInfo.id}/mqdefault.jpg`} className="w-48 h-28 rounded-2xl object-cover shadow-2xl border border-white/5" />
+            <div className="flex flex-col lg:flex-row gap-8 items-center mb-8 border-b border-gray-200 pb-8">
+              <img src={`https://img.youtube.com/vi/${videoInfo.id}/mqdefault.jpg`} className="w-48 h-28 rounded-2xl object-cover shadow-2xl border border-gray-200" />
               <div className="flex-1 text-center lg:text-left space-y-2">
                 <h3 className="text-xl font-black tracking-tight leading-tight">{videoInfo.title}</h3>
-                <div className="flex flex-wrap justify-center lg:justify-start gap-4 text-[10px] font-black text-gray-600 uppercase tracking-widest">
+                <div className="flex flex-wrap justify-center lg:justify-start gap-4 text-[10px] font-black text-gray-900 uppercase tracking-widest">
                   <span>ID: {videoInfo.id}</span>
                   <span className="text-brand-cyan">Idioma: {videoInfo.lang}</span>
                 </div>
               </div>
               <div className="flex gap-2">
-                <button onClick={copyToClipboard} className="p-4 bg-white/5 rounded-2xl hover:text-brand-cyan transition-all shadow-xl" title="Copiar"><Copy className="w-5 h-5" /></button>
-                <button onClick={() => downloadFile('txt')} className="p-4 bg-white/5 rounded-2xl hover:text-brand-green transition-all shadow-xl" title="Baixar TXT"><FileText className="w-5 h-5" /></button>
-                <button onClick={() => downloadFile('srt')} className="p-4 bg-white/5 rounded-2xl hover:text-brand-purple transition-all shadow-xl" title="Baixar SRT"><ChevronRight className="w-5 h-5" /></button>
+                <button onClick={copyToClipboard} className="p-4 bg-gray-50 rounded-2xl hover:text-brand-cyan transition-all shadow-xl" title="Copiar"><Copy className="w-5 h-5" /></button>
+                <button onClick={() => downloadFile('txt')} className="p-4 bg-gray-50 rounded-2xl hover:text-brand-green transition-all shadow-xl" title="Baixar TXT"><FileText className="w-5 h-5" /></button>
+                <button onClick={() => downloadFile('srt')} className="p-4 bg-gray-50 rounded-2xl hover:text-brand-purple transition-all shadow-xl" title="Baixar SRT"><ChevronRight className="w-5 h-5" /></button>
               </div>
             </div>
 
             <div className="relative mb-8">
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-900" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 placeholder="Pesquisar termo na transcrição..."
-                className="w-full bg-background-deep/50 border border-white/5 rounded-2xl py-4 pl-14 pr-6 text-sm font-bold text-gray-300 outline-none focus:border-brand-cyan transition-all shadow-inner"
+                className="w-full bg-white/50 border border-gray-200 rounded-2xl py-4 pl-14 pr-6 text-sm font-black text-gray-900 outline-none focus:border-brand-cyan transition-all shadow-inner"
               />
             </div>
 
-            <div className="bg-background-deep/50 border border-white/5 rounded-[32px] p-8 max-h-[500px] overflow-y-auto custom-scrollbar shadow-inner relative">
+            <div className="bg-white/50 border border-gray-200 rounded-2xl p-8 max-h-[500px] overflow-y-auto custom-scrollbar shadow-inner relative">
               {viewMode === 'raw' ? (
-                <div className="text-sm font-medium leading-relaxed text-gray-400 whitespace-pre-wrap select-text">
+                <div className="text-sm font-black leading-relaxed text-gray-900 whitespace-pre-wrap select-text">
                   {segments.map(s => s.text).join(' ')}
                 </div>
               ) : (
                 <div className="space-y-4">
                   {filteredSegments.length > 0 ? filteredSegments.map((s, i) => (
-                    <div key={i} className="flex gap-6 group hover:bg-white/5 p-4 rounded-2xl transition-all">
+                    <div key={i} className="flex gap-6 group hover:bg-gray-50 p-4 rounded-2xl transition-all">
                       <span className="font-orbitron text-[10px] font-black text-brand-cyan opacity-40 group-hover:opacity-100 transition-opacity shrink-0">{s.timeLabel}</span>
-                      <p className="text-sm font-medium text-gray-400 group-hover:text-gray-200 select-text">{s.text}</p>
+                      <p className="text-sm font-black text-gray-900 group-hover:text-gray-900 select-text">{s.text}</p>
                     </div>
                   )) : (
-                    <div className="py-20 text-center text-gray-700 font-bold uppercase tracking-widest text-xs">Nenhum segmento encontrado para sua busca</div>
+                    <div className="py-20 text-center text-gray-700 font-black uppercase tracking-widest text-xs">Nenhum segmento encontrado para sua busca</div>
                   )}
                 </div>
               )}
@@ -342,9 +342,9 @@ const UmbraExtrairTool: React.FC = () => {
                 { label: 'Duração', val: segments.length ? segments[segments.length - 1].timeLabel : '—' },
                 { label: 'Caracteres', val: segments.map(s => s.text).join(' ').length },
               ].map(s => (
-                <div key={s.label} className="bg-background-deep/50 border border-white/5 p-5 rounded-2xl text-center shadow-inner">
-                  <div className="text-lg font-black text-white">{s.val.toLocaleString()}</div>
-                  <div className="text-[9px] font-bold text-gray-600 uppercase tracking-widest">{s.label}</div>
+                <div key={s.label} className="bg-white/50 border border-gray-200 p-5 rounded-2xl text-center shadow-inner">
+                  <div className="text-lg font-black text-gray-900">{s.val.toLocaleString()}</div>
+                  <div className="text-[9px] font-black text-gray-900 uppercase tracking-widest">{s.label}</div>
                 </div>
               ))}
             </div>
@@ -353,12 +353,12 @@ const UmbraExtrairTool: React.FC = () => {
       )}
 
       {/* FOOTER TIPS */}
-      <footer className="mt-20 p-12 bg-background-mid border border-white/5 rounded-[56px] text-center max-w-4xl mx-auto shadow-2xl relative overflow-hidden">
+      <footer className="mt-20 p-12 bg-white border border-gray-200 rounded-2xl text-center max-w-4xl mx-auto shadow-2xl relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-brand-cyan/5 via-transparent to-brand-pink/5 opacity-50" />
         <div className="relative z-10 space-y-6">
-          <div className="w-16 h-16 bg-white/5 rounded-[24px] flex items-center justify-center mx-auto text-brand-cyan shadow-xl"><Info className="w-8 h-8" /></div>
+          <div className="w-16 h-16 bg-gray-50 rounded-[24px] flex items-center justify-center mx-auto text-brand-cyan shadow-xl"><Info className="w-8 h-8" /></div>
           <h4 className="text-xl font-black tracking-tighter uppercase">Protocolo de Extração Umbra</h4>
-          <p className="text-gray-500 text-xs max-w-xl mx-auto leading-relaxed">Diferente das ferramentas comuns, o Umbra Extrair utiliza a API do Supadata para forçar a detecção de legendas mesmo quando o YouTube não as exibe nativamente. Perfeito para engenharia reversa de scripts virais.</p>
+          <p className="text-gray-900 text-xs max-w-xl mx-auto leading-relaxed">Diferente das ferramentas comuns, o Umbra Extrair utiliza a API do Supadata para forçar a detecção de legendas mesmo quando o YouTube não as exibe nativamente. Perfeito para engenharia reversa de scripts virais.</p>
         </div>
       </footer>
     </div>

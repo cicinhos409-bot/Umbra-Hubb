@@ -3,17 +3,14 @@ import React from 'react';
 
 export enum ToolTier {
   FREE = 'FREE',
-  PRO = 'PRO',
-  TURBO = 'TURBO'
+  PRO = 'PRO'
 }
 
 export enum ToolCategory {
   WEB = 'WEB',
-  MOTOR_SUPREMO = 'MOTOR SUPREMO',
   TOOLS_2IN1 = '2 EM 1',
   SPECIAL = 'SPECIAL',
   CHATBOTS = 'CHATBOTS',
-  UMBRA_TIKTOK = 'UMBRA HUB TIKTOK'
 }
 
 export interface Tool {
@@ -37,6 +34,19 @@ export interface PricingPlan {
   tier: ToolTier;
 }
 
+export interface LogEntry {
+  message: string;
+  type: 'success' | 'error' | 'info';
+  timestamp: Date;
+}
+
+export interface ScannerResult {
+  expected: number;
+  found: number;
+  missingCount: number;
+  missing: number[];
+  output: string;
+}
 export interface Testimonial {
   name: string;
   role: string;

@@ -3,222 +3,344 @@ import { ToolTier } from '../types';
 import {
   ExternalLink,
   Download,
-  Twitter,
-  Youtube,
-  Instagram,
   Zap,
   Lock,
   FileText,
-  MessageSquare
+  MessageSquare,
+  Sparkles,
+  ArrowRight,
+  ShieldCheck,
+  Smartphone,
+  Library,
+  Layers,
+  Clapperboard,
+  Bot,
+  Gift,
 } from 'lucide-react';
 
 interface BonusMaterialToolProps {
   userTier: ToolTier;
 }
 
+const iconColorMap: Record<string, string> = {
+  default: 'text-gray-500',
+  gpt:     'text-blue-500',
+  gem:     'text-purple-500',
+  docs:    'text-emerald-500',
+  dl:      'text-orange-500',
+  ext:     'text-primary',
+};
+
+type CardType = 'default' | 'gpt' | 'gem' | 'docs' | 'dl' | 'ext';
+
+interface PremiumCardProps {
+  title: string;
+  subtitle: string;
+  description: string;
+  icon: React.ElementType;
+  href: string;
+  tags: string[];
+  type?: CardType;
+  isLocked: boolean;
+}
+
+const PremiumCard: React.FC<PremiumCardProps> = ({
+  title, subtitle, description, icon: Icon, href, tags, type = 'default', isLocked,
+}) => {
+  const iconColor = iconColorMap[type] ?? iconColorMap.default;
+  return (
+    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col">
+      <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20 shrink-0">
+            <Icon className={`w-4 h-4 ${iconColor}`} />
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-sm font-black text-gray-900 truncate">{title}</h3>
+            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest truncate">{subtitle}</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-1.5 justify-end shrink-0">
+          {tags.slice(0, 2).map(tag => (
+            <span key={tag} className="px-2 py-0.5 rounded-full bg-white border border-gray-200 text-[9px] font-black uppercase tracking-widest text-gray-500">
+              {tag}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      <div className="p-6 flex flex-col flex-grow">
+        <p className="text-gray-600 text-sm font-black leading-relaxed flex-grow mb-5">
+          {description}
+        </p>
+
+        {isLocked ? (
+          <button
+            onClick={() => alert('Conteúdo exclusivo para assinantes PRO. Faça upgrade para liberar o acesso!')}
+            className="w-full py-3 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all"
+          >
+            <Lock className="w-3.5 h-3.5" /> Conteúdo Bloqueado
+          </button>
+        ) : (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full py-3 rounded-xl bg-primary text-white flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-primary/90 transition-all"
+          >
+            {type === 'dl' ? <Download className="w-3.5 h-3.5" /> : <ExternalLink className="w-3.5 h-3.5" />}
+            {type === 'dl' ? 'Baixar Material' : 'Acessar Agora'}
+          </a>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const SEQUENCES = [
+  {
+    title: 'Títulos Magnéticos',
+    description: 'Gera 40 títulos em 4 categorias (curiosidade, emoção, número e contradição). Ranqueia os melhores e refina versões de alta urgência.',
+    Icon: Layers,
+    badge: 'Hook Set',
+    BadgeIcon: Library,
+    href: '/Sequencia%20Extensao-Umbra%20Unified%20Automation/SEQUENCIA-CRIACAO-TITULOS.md',
+    label: 'Baixar Sequência',
+  },
+  {
+    title: 'Every ___ Explained.',
+    description: 'Domina o formato viral com maior CTR do YouTube. Gera titles, pacote de produção (thumb, hook, estrutura) e variações.',
+    Icon: Smartphone,
+    badge: 'Viral Master',
+    BadgeIcon: Zap,
+    href: '/Sequencia%20Extensao-Umbra%20Unified%20Automation/SEQUENCIA-EVERY-EXPLAINED-TITLES.md',
+    label: 'Baixar Master',
+  },
+  {
+    title: 'Roteiro Cinematográfico',
+    description: 'Transforma ideias em roteiros profissionais com estrutura de 3 atos, personagens e filtro de humanização anti-IA.',
+    Icon: Clapperboard,
+    badge: 'Storytelling',
+    BadgeIcon: ShieldCheck,
+    href: '/Sequencia%20Extensao-Umbra%20Unified%20Automation/SEQUENCIA-ROTEIRO-CINEMATOGRAFICO.md',
+    label: 'Baixar Roteiro',
+  },
+  {
+    title: 'Umbra Prompt',
+    description: 'Agente especializado em produzir prompts sincronizados, localizar lacunas e otimizar versões para resultados extremos.',
+    Icon: Bot,
+    badge: 'Agent Intel',
+    BadgeIcon: Sparkles,
+    href: '/Sequencia%20Extensao-Umbra%20Unified%20Automation/UMBRA-PROMPTS.md',
+    label: 'Baixar Agente',
+  },
+  {
+    title: 'Kit Criador de Conteúdo',
+    description: 'Sequência completa de 5 prompts para montar um vídeo do zero em uma única automação. Gera ganchos, roteiro dark, títulos clicáveis, encerramento humanizado e reescreve seus prompts com técnicas avançadas.',
+    Icon: Clapperboard,
+    badge: 'Full Pipeline',
+    BadgeIcon: Zap,
+    href: '/Sequencia%20Extensao-Umbra%20Unified%20Automation/TST-KIT-CRIADOR-CONTEUDO.md',
+    label: 'Baixar Kit Completo',
+  },
+];
+
 const BonusMaterialTool: React.FC<BonusMaterialToolProps> = ({ userTier }) => {
   const isLocked = userTier === ToolTier.FREE;
 
-  const ActionButton = ({ href, label, type, icon: Icon }: { href: string; label: string; type: 'gpt' | 'docs' | 'gem' | 'dl'; icon: any }) => {
-    if (isLocked) {
-      return (
-        <button
-          onClick={() => {
-            alert('🔒 CONTEÚDO EXCLUSIVO\n\nEste material é reservado para assinantes PRO ou TURBO.\n\nFaça upgrade no seu perfil para liberar o acesso agora!');
-          }}
-          className="w-full flex flex-col items-center justify-center gap-1 py-4 rounded-2xl bg-white/5 text-gray-500 font-bold text-[10px] uppercase tracking-[0.2em] border border-white/10 hover:bg-white/10 transition-all shadow-inner group"
-        >
-          <span className="flex items-center gap-2 text-gray-400 group-hover:text-white transition-colors">
-            <Lock className="w-3 h-3" /> BLOQUEADO
-          </span>
-          <span className="text-brand-purple animate-pulse">Fazer Upgrade</span>
-        </button>
-      );
-    }
-
-    const colorClasses = {
-      gpt: 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20',
-      docs: 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20',
-      gem: 'bg-purple-500/10 text-purple-400 hover:bg-purple-500/20',
-      dl: 'bg-orange-500/10 text-orange-400 hover:bg-orange-500/20',
-    };
-
-    return (
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-xs uppercase tracking-widest transition-all ${colorClasses[type] || 'bg-white/10 text-white'}`}
-      >
-        <Icon className="w-4 h-4" /> {label}
-      </a>
-    );
-  };
-
   return (
-    <div className="min-h-screen bg-[#09090f] text-white font-['Sora',sans-serif] pb-24 overflow-x-hidden relative">
-      <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <div className="animate-in fade-in duration-500 space-y-6">
 
-      {/* Background Gradients */}
-      <div className="fixed inset-0 pointer-events-none z-0">
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_70%_50%_at_10%_10%,_rgba(255,0,80,0.1)_0%,_transparent_55%),radial-gradient(ellipse_60%_45%_at_90%_90%,_rgba(180,0,255,0.1)_0%,_transparent_55%),radial-gradient(ellipse_50%_40%_at_50%_50%,_rgba(255,60,0,0.06)_0%,_transparent_60%)]" />
+      {/* ── PAGE HEADER ── */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20 shrink-0">
+            <Gift className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-black tracking-tight text-gray-900">Material Bônus</h1>
+            <p className="text-[11px] font-black text-gray-500 uppercase tracking-widest">Arsenal exclusivo para criadores Faceless</p>
+          </div>
+        </div>
+        {isLocked && (
+          <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200">
+            <Lock className="w-3.5 h-3.5 text-amber-600" />
+            <span className="text-[10px] font-black text-amber-700 uppercase tracking-widest">Plano PRO</span>
+          </div>
+        )}
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-12 relative z-10 animate-in fade-in duration-700">
-
-        {/* HERO */}
-        <header className="text-center mb-16">
-          <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
-            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-wider text-white">
-              <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> TikTok
+      {/* ── PRO UPGRADE BANNER ── */}
+      {isLocked && (
+        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+          <div className="px-8 py-5 border-b border-gray-200 bg-gray-50 flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20">
+              <Lock className="w-5 h-5 text-primary" />
             </div>
-            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-500/10 border border-red-500/20 text-[10px] font-bold uppercase tracking-wider text-red-400">
-              <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" /> YouTube
-            </div>
-            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-[10px] font-bold uppercase tracking-wider text-purple-400">
-              <div className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-pulse" /> Instagram
+            <div>
+              <h3 className="text-base font-black text-gray-900">Conteúdo Exclusivo PRO</h3>
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Faça upgrade para liberar todo o arsenal</p>
             </div>
           </div>
-
-          <h1 className="text-4xl md:text-6xl font-extrabold mb-4 leading-tight tracking-tight">
-            Material <span className="bg-gradient-to-r from-[#ff2d55] via-[#bf5af2] to-[#ff375f] bg-[length:200%] bg-clip-text text-fill-transparent text-transparent animate-shimmer">Bônus</span>
-            <br />para Criadores Faceless
-          </h1>
-          <p className="text-gray-400 text-base md:text-lg max-w-lg mx-auto font-medium leading-relaxed">
-            Ferramentas e recursos para criar conteúdo viral sem aparecer — com o poder da Inteligência Artificial.
-          </p>
-        </header>
-
-        {/* SECTION: FERRAMENTAS DE IA */}
-        <div className="flex items-center gap-4 mb-8">
-          <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] whitespace-nowrap">Ferramentas de IA</span>
-          <div className="h-px w-full bg-white/5" />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
-
-          {/* ChatGPT Card */}
-          <div className="bg-white/5 border border-white/10 rounded-[32px] p-6 hover:bg-white/[0.08] hover:border-white/20 transition-all group relative overflow-hidden group">
-            <div className="absolute inset-0 bg-blue-500/[0.05] opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="flex items-center justify-between mb-6">
-              <div className="w-12 h-12 bg-blue-500/15 border border-blue-500/25 rounded-2xl flex items-center justify-center text-blue-400">
-                <MessageSquare className="w-6 h-6" />
-              </div>
-              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 group-hover:text-white transition-colors">
-                <ExternalLink className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mb-4">
-              <h3 className="text-lg font-bold text-white mb-1">ChatGPT — Agentes</h3>
-              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">OpenAI • Roteiros & Ganchos</p>
-            </div>
-            <div className="flex flex-wrap gap-1.5 mb-6">
-              <span className="text-[9px] font-bold bg-white/5 border border-white/10 text-gray-400 px-2 py-1 rounded-full uppercase tracking-tight">✦ Roteiros virais</span>
-              <span className="text-[9px] font-bold bg-white/5 border border-white/10 text-gray-400 px-2 py-1 rounded-full uppercase tracking-tight">✦ Alto CTR</span>
-            </div>
-            <p className="text-xs text-gray-400 leading-relaxed mb-8">
-              Crie roteiros virais e títulos magnéticos com agentes personalizados para seu nicho.
-            </p>
-            <ActionButton href="https://chatgpt.com" label="Acessar ChatGPT" type="gpt" icon={MessageSquare} />
-          </div>
-
-          {/* Gemini Card */}
-          <div className="bg-white/5 border border-white/10 rounded-[32px] p-6 hover:bg-white/[0.08] hover:border-white/20 transition-all group relative overflow-hidden group">
-            <div className="absolute inset-0 bg-purple-500/[0.05] opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="flex items-center justify-between mb-6">
-              <div className="w-12 h-12 bg-purple-500/15 border border-purple-500/25 rounded-2xl flex items-center justify-center text-purple-400">
-                <Zap className="w-6 h-6" />
-              </div>
-              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 group-hover:text-white transition-colors">
-                <ExternalLink className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mb-4">
-              <h3 className="text-lg font-bold text-white mb-1">Gemini — Agentes</h3>
-              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Google • Tendências IA</p>
-            </div>
-            <div className="flex flex-wrap gap-1.5 mb-6">
-              <span className="text-[9px] font-bold bg-white/5 border border-white/10 text-gray-400 px-2 py-1 rounded-full uppercase tracking-tight">YouTube</span>
-              <span className="text-[9px] font-bold bg-white/5 border border-white/10 text-gray-400 px-2 py-1 rounded-full uppercase tracking-tight">TikTok</span>
-            </div>
-            <p className="text-xs text-gray-400 leading-relaxed mb-8">
-              Pesquise tendências e gere ideias de vídeos automatizados com os agentes do Gemini.
-            </p>
-            <ActionButton href="https://gemini.google.com" label="Acessar Gemini" type="gem" icon={Zap} />
-          </div>
-
-          {/* Docs Card */}
-          <div className="bg-white/5 border border-white/10 rounded-[32px] p-6 hover:bg-white/[0.08] hover:border-white/20 transition-all group relative overflow-hidden group">
-            <div className="absolute inset-0 bg-emerald-500/[0.05] opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="flex items-center justify-between mb-6">
-              <div className="w-12 h-12 bg-emerald-500/15 border border-emerald-500/25 rounded-2xl flex items-center justify-center text-emerald-400">
-                <FileText className="w-6 h-6" />
-              </div>
-              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-gray-500 group-hover:text-white transition-colors">
-                <ExternalLink className="w-4 h-4" />
-              </div>
-            </div>
-            <div className="mb-4">
-              <h3 className="text-lg font-bold text-white mb-1">Documentos do Curso</h3>
-              <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Templates & Checklists</p>
-            </div>
-            <div className="flex flex-wrap gap-1.5 mb-6">
-              <span className="text-[9px] font-bold bg-white/5 border border-white/10 text-gray-400 px-2 py-1 rounded-full uppercase tracking-tight">Templates</span>
-              <span className="text-[9px] font-bold bg-white/5 border border-white/10 text-gray-400 px-2 py-1 rounded-full uppercase tracking-tight">Aulas</span>
-            </div>
-            <p className="text-xs text-gray-400 leading-relaxed mb-8">
-              Templates de roteiro e checklists de postagem em um só lugar.
-            </p>
-            <ActionButton href="https://docs.google.com" label="Abrir Documentos" type="docs" icon={FileText} />
-          </div>
-
-        </div>
-
-        {/* SECTION: DOWNLOAD */}
-        <div className="flex items-center gap-4 mb-8">
-          <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] whitespace-nowrap">Download Exclusivo</span>
-          <div className="h-px w-full bg-white/5" />
-        </div>
-
-        <div className="bg-white/5 border border-white/10 rounded-[40px] p-8 md:p-10 relative overflow-hidden group">
-          <div className="absolute inset-0 bg-orange-500/[0.03] pointer-events-none" />
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
-            <div className="flex items-center gap-6">
-              <div className="w-16 h-16 bg-orange-500/15 border border-orange-500/25 rounded-3xl flex items-center justify-center text-orange-400 shadow-xl shadow-orange-500/5">
-                <Download className="w-8 h-8" />
-              </div>
-              <div className="text-center md:text-left">
-                <h3 className="text-xl md:text-2xl font-black text-white mb-1">Baixar Material TST</h3>
-                <p className="text-sm text-gray-500 font-medium mb-3">Pack completo • TikTok, YouTube & Instagram Faceless</p>
-                <div className="flex flex-wrap justify-center md:justify-start gap-2">
-                  <span className="px-3 py-1 rounded-full bg-white/5 text-[9px] font-bold text-gray-400 border border-white/10 uppercase tracking-tight">TikTok</span>
-                  <span className="px-3 py-1 rounded-full bg-red-500/10 text-[9px] font-bold text-red-400 border border-red-500/20 uppercase tracking-tight">YouTube</span>
+          <div className="p-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+              {['Viralização', 'Automação', 'Storytelling', 'IA Avançada'].map(item => (
+                <div key={item} className="p-4 bg-gray-50 border border-gray-200 rounded-xl flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
+                  <span className="text-xs font-black text-gray-700">{item}</span>
                 </div>
-              </div>
+              ))}
             </div>
-            <div className="w-full md:w-auto">
-              <ActionButton href="#" label="Baixar Agora" type="dl" icon={Download} />
+            <button className="w-full py-3.5 rounded-xl bg-primary text-white font-black text-[10px] uppercase tracking-[0.2em] hover:bg-primary/90 transition-all flex items-center justify-center gap-2">
+              <Sparkles className="w-4 h-4" /> Fazer Upgrade para PRO
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── FEATURED: PACK TST ── */}
+      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+        <div className="px-8 py-5 border-b border-gray-200 bg-gray-50 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20">
+              <Download className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-base font-black text-gray-900">Download Consolidado</h3>
+              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Pack completo atualizado</p>
+            </div>
+          </div>
+          <div className="hidden sm:flex items-center gap-2">
+            <span className="px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20 text-[9px] font-black text-primary uppercase tracking-widest">Masterclass</span>
+            <span className="px-2.5 py-1 rounded-full bg-gray-100 border border-gray-200 text-[9px] font-black text-gray-500 uppercase tracking-widest">Update 2024</span>
+          </div>
+        </div>
+        <div className="p-8">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+            <div className="flex-grow">
+              <h3 className="text-2xl font-black text-gray-900 tracking-tight uppercase mb-2">Pack Material TST v2.0</h3>
+              <p className="text-sm font-black text-gray-600 leading-relaxed max-w-xl">
+                O arsenal completo e definitivo. Inclui todos os roteiros, checklists de postagem, guias de nicho e o mapa mental da estratégia TST para escala global.
+              </p>
+            </div>
+            <div className="w-full md:w-auto shrink-0">
+              {isLocked ? (
+                <button
+                  onClick={() => alert('Conteúdo exclusivo para assinantes PRO. Faça upgrade para liberar o acesso!')}
+                  className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-400 font-black uppercase text-[10px] tracking-widest hover:bg-gray-100 hover:text-gray-700 transition-all"
+                >
+                  <Lock className="w-4 h-4" /> Conteúdo Exclusivo
+                </button>
+              ) : (
+                <a href="#" className="flex items-center justify-center gap-2 px-8 py-4 bg-primary text-white rounded-xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-primary/90 transition-all">
+                  <Download className="w-4 h-4" /> Iniciar Download
+                </a>
+              )}
             </div>
           </div>
         </div>
-
-        {/* FOOTER */}
-        <footer className="mt-20 text-center text-gray-600 text-xs font-bold leading-loose uppercase tracking-widest">
-          <p className="text-gray-500 mb-1">Material Bônus — Criadores Faceless</p>
-          <p>TikTok • YouTube • Instagram • Powered by IA</p>
-        </footer>
-
       </div>
 
-      <style>{`
-        @keyframes shimmer {
-          0% { background-position: -200% center; }
-          100% { background-position: 200% center; }
-        }
-        .animate-shimmer {
-          animation: shimmer 5s infinite linear;
-        }
-      `}</style>
+      {/* ── INTELIGÊNCIA & TEMPLATES ── */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <span className="text-[11px] font-black uppercase tracking-[0.4em] text-gray-500 shrink-0">Inteligência & Templates</span>
+          <div className="h-px flex-grow bg-gray-200" />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <PremiumCard
+            title="ChatGPT Agents"
+            subtitle="OpenAI • Prompt Engineering"
+            description="Roteiristas de IA treinados para converter hooks em vídeos virais. Estrutura otimizada para o algoritmo 2024."
+            icon={MessageSquare}
+            href="https://chatgpt.com"
+            tags={['Scripts', 'Engajamento']}
+            type="gpt"
+            isLocked={isLocked}
+          />
+          <PremiumCard
+            title="AIDA TikTok Gem"
+            subtitle="Gemini • Roteiros de Compra"
+            description="Especialista em roteiros virais de alta conversão para TikTok Shop usando o método AIDA: Atenção, Interesse, Desejo e Ação."
+            icon={Zap}
+            href="https://gemini.google.com/gem/1s2uVz-mP67OXG6trStYe-Sjd-sRHaKRR?usp=sharing"
+            tags={['Sales', 'Conversion']}
+            type="gem"
+            isLocked={isLocked}
+          />
+          <PremiumCard
+            title="Gemini Power"
+            subtitle="Google • Pesquisa de Nichos"
+            description="Acesse o poder do Gemini para mapear tendências antes de todo mundo e gerar roteiros informativos densos."
+            icon={Smartphone}
+            href="https://gemini.google.com"
+            tags={['Tendências', 'SEO']}
+            type="gem"
+            isLocked={isLocked}
+          />
+          <PremiumCard
+            title="Central de Docs"
+            subtitle="Umbra • Materiais Auxiliares"
+            description="Repositório com todos os documentos do site, guias rápidos e checklists em PDF para download."
+            icon={FileText}
+            href="https://docs.google.com"
+            tags={['Templates', 'Checklists']}
+            type="docs"
+            isLocked={isLocked}
+          />
+        </div>
+      </div>
+
+      {/* ── AUTOMAÇÃO DE SEQUÊNCIA ── */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-3">
+          <span className="text-[11px] font-black uppercase tracking-[0.4em] text-gray-500 shrink-0">Automação de Sequência</span>
+          <div className="h-px flex-grow bg-gray-200" />
+          <span className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-[9px] font-black text-primary uppercase tracking-widest shrink-0">Umbra Unified</span>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden divide-y divide-gray-100">
+          {SEQUENCES.map((seq, i) => (
+            <div key={i} className="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-6 hover:bg-gray-50 transition-colors">
+              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center border border-primary/20 shrink-0">
+                <seq.Icon className="w-5 h-5 text-primary" />
+              </div>
+
+              <div className="flex-grow min-w-0">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                  <h3 className="text-sm font-black text-gray-900 uppercase tracking-tight">{seq.title}</h3>
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 border border-gray-200 text-[9px] font-black text-gray-500 uppercase tracking-widest">
+                    <seq.BadgeIcon className="w-2.5 h-2.5" /> {seq.badge}
+                  </span>
+                </div>
+                <p className="text-xs font-black text-gray-500 leading-relaxed">{seq.description}</p>
+              </div>
+
+              {isLocked ? (
+                <button
+                  onClick={() => alert('Conteúdo exclusivo para assinantes PRO.')}
+                  className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-50 border border-gray-200 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all"
+                >
+                  <Lock className="w-3.5 h-3.5" /> Bloqueado
+                </button>
+              ) : (
+                <a
+                  href={seq.href}
+                  className="shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary/10 border border-primary/20 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary hover:text-white transition-all"
+                >
+                  {seq.label} <ArrowRight className="w-3 h-3" />
+                </a>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <p className="text-center text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">
+          Todas as sequências são compatíveis com o módulo Umbra Unified Automation
+        </p>
+      </div>
+
     </div>
   );
 };

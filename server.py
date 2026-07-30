@@ -38,16 +38,98 @@ def home():
     print("[SERVER] Root health check requested.", flush=True)
     return "Umbra Hub API is Online", 200
 
+# ─── Auth Callback System (Plan B) ──────────────────────────────────
+pending_session = None
+
+@app.route('/auth-callback', strict_slashes=False)
+@app.route('/auth-callback/')
+def auth_callback():
+    print("[SERVER] Auth callback hit!", flush=True)
+    return """
+    <html>
+        <body style="background: #0a0a0a; color: white; font-family: 'Inter', sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0;">
+            <div style="text-align: center; border: 1px solid #333; padding: 40px; border-radius: 12px; background: #111;">
+                <h2 style="color: #00f2fe;">Umbra Hub</h2>
+                <p id="msg">Processando login...</p>
+                <script>
+                    const hash = window.location.hash.substring(1);
+                    if (hash) {
+                        fetch('/api/store-auth', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ hash: hash })
+                        }).then(() => {
+                            document.getElementById('msg').innerHTML = 'Login realizado com sucesso!<br>Você já pode fechar esta aba e voltar para o app.';
+                        });
+                    } else {
+                        document.getElementById('msg').innerHTML = 'Nenhum dado encontrado. Tente logar novamente.';
+                    }
+                </script>
+            </div>
+        </body>
+    </html>
+    """
+
+@app.route('/api/store-auth', methods=['POST', 'GET']) # Allow GET for simple redirects if needed
+def store_auth():
+    global pending_session
+    if request.method == 'POST':
+        data = request.json
+        pending_session = data.get('hash')
+    else:
+        pending_session = request.args.get('hash')
+    return jsonify({"status": "stored"})
+
+@app.route('/api/poll-auth')
+def poll_auth():
+    global pending_session
+    if pending_session:
+        s = pending_session
+        pending_session = None # Consumir a sessão
+        return jsonify({"session": s})
+    return jsonify({"session": None})
+
 import re
 from datetime import datetime
 
-RAPIDAPI_KEYS = [k for k in [os.environ.get(f'RAPIDAPI_KEY_{i}', '') for i in range(1, 16)] if k]
+# ── YouTube Multi-Pool Keys (Dynamic) ───────────────────────────
+def get_all_env_keys(prefixes):
+    """Scan environment for multiple prefixes like YT_MAIN_KEY, RAPIDAPI_KEY..."""
+    found = []
+    if isinstance(prefixes, str):
+        prefixes = [prefixes]
+    for prefix in prefixes:
+        base = os.getenv(prefix)
+        if base: found.append(base)
+        for i in range(1, 101):
+            k = os.getenv(f"{prefix}_{i}")
+            if k: found.append(k)
+    return list(dict.fromkeys(found))
+
+class KeyManager:
+    def __init__(self, pool_name: str, env_prefixes: list = None):
+        self.keys = []
+        if env_prefixes:
+            self.keys = get_all_env_keys(env_prefixes)
+        self.index = 0
+        print(f"[KeyManager] Initialized '{pool_name}' with {len(self.keys)} keys.")
+    
+    def get_key(self):
+        if not self.keys: return ""
+        key = self.keys[self.index]
+        self.index = (self.index + 1) % len(self.keys)
+        return key
+
+yt_main_manager = KeyManager("yt_main", ["YT_MAIN_KEY", "RAPIDAPI_KEY"])
+dl_manager = KeyManager("downloader", ["YT_DL_KEY", "YT_MAIN_KEY", "RAPIDAPI_KEY"])
+if not dl_manager.keys:
+    dl_manager.keys = yt_main_manager.keys
 
 def fetch_posts_rapidapi(username):
-    """Busca posts usando rotação de chaves RapidAPI se o TikWM falhar"""
-    keys = RAPIDAPI_KEYS.copy()
-    random.shuffle(keys)
-    for key in keys:
+    """Busca posts usando rotação de chaves via KeyManager"""
+    for _ in range(max(1, len(yt_main_manager.keys))):
+        key = yt_main_manager.get_key()
+        if not key: break
         try:
             r = requests.get(
                 f'https://tiktok-scraper7.p.rapidapi.com/user/posts?unique_id={username}&count=20',
@@ -58,8 +140,7 @@ def fetch_posts_rapidapi(username):
                 timeout=12
             )
             print(f'[RAPIDAPI] status={r.status_code} key=...{key[-6:]}', flush=True)
-            if r.status_code == 429: # Rate limit atingido para esta key
-                continue
+            if r.status_code == 429: continue
             if r.status_code == 200:
                 j = r.json()
                 d = j.get('data', {})
@@ -369,6 +450,114 @@ def youtube():
         'images': []
     })
 
+# ── New YouTube Hub Routes ───────────────────────────────────
+
+@app.route('/api/yt/trending')
+def yt_trending():
+    geo = request.args.get('geo', 'BR')
+    cat = request.args.get('cat', '')
+    qty = int(request.args.get('qty', 50))
+    key = yt_main_manager.get_key()
+    
+    params = {
+        "part": "snippet,statistics",
+        "chart": "mostPopular",
+        "regionCode": geo,
+        "maxResults": str(min(qty, 50))
+    }
+    if cat: params["videoCategoryId"] = cat
+
+    try:
+        resp = requests.get(
+            "https://youtube-v31.p.rapidapi.com/videos",
+            params=params,
+            headers={"X-RapidAPI-Key": key, "X-RapidAPI-Host": "youtube-v31.p.rapidapi.com"},
+            timeout=20
+        )
+        data = resp.json()
+        return jsonify(data), resp.status_code
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/yt/search')
+def yt_search():
+    q = request.args.get('q', '')
+    lang = request.args.get('lang', '')
+    after = request.args.get('after', '')
+    before = request.args.get('before', '')
+    duration = request.args.get('duration', 'any')
+    order = request.args.get('order', 'relevance')
+    qty = int(request.args.get('qty', 50))
+    
+    key = yt_main_manager.get_key()
+    params = {
+        "q": q,
+        "part": "snippet,id",
+        "maxResults": str(min(qty, 50)),
+        "order": order,
+        "type": "video"
+    }
+    if lang: params["relevanceLanguage"] = lang
+    if after: params["publishedAfter"] = after
+    if before: params["publishedBefore"] = before
+    if duration and duration != "any": params["videoDuration"] = duration
+
+    try:
+        resp = requests.get(
+            "https://youtube-v31.p.rapidapi.com/search",
+            params=params,
+            headers={"X-RapidAPI-Key": key, "X-RapidAPI-Host": "youtube-v31.p.rapidapi.com"},
+            timeout=25
+        )
+        return jsonify(resp.json()), resp.status_code
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/yt/video')
+def yt_video_details():
+    vid_id = request.args.get('id')
+    key = yt_main_manager.get_key()
+    try:
+        resp = requests.get(
+            "https://youtube-v31.p.rapidapi.com/videos",
+            params={"part": "snippet,statistics,contentDetails", "id": vid_id},
+            headers={"X-RapidAPI-Key": key, "X-RapidAPI-Host": "youtube-v31.p.rapidapi.com"},
+            timeout=20
+        )
+        return jsonify(resp.json()), resp.status_code
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/yt/channel')
+def yt_channel_details():
+    chan_id = request.args.get('id')
+    key = yt_main_manager.get_key()
+    try:
+        resp = requests.get(
+            "https://youtube-v31.p.rapidapi.com/channels",
+            params={"part": "snippet,statistics,brandingSettings", "id": chan_id},
+            headers={"X-RapidAPI-Key": key, "X-RapidAPI-Host": "youtube-v31.p.rapidapi.com"},
+            timeout=20
+        )
+        return jsonify(resp.json()), resp.status_code
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/yt/download_proxy')
+def yt_dl_proxy():
+    vid_id = request.args.get('id')
+    key = dl_manager.get_key()
+    try:
+        resp = requests.get(
+            "https://youtube-media-downloader.p.rapidapi.com/v2/video/details",
+            params={"videoId": vid_id},
+            headers={"X-RapidAPI-Key": key, "X-RapidAPI-Host": "youtube-media-downloader.p.rapidapi.com"},
+            timeout=20
+        )
+        return jsonify(resp.json()), resp.status_code
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/download', methods=['GET', 'POST'])
 def download():
     if request.method == 'POST':
@@ -404,23 +593,52 @@ def download():
         else:
             fmt = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best'
 
-        result = subprocess.run(
-            [
-                'yt-dlp',
-                '-o', output_template,
-                '-f', fmt,
-                '--merge-output-format', 'mp4',
-                '--no-playlist',
-                '--remote-components', 'ejs:github',
-                '--cookies', cookies_file,
-                original_url
-            ],
-            capture_output=True, text=True, timeout=120
-        )
+        def run_ytdlp(f_str):
+            try:
+                return subprocess.run(
+                    [
+                        'yt-dlp',
+                        '-o', output_template,
+                        '-f', f_str,
+                        '--merge-output-format', 'mp4',
+                        '--no-playlist',
+                        '--remote-components', 'ejs:github',
+                        '--cookies', cookies_file,
+                        original_url
+                    ],
+                    capture_output=True, text=True, timeout=120
+                )
+            except subprocess.TimeoutExpired as e:
+                print(f"[TIMEOUT] yt-dlp demorou demais com f={f_str}. Continuando...", flush=True)
+                # Retorna um objeto fake para não quebrar a lógica seguinte
+                class DummyResult:
+                    stderr = "Timeout Expired"
+                return DummyResult()
+            except Exception as e:
+                print(f"[ERROR] Erro inesperado no subprocess: {e}", flush=True)
+                class DummyResult:
+                    stderr = str(e)
+                return DummyResult()
+
+        print(f"[DOWNLOAD] Requested URL: {original_url} | Height: {height}", flush=True)
+        result = run_ytdlp(fmt)
 
         files = glob.glob(os.path.join(tmpdir, '*'))
+        
+        # Se falhou, tenta o fallback para "best"
         if not files:
-            return jsonify({'error': 'Falha: ' + result.stderr}), 500
+            print(f"[FALLBACK] Tentativa 1 falhou. Motivo: {result.stderr[:200]}... Tentando fallback 'best'...", flush=True)
+            result = run_ytdlp('bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best')
+            files = glob.glob(os.path.join(tmpdir, '*'))
+
+        # Se ainda falhou, tenta qualquer formato 'best'
+        if not files:
+            print("[FALLBACK] Tentativa 2 falhou. Tentando fallback final 'best' absoluto...", flush=True)
+            result = run_ytdlp('best')
+            files = glob.glob(os.path.join(tmpdir, '*'))
+
+        if not files:
+            return jsonify({'error': 'Não foi possível baixar o vídeo após várias tentativas: ' + result.stderr}), 500
 
         with open(files[0], 'rb') as f:
             file_data = f.read()

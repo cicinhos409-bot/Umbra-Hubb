@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e0a3c"/>
+      <stop offset="50%" style="stop-color:#3b1078"/>
+      <stop offset="100%" style="stop-color:#6d28d9"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.08"/>
+      <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0.02"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="20" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Noise texture dots -->
+  <circle cx="100" cy="80"  r="120" fill="#7c3aed" opacity="0.15"/>
+  <circle cx="1100" cy="550" r="150" fill="#a78bfa" opacity="0.12"/>
+  <circle cx="600" cy="600" r="200" fill="#4c1d95" opacity="0.20"/>
+
+  <!-- Grid lines decoration -->
+  <line x1="0" y1="315" x2="1200" y2="315" stroke="#ffffff" stroke-opacity="0.04" stroke-width="1"/>
+  <line x1="600" y1="0" x2="600" y2="630" stroke="#ffffff" stroke-opacity="0.04" stroke-width="1"/>
+
+  <!-- Card background -->
+  <rect x="80" y="70" width="1040" height="490" rx="24" fill="url(#card)" stroke="#ffffff" stroke-opacity="0.08" stroke-width="1"/>
+
+  <!-- Category badge -->
+  <rect x="120" y="110" width="200" height="38" rx="19" fill="#8b5cf6" opacity="0.9"/>
+  <text x="220" y="134" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="white" text-anchor="middle" letter-spacing="1">FACELESS</text>
+
+  <!-- Main emoji -->
+  <text x="180" y="310" font-size="130" text-anchor="middle" filter="url(#glow)">🎬</text>
+
+  <!-- Title -->
+  <text x="420" y="240" font-family="system-ui, -apple-system, sans-serif" font-size="54" font-weight="900" fill="white" letter-spacing="-1">Como Criar um Canal</text>
+  <text x="420" y="308" font-family="system-ui, -apple-system, sans-serif" font-size="54" font-weight="900" fill="#a78bfa" letter-spacing="-1">Faceless do Zero</text>
+  <text x="420" y="356" font-family="system-ui, -apple-system, sans-serif" font-size="54" font-weight="900" fill="white" letter-spacing="-1">em 2026</text>
+
+  <!-- Description -->
+  <text x="420" y="420" font-family="system-ui, -apple-system, sans-serif" font-size="22" fill="#c4b5fd" opacity="0.9">Do zero ao primeiro pagamento — sem aparecer na câmera</text>
+
+  <!-- Tags -->
+  <rect x="420" y="450" width="110" height="32" rx="16" fill="#4c1d95"/>
+  <text x="475" y="471" font-family="system-ui, sans-serif" font-size="14" font-weight="600" fill="#c4b5fd" text-anchor="middle">YouTube</text>
+
+  <rect x="544" y="450" width="110" height="32" rx="16" fill="#4c1d95"/>
+  <text x="599" y="471" font-family="system-ui, sans-serif" font-size="14" font-weight="600" fill="#c4b5fd" text-anchor="middle">Automação</text>
+
+  <rect x="668" y="450" width="140" height="32" rx="16" fill="#4c1d95"/>
+  <text x="738" y="471" font-family="system-ui, sans-serif" font-size="14" font-weight="600" fill="#c4b5fd" text-anchor="middle">Monetização</text>
+
+  <!-- Read time -->
+  <text x="420" y="520" font-family="system-ui, sans-serif" font-size="16" fill="#7c3aed" font-weight="600">⏱ 8 min de leitura</text>
+
+  <!-- Branding -->
+  <rect x="960" y="490" width="140" height="50" rx="12" fill="#8b5cf6" opacity="0.9"/>
+  <text x="1030" y="520" font-family="system-ui, sans-serif" font-size="20" font-weight="900" fill="white" text-anchor="middle">UmbraHub</text>
+</svg>

@@ -5,23 +5,183 @@
 @layer base {
   body {
     font-family: 'Inter', sans-serif;
-    background-color: #030308;
-    color: #f9fafb;
+    background-color: #ffffff;
+    color: #111827;
+    font-weight: 900;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
+
+  /* ── Todos os textos: preto máximo ───────── */
+  p, span, div, li, td, th, a, strong, em, small, blockquote, pre, code,
+  h1, h2, h3, h4, h5, h6, label, button, input, textarea, select {
+    font-weight: 900 !important;
+  }
+
+  /* ── Títulos ─────────────────────────────── */
+  h1 {
+    font-weight: 900;
+    color: #111827;
+    line-height: 1.15;
+  }
+  h2 {
+    font-weight: 900;
+    color: #111827;
+    line-height: 1.2;
+  }
+  h3 {
+    font-weight: 900;
+    color: #111827;
+    line-height: 1.25;
+  }
+  h4, h5, h6 {
+    font-weight: 900;
+    color: #111827;
+    line-height: 1.3;
+  }
+
+  /* ── Parágrafos ──────────────────────────── */
+  p {
+    color: #111827;
+    font-weight: 900;
+    line-height: 1.7;
+  }
+
+  /* ── Labels ──────────────────────────────── */
+  label {
+    font-weight: 900;
+    color: #111827;
+  }
+
+  /* ── Botões ──────────────────────────────── */
+  button {
+    font-weight: 900;
+  }
+
+  /* ── Inputs e selects ────────────────────── */
+  input, textarea, select {
+    font-weight: 900;
+    color: #111827;
+  }
+}
+
+@layer components {
+  /* ── Card titles & subtitles ─────────────── */
+  .card-title {
+    font-weight: 900;
+    color: #111827;
+  }
+  .card-subtitle {
+    font-weight: 900;
+    color: #111827;
+  }
+
+  /* ── Badges ──────────────────────────────── */
+  .badge {
+    font-weight: 900;
+  }
+
+  /* ── Textos utilitários de contraste ─────── */
+  .text-muted {
+    color: #374151;
+    font-weight: 900;
+  }
+  .text-body {
+    color: #111827;
+    font-weight: 900;
+    line-height: 1.7;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   DARK MODE — class="dark" on <html>
+   ═══════════════════════════════════════════════════ */
+html.dark body {
+  background-color: #0d0d14 !important;
+  color: #e8e8f0 !important;
+}
+
+/* Backgrounds */
+html.dark .bg-white           { background-color: #13131c !important; }
+html.dark .bg-gray-50         { background-color: #1a1a26 !important; }
+html.dark .bg-gray-100        { background-color: #1f1f2e !important; }
+html.dark .bg-gray-200        { background-color: #2a2a3a !important; }
+html.dark .bg-gray-300        { background-color: #36364a !important; }
+
+/* Text — bright enough to be readable on dark backgrounds */
+html.dark .text-gray-900      { color: #f2f2f8 !important; }
+html.dark .text-gray-800      { color: #dcdcec !important; }
+html.dark .text-gray-700      { color: #c0c0d8 !important; }
+html.dark .text-gray-600      { color: #a0a0c0 !important; }
+html.dark .text-gray-500      { color: #9090b4 !important; }
+html.dark .text-gray-400      { color: #7878a0 !important; }
+html.dark .text-black         { color: #f2f2f8 !important; }
+
+/* Borders */
+html.dark .border-gray-200    { border-color: rgba(255,255,255,0.10) !important; }
+html.dark .border-gray-300    { border-color: rgba(255,255,255,0.15) !important; }
+html.dark .border-gray-900    { border-color: rgba(255,255,255,0.25) !important; }
+html.dark .divide-gray-200    { border-color: rgba(255,255,255,0.10) !important; }
+
+/* Header backdrop */
+html.dark header.fixed        { background-color: rgba(13,13,20,0.90) !important; border-color: rgba(255,255,255,0.08) !important; }
+
+/* Inputs */
+html.dark input,
+html.dark textarea,
+html.dark select {
+  background-color: #1a1a26 !important;
+  color: #e8e8f0 !important;
+  border-color: rgba(255,255,255,0.1) !important;
+}
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #6060a0 !important;
+}
+
+/* Cards hover border */
+html.dark .hover\:border-gray-300:hover { border-color: rgba(255,255,255,0.18) !important; }
+html.dark .hover\:border-gray-400:hover { border-color: rgba(255,255,255,0.22) !important; }
+
+/* Scrollbar */
+html.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(167,139,250,0.25);
+}
+
+/* Dark mode fade overlays in marquee */
+html.dark .mrq-fade-left  { background: linear-gradient(to right, #0d0d14 0%, transparent 100%) !important; }
+html.dark .mrq-fade-right { background: linear-gradient(to left,  #0d0d14 0%, transparent 100%) !important; }
+
+/* ── Legal pages (Terms / Privacy) — readable body text ── */
+.legal-body,
+.legal-body p,
+.legal-body li,
+.legal-body span,
+.legal-body a {
+  font-weight: 500 !important;
+  color: #4b5563 !important;
+  line-height: 1.85 !important;
+}
+html.dark .legal-body,
+html.dark .legal-body p,
+html.dark .legal-body li,
+html.dark .legal-body span,
+html.dark .legal-body a {
+  color: #c0c0d8 !important;
 }
 
 @layer utilities {
   .bg-grid {
     background-size: 40px 40px;
-    background-image: radial-gradient(circle, #ffffff05 1px, transparent 1px);
+    background-image: radial-gradient(circle, #a78bfa12 1px, transparent 1px);
   }
 
   .neon-glow-purple {
-    box-shadow: 0 0 20px rgba(168, 85, 247, 0.2);
+    box-shadow: 0 0 20px rgba(167, 139, 250, 0.2);
   }
 
   .neon-glow-cyan {
-    box-shadow: 0 0 20px rgba(0, 245, 255, 0.2);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
   }
 
   .custom-scrollbar::-webkit-scrollbar {
@@ -34,12 +194,12 @@
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(167, 139, 250, 0.2);
     border-radius: 10px;
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(168, 85, 247, 0.2);
+    background: rgba(139, 92, 246, 0.4);
   }
 
   .scrollbar-hide::-webkit-scrollbar {

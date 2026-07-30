@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#050a14"/>
+      <stop offset="55%" style="stop-color:#0d1425"/>
+      <stop offset="100%" style="stop-color:#130e2b"/>
+    </linearGradient>
+    <linearGradient id="purple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6"/>
+      <stop offset="100%" style="stop-color:#6d28d9"/>
+    </linearGradient>
+    <linearGradient id="green" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#10b981"/>
+      <stop offset="100%" style="stop-color:#34d399"/>
+    </linearGradient>
+    <linearGradient id="flow" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#8b5cf6"/>
+      <stop offset="50%" style="stop-color:#06b6d4"/>
+      <stop offset="100%" style="stop-color:#10b981"/>
+    </linearGradient>
+    <filter id="glow-p">
+      <feGaussianBlur stdDeviation="14" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-g">
+      <feGaussianBlur stdDeviation="20" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Ambient glows -->
+  <circle cx="100"  cy="150" r="220" fill="#8b5cf6" opacity="0.09"/>
+  <circle cx="1100" cy="480" r="200" fill="#10b981" opacity="0.07"/>
+  <circle cx="600"  cy="650" r="180" fill="#06b6d4" opacity="0.06"/>
+
+  <!-- Grid / circuit lines -->
+  <line x1="0"    y1="210" x2="1200" y2="210" stroke="#ffffff" stroke-opacity="0.04" stroke-width="1"/>
+  <line x1="0"    y1="420" x2="1200" y2="420" stroke="#ffffff" stroke-opacity="0.04" stroke-width="1"/>
+  <line x1="400"  y1="0"   x2="400"  y2="630" stroke="#ffffff" stroke-opacity="0.04" stroke-width="1"/>
+  <line x1="800"  y1="0"   x2="800"  y2="630" stroke="#ffffff" stroke-opacity="0.04" stroke-width="1"/>
+
+  <!-- Top accent bar -->
+  <rect x="0" y="0" width="1200" height="4" fill="url(#flow)"/>
+
+  <!-- Card frame -->
+  <rect x="70" y="60" width="1060" height="510" rx="22" fill="#ffffff" fill-opacity="0.025" stroke="#8b5cf6" stroke-opacity="0.18" stroke-width="1"/>
+
+  <!-- ── LEFT COLUMN: título ── -->
+
+  <!-- Eyebrow badge -->
+  <rect x="110" y="100" width="230" height="36" rx="18" fill="#8b5cf6" fill-opacity="0.2" stroke="#8b5cf6" stroke-opacity="0.5" stroke-width="1"/>
+  <text x="225" y="123" font-family="system-ui,-apple-system,sans-serif" font-size="14" font-weight="700" fill="#c4b5fd" text-anchor="middle" letter-spacing="1">⚡ AUTOMAÇÃO COM IA</text>
+
+  <!-- Main title -->
+  <text x="110" y="205" font-family="system-ui,-apple-system,sans-serif" font-size="52" font-weight="900" fill="white" letter-spacing="-2">6 Vídeos</text>
+  <text x="110" y="263" font-family="system-ui,-apple-system,sans-serif" font-size="52" font-weight="900" fill="url(#purple)" letter-spacing="-2">por Semana</text>
+  <text x="110" y="315" font-family="system-ui,-apple-system,sans-serif" font-size="38" font-weight="900" fill="#94a3b8" letter-spacing="-1">em apenas</text>
+  <text x="110" y="385" font-family="system-ui,-apple-system,sans-serif" font-size="76" font-weight="900" fill="url(#green)" letter-spacing="-3" filter="url(#glow-g)">3 horas</text>
+
+  <!-- Sub -->
+  <text x="110" y="432" font-family="system-ui,sans-serif" font-size="18" fill="#64748b">Com IA Flow + UmbraHub · Guia completo</text>
+
+  <!-- Stat pills -->
+  <rect x="110" y="460" width="120" height="46" rx="12" fill="#ffffff" fill-opacity="0.05" stroke="#8b5cf6" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="170" y="479" font-family="system-ui,sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">Leitura</text>
+  <text x="170" y="498" font-family="system-ui,sans-serif" font-size="17" font-weight="800" fill="#a78bfa" text-anchor="middle">10 min</text>
+
+  <rect x="244" y="460" width="120" height="46" rx="12" fill="#ffffff" fill-opacity="0.05" stroke="#10b981" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="304" y="479" font-family="system-ui,sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">Nível</text>
+  <text x="304" y="498" font-family="system-ui,sans-serif" font-size="17" font-weight="800" fill="#34d399" text-anchor="middle">Qualquer</text>
+
+  <rect x="378" y="460" width="130" height="46" rx="12" fill="#ffffff" fill-opacity="0.05" stroke="#06b6d4" stroke-opacity="0.3" stroke-width="1"/>
+  <text x="443" y="479" font-family="system-ui,sans-serif" font-size="11" fill="#94a3b8" text-anchor="middle">Resultado</text>
+  <text x="443" y="498" font-family="system-ui,sans-serif" font-size="17" font-weight="800" fill="#67e8f9" text-anchor="middle">6 vídeos/sem</text>
+
+  <!-- ── RIGHT COLUMN: flow diagram ── -->
+
+  <!-- Flow steps: 3 → 2 → 1 hour blocks stacked -->
+  <!-- Step 1 -->
+  <rect x="840" y="100" width="260" height="88" rx="14" fill="#8b5cf6" fill-opacity="0.15" stroke="#8b5cf6" stroke-opacity="0.4" stroke-width="1"/>
+  <text x="862" y="130" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#a78bfa" letter-spacing="1">HORA 1</text>
+  <text x="862" y="156" font-family="system-ui,sans-serif" font-size="20" font-weight="900" fill="white">🧠 Roteiros em lote</text>
+  <text x="862" y="176" font-family="system-ui,sans-serif" font-size="13" fill="#94a3b8">6 scripts gerados com IA</text>
+
+  <!-- Arrow -->
+  <text x="965" y="220" font-size="22" fill="#475569" text-anchor="middle">↓</text>
+
+  <!-- Step 2 -->
+  <rect x="840" y="232" width="260" height="88" rx="14" fill="#06b6d4" fill-opacity="0.12" stroke="#06b6d4" stroke-opacity="0.35" stroke-width="1"/>
+  <text x="862" y="262" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#67e8f9" letter-spacing="1">HORA 2</text>
+  <text x="862" y="288" font-family="system-ui,sans-serif" font-size="20" font-weight="900" fill="white">🎙️ Voz + Assets</text>
+  <text x="862" y="308" font-family="system-ui,sans-serif" font-size="13" fill="#94a3b8">6 áudios + imagens selecionados</text>
+
+  <!-- Arrow -->
+  <text x="965" y="352" font-size="22" fill="#475569" text-anchor="middle">↓</text>
+
+  <!-- Step 3 -->
+  <rect x="840" y="364" width="260" height="88" rx="14" fill="#10b981" fill-opacity="0.12" stroke="#10b981" stroke-opacity="0.35" stroke-width="1"/>
+  <text x="862" y="394" font-family="system-ui,sans-serif" font-size="12" font-weight="700" fill="#34d399" letter-spacing="1">HORA 3</text>
+  <text x="862" y="420" font-family="system-ui,sans-serif" font-size="20" font-weight="900" fill="white">✂️ Edição + Upload</text>
+  <text x="862" y="440" font-family="system-ui,sans-serif" font-size="13" fill="#94a3b8">6 vídeos prontos agendados</text>
+
+  <!-- Result badge -->
+  <rect x="840" y="475" width="260" height="68" rx="14" fill="url(#flow)" fill-opacity="0.18" stroke-width="1.5">
+    <animate attributeName="stroke-opacity" values="0.4;0.8;0.4" dur="2s" repeatCount="indefinite"/>
+  </rect>
+  <rect x="840" y="475" width="260" height="68" rx="14" fill="none" stroke="url(#flow)" stroke-width="1.5"/>
+  <text x="970" y="502" font-family="system-ui,sans-serif" font-size="12" fill="#94a3b8" text-anchor="middle">RESULTADO FINAL</text>
+  <text x="970" y="527" font-family="system-ui,sans-serif" font-size="22" font-weight="900" fill="white" text-anchor="middle">6 vídeos · 1 semana · 3h</text>
+
+  <!-- Branding -->
+  <rect x="110" y="536" width="130" height="40" rx="10" fill="#8b5cf6" fill-opacity="0.85"/>
+  <text x="175" y="561" font-family="system-ui,sans-serif" font-size="17" font-weight="900" fill="white" text-anchor="middle">UmbraHub</text>
+</svg>
